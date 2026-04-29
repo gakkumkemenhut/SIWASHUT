@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIWASHUT — Sistem Pengawasan Kehutanan</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- Spatial file support -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://unpkg.com/shpjs@4.0.4/dist/shp.js"></script>
+<script src="https://unpkg.com/@tmcw/togeojson@5.8.1/dist/togeojson.umd.js"></script>
+<style>
+  :root {
+    --hijau: #1a5c2e;
+    --hijau-mid: #2d8b4e;
+    --hijau-light: #e8f5ed;
+    --hijau-accent: #4ade80;
+    --coklat: #5c3a1e;
+    --kuning: #f59e0b;
+    --merah: #dc2626;
+    --biru: #1d4ed8;
+    --abu: #6b7280;
+    --bg: #f0f4f0;
+    --card: #ffffff;
+    --text: #1a2e1a;
+    --text-muted: #4b5563;
+    --border: #d1e7d9;
+    --sidebar-w: 240px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+  /* ===== LOGIN PAGE ===== */
+  #login-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: stretch;
+    background: #0e2116;
+  }
+  #login-screen.hidden { display: none; }
+
+  .login-left {
+    flex: 1;
+    background: linear-gradient(160deg, #0e2116 0%, #1a5c2e 50%, #2d8b4e 100%);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 60px 48px;
+    position: relative; overflow: hidden;
+  }
+  .login-left::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(74,222,128,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(255,255,255,0.04) 0%, transparent 50%);
+  }
+  .login-left-deco {
+    position: absolute;
+    font-size: 220px; opacity: 0.04;
+    bottom: -30px; right: -20px;
+    line-height: 1; pointer-events: none;
+    user-select: none;
+  }
+  .login-brand { position: relative; text-align: center; }
+  .login-brand .tree-icon { font-size: 72px; display: block; margin-bottom: 16px; filter: drop-shadow(0 8px 24px rgba(0,0,0,0.3)); animation: floatTree 3s ease-in-out infinite; }
+  @keyframes floatTree { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .login-brand h1 { font-family: 'Playfair Display', serif; font-size: 42px; color: #fff; letter-spacing: 3px; margin-bottom: 8px; }
+  .login-brand p { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 40px; }
+  .login-desc {
+    position: relative; max-width: 360px; text-align: center;
+    color: rgba(255,255,255,0.65); font-size: 14px; line-height: 1.8;
+    border-top: 1px solid rgba(255,255,255,0.1); padding-top: 32px;
+  }
+  .login-desc strong { color: rgba(255,255,255,0.9); }
+  .login-pills { display: flex; gap: 8px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+  .login-pill {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7); font-size: 11px; padding: 5px 14px;
+    border-radius: 20px; letter-spacing: 0.5px;
+  }
+
+  .login-right {
+    width: 460px; min-width: 400px;
+    background: #fff;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 60px 52px;
+    position: relative;
+  }
+  .login-right::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, #1a5c2e, #4ade80, #1a5c2e);
+  }
+  .login-form-header { margin-bottom: 36px; }
+  .login-form-header h2 { font-size: 26px; font-weight: 700; color: #1a2e1a; margin-bottom: 6px; }
+  .login-form-header p { font-size: 13px; color: #6b7280; }
+
+  .login-group { margin-bottom: 20px; }
+  .login-label {
+    display: block; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: #4b5563; margin-bottom: 8px;
+  }
+  .login-input-wrap { position: relative; }
+  .login-input-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 16px; pointer-events: none;
+  }
+  .login-input {
+    width: 100%; padding: 13px 14px 13px 44px;
+    border: 1.5px solid #d1e7d9;
+    border-radius: 10px;
+    font-size: 14px; font-family: inherit; color: #1a2e1a;
+    background: #f8fdf9;
+    outline: none; transition: all 0.2s;
+  }
+  .login-input:focus { border-color: #1a5c2e; background: #fff; box-shadow: 0 0 0 3px rgba(26,92,46,0.1); }
+  .login-input.error { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
+  .pw-toggle {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px;
+    color: #6b7280; transition: color 0.2s;
+  }
+  .pw-toggle:hover { color: #1a5c2e; }
+
+  .login-error {
+    background: #fee2e2; color: #991b1b;
+    border: 1px solid #fecaca; border-radius: 8px;
+    padding: 11px 14px; font-size: 13px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .login-error.hidden { display: none; }
+
+  .login-hint {
+    background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;
+    padding: 11px 14px; font-size: 12px; color: #166534; margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .btn-login {
+    width: 100%; padding: 14px;
+    background: #1a5c2e; color: #fff;
+    border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700; font-family: inherit;
+    cursor: pointer; letter-spacing: 0.5px;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 4px;
+  }
+  .btn-login:hover { background: #2d8b4e; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,92,46,0.25); }
+  .btn-login:active { transform: translateY(0); }
+  .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .login-footer { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e5e7eb; text-align: center; }
+  .login-footer p { font-size: 11px; color: #9ca3af; }
+  .login-footer strong { color: #6b7280; }
+
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* APP hidden until login */
+  #app-wrapper { display: none; width: 100%; }
+  #app-wrapper.visible { display: flex; width: 100%; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--hijau);
+    min-height: 100vh;
+    position: fixed;
+    left: 0; top: 0;
+    display: flex; flex-direction: column;
+    z-index: 100;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+  }
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-logo .brand { font-family: 'Playfair Display', serif; font-size: 22px; color: #fff; letter-spacing: 1px; }
+  .sidebar-logo .sub { font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+  .sidebar-icon { font-size: 28px; margin-bottom: 4px; }
+  .nav-section { padding: 16px 12px 8px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 20px;
+    color: rgba(255,255,255,0.75);
+    cursor: pointer;
+    font-size: 13.5px;
+    border-radius: 0;
+    transition: all 0.2s;
+    margin: 2px 8px;
+    border-radius: 8px;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-item.active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 600; }
+  .nav-item .nav-icon { width: 20px; text-align: center; font-size: 16px; }
+  .sidebar-footer { margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-footer p { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* TOPBAR */
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title { font-size: 16px; font-weight: 600; color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .badge-user { background: var(--hijau); color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-date { font-size: 12px; color: var(--text-muted); }
+
+  /* CONTENT */
+  .content { padding: 28px 32px; flex: 1; }
+
+  /* PAGE SECTIONS */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* STAT CARDS */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 22px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before { content:''; position:absolute; top:0;right:0; width:80px;height:80px; border-radius: 0 0 0 100%; opacity: 0.06; }
+  .stat-card.s1::before { background: var(--hijau); }
+  .stat-card.s2::before { background: var(--kuning); }
+  .stat-card.s3::before { background: var(--merah); }
+  .stat-card.s4::before { background: var(--biru); }
+  .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; }
+  .stat-value { font-size: 32px; font-weight: 700; line-height: 1; }
+  .stat-card.s1 .stat-value { color: var(--hijau); }
+  .stat-card.s2 .stat-value { color: var(--kuning); }
+  .stat-card.s3 .stat-value { color: var(--merah); }
+  .stat-card.s4 .stat-value { color: var(--biru); }
+  .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  .stat-icon { font-size: 28px; position: absolute; top: 16px; right: 18px; opacity: 0.2; }
+
+  /* SECTION TITLE */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-size: 16px; font-weight: 700; color: var(--text); }
+
+  /* CHART GRID */
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .chart-card { background:#fff; border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+  .chart-card.wide { grid-column: span 2; }
+  .chart-title { font-size: 13px; font-weight: 600; margin-bottom: 16px; color: var(--text); }
+  .chart-canvas-wrap { position: relative; height: 220px; }
+
+  /* MAP */
+  .map-section { background:#fff; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 28px; overflow:hidden; }
+  .map-wrap { position: relative; border-radius: 12px; overflow: hidden; }
+  #indonesia-map { width: 100%; height: 500px; border-radius: 12px; }
+  .map-ctrl-btn { background:rgba(255,255,255,0.95); border:1px solid rgba(0,0,0,0.15); border-radius:6px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; box-shadow:0 2px 8px rgba(0,0,0,0.12); transition:all 0.2s; color:#374151; }
+  .map-ctrl-btn:hover { background:#fff; box-shadow:0 3px 12px rgba(0,0,0,0.2); }
+  .map-ctrl-btn.active { background:#1a5c2e; color:#fff; border-color:#1a5c2e; }
+  .leaflet-popup-content-wrapper { border-radius: 10px !important; padding: 4px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important; }
+  .leaflet-popup-content { margin: 12px 16px !important; font-family: "Plus Jakarta Sans", sans-serif !important; font-size: 13px !important; }
+  .map-popup-title { font-size: 14px; font-weight: 700; color: #1a5c2e; margin-bottom: 6px; }
+  .map-popup-row { display: flex; justify-content: space-between; gap: 16px; margin: 3px 0; font-size: 12px; }
+  .map-popup-label { color: #6b7280; }
+  .map-popup-val { font-weight: 600; color: #1a2e1a; }
+  .map-popup-btn { display:block; margin-top:10px; text-align:center; background:#1a5c2e; color:#fff; border:none; border-radius:6px; padding:7px 14px; font-size:12px; font-weight:600; cursor:pointer; width:100%; font-family:inherit; }
+  /* legend now inside map overlay */
+
+  /* TABLE */
+  .table-card { background:#fff; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+  .table-toolbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .search-box { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
+  .search-box input { border: none; background: none; font-size: 13px; outline: none; flex: 1; font-family: inherit; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: var(--hijau-light); padding: 12px 16px; text-align: left; font-weight: 600; color: var(--hijau); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:hover { background: var(--hijau-light); }
+  tbody td { padding: 11px 16px; color: var(--text); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-ok { background: #dcfce7; color: #166534; }
+  .badge-warn { background: #fef9c3; color: #854d0e; }
+  .badge-danger { background: #fee2e2; color: #991b1b; }
+  .badge-proc { background: #dbeafe; color: #1e40af; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: all 0.2s; }
+  .btn-primary { background: var(--hijau); color: #fff; }
+  .btn-primary:hover { background: var(--hijau-mid); }
+  .btn-outline { background: #fff; color: var(--hijau); border: 1.5px solid var(--hijau); }
+  .btn-outline:hover { background: var(--hijau-light); }
+  .btn-danger { background: var(--merah); color: #fff; }
+  .btn-excel { background: #1a6b3c; color: #fff; }
+  .btn-excel:hover { background: #145530; }
+
+  /* FORM */
+  .form-card { background:#fff; border-radius: 12px; border: 1px solid var(--border); padding: 28px; }
+  .form-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); color: var(--hijau); display: flex; align-items: center; gap: 10px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: span 2; }
+  .form-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+  .form-control {
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .form-control:focus { border-color: var(--hijau-mid); box-shadow: 0 0 0 3px rgba(45,139,78,0.1); }
+  select.form-control { cursor: pointer; }
+  textarea.form-control { resize: vertical; min-height: 80px; }
+  .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .required { color: var(--merah); }
+
+  /* ALERT */
+  .alert { padding: 14px 18px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+  .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+  .alert-info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+  .alert.hidden { display: none; }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 48px; color: var(--text-muted); }
+  .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .chart-grid { grid-template-columns: 1fr; }
+    .chart-card.wide { grid-column: span 1; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: span 1; }
+  }
+
+  /* Map tooltip */
+  .map-tooltip { position: absolute; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.12); z-index: 10; min-width: 160px; }
+  .map-tooltip strong { display: block; margin-bottom: 4px; font-size: 13px; color: var(--hijau); }
+
+  /* Pagination */
+  .pagination { display: flex; align-items: center; gap: 6px; padding: 14px 20px; border-top: 1px solid var(--border); justify-content: flex-end; }
+  .page-btn { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border); background: #fff; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+  .page-btn.active { background: var(--hijau); color: #fff; border-color: var(--hijau); }
+  .page-info { font-size: 12px; color: var(--text-muted); margin-right: auto; padding-left: 20px; }
+
+  /* ===== TAB SWITCHER ===== */
+  .tab-switcher { display:flex; gap:0; margin-bottom:24px; border:1.5px solid #d1e7d9; border-radius:10px; overflow:hidden; }
+  .tab-btn { flex:1; padding:11px; border:none; background:#f8fdf9; font-family:inherit; font-size:13px; font-weight:600; color:#6b7280; cursor:pointer; transition:all 0.2s; }
+  .tab-btn.active { background:#1a5c2e; color:#fff; }
+  .tab-btn:not(.active):hover { background:#e8f5ed; color:#1a5c2e; }
+  .login-switch-text { text-align:center; font-size:12px; color:#9ca3af; margin-top:14px; }
+  .login-switch-text a { color:#1a5c2e; font-weight:600; text-decoration:none; }
+  .login-switch-text a:hover { text-decoration:underline; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
+
+  /* ===== ADMIN PANEL (dalam app) ===== */
+  .pending-card { background:#fff; border-radius:12px; border:1px solid var(--border); overflow:hidden; margin-bottom:20px; }
+  .pending-header { background:var(--hijau-light); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
+  .pending-header h3 { font-size:14px; font-weight:700; color:var(--hijau); }
+  .notif-badge { background:#dc2626; color:#fff; border-radius:20px; font-size:11px; font-weight:700; padding:2px 8px; }
+  .pending-row { display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--border); font-size:13px; }
+  .pending-row:last-child { border-bottom:none; }
+  .pending-info { flex:1; }
+  .pending-name { font-weight:600; color:var(--text); }
+  .pending-meta { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .btn-approve { background:#1a5c2e; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .btn-reject { background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .empty-pending { padding:28px; text-align:center; color:var(--text-muted); font-size:13px; }
+
+  /* ===== SPATIAL LAYER MANAGER ===== */
+  .layer-row { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; background:#fafafa; transition:background 0.15s; }
+  .layer-row:hover { background:#f0fdf4; }
+  .layer-icon { font-size:20px; flex-shrink:0; }
+  .layer-info { flex:1; min-width:0; }
+  .layer-name { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .layer-meta { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .layer-controls { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .layer-color-btn { width:28px; height:28px; border-radius:6px; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.2); cursor:pointer; padding:0; flex-shrink:0; }
+  .opacity-wrap { display:flex; align-items:center; gap:6px; }
+  .opacity-label { font-size:11px; color:var(--text-muted); white-space:nowrap; }
+  .opacity-slider { width:90px; height:4px; -webkit-appearance:none; appearance:none; border-radius:4px; background:linear-gradient(to right,#1a5c2e var(--val,50%),#e5e7eb var(--val,50%)); cursor:pointer; outline:none; }
+  .opacity-slider::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#1a5c2e; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.25); cursor:pointer; }
+  .opacity-val { font-size:11px; font-weight:700; color:var(--hijau); min-width:30px; text-align:right; }
+  .layer-vis-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer; transition:all 0.15s; }
+  .layer-vis-btn:hover { background:var(--hijau-light); }
+  .layer-del-btn { background:#fee2e2; border:1px solid #fecaca; border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer; color:#dc2626; transition:all 0.15s; }
+  .layer-del-btn:hover { background:#fecaca; }
+  .layer-zoom-btn { background:#dbeafe; border:1px solid #bfdbfe; border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer; color:#1d4ed8; transition:all 0.15s; }
+  .layer-zoom-btn:hover { background:#bfdbfe; }
+  .upload-dropzone { border:2px dashed var(--border); border-radius:10px; padding:28px; text-align:center; color:var(--text-muted); font-size:13px; margin-bottom:8px; transition:all 0.2s; cursor:pointer; }
+  .upload-dropzone:hover, .upload-dropzone.drag-over { border-color:var(--hijau-mid); background:var(--hijau-light); color:var(--hijau); }
+  .format-tags { display:flex; gap:6px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+  .format-tag { background:#f3f4f6; border:1px solid #e5e7eb; border-radius:6px; padding:3px 10px; font-size:11px; font-weight:600; color:#374151; }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen">
+  <div class="login-left">
+    <div class="login-left-deco">🌳</div>
+    <div class="login-brand">
+      <span class="tree-icon">🌲</span>
+      <h1>SIWASHUT</h1>
+      <p>Sistem Informasi Pengawasan Kehutanan</p>
+    </div>
+    <div class="login-desc">
+      Platform resmi <strong>pengawasan & pelaporan kehutanan</strong> terintegrasi untuk seluruh wilayah Indonesia.
+      <div class="login-pills">
+        <span class="login-pill">🗺️ Peta Sebaran</span>
+        <span class="login-pill">📊 Dashboard</span>
+        <span class="login-pill">📥 Ekspor Excel</span>
+        <span class="login-pill">📋 Rekap Data</span>
+      </div>
+    </div>
+  </div>
+  <div class="login-right">
+    <!-- TAB SWITCHER -->
+    <div class="tab-switcher">
+      <button class="tab-btn active" id="tab-login-btn" onclick="switchTab('login')">🔓 Masuk</button>
+      <button class="tab-btn" id="tab-reg-btn" onclick="switchTab('register')">📝 Daftar Akun</button>
+    </div>
+
+    <!-- PANEL LOGIN -->
+    <div id="panel-login">
+      <div class="login-form-header">
+        <h2>Selamat Datang 👋</h2>
+        <p>Masukkan kredensial Anda untuk mengakses sistem SIWASHUT</p>
+      </div>
+
+    <div id="login-error" class="login-error hidden">
+      ⚠️ Username atau password salah. Silakan coba lagi.
+    </div>
+    <div class="login-group">
+      <label class="login-label">Username</label>
+      <div class="login-input-wrap">
+        <span class="login-input-icon">👤</span>
+        <input type="text" id="inp-username" class="login-input" placeholder="Masukkan username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+    </div>
+    <div class="login-group">
+      <label class="login-label">Password</label>
+      <div class="login-input-wrap">
+        <span class="login-input-icon">🔒</span>
+        <input type="password" id="inp-password" class="login-input" placeholder="Masukkan password" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="pw-toggle" onclick="togglePw()" title="Tampilkan password">👁️</button>
+      </div>
+    </div>
+    <button class="btn-login" id="login-btn" onclick="doLogin()">
+      <span id="login-btn-text">🔓 Masuk ke Sistem</span>
+    </button>
+      <p class="login-switch-text">Belum punya akun? <a href="#" onclick="switchTab('register');return false;">Daftar di sini</a></p>
+    </div><!-- /panel-login -->
+
+    <!-- PANEL REGISTER -->
+    <div id="panel-register" style="display:none">
+      <div class="login-form-header">
+        <h2>Buat Akun Baru 📝</h2>
+        <p>Isi data di bawah. Akun akan aktif setelah disetujui Admin.</p>
+      </div>
+      <div id="reg-error" class="login-error hidden"></div>
+      <div id="reg-success" class="login-hint hidden" style="background:#f0fdf4;border-color:#86efac;color:#166534"></div>
+      <div class="form-grid-2">
+        <div class="login-group">
+          <label class="login-label">Nama Lengkap <span style="color:#dc2626">*</span></label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">🪪</span>
+            <input type="text" id="reg-nama" class="login-input" placeholder="Nama lengkap Anda">
+          </div>
+        </div>
+        <div class="login-group">
+          <label class="login-label">Unit Kerja / BPHP <span style="color:#dc2626">*</span></label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">🏢</span>
+            <input type="text" id="reg-unit" class="login-input" placeholder="Contoh: BPHP Wilayah X">
+          </div>
+        </div>
+        <div class="login-group">
+          <label class="login-label">Username <span style="color:#dc2626">*</span></label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">👤</span>
+            <input type="text" id="reg-username" class="login-input" placeholder="Buat username unik">
+          </div>
+        </div>
+        <div class="login-group">
+          <label class="login-label">NIP / No. Pegawai</label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">🔢</span>
+            <input type="text" id="reg-nip" class="login-input" placeholder="NIP (opsional)">
+          </div>
+        </div>
+        <div class="login-group">
+          <label class="login-label">Password <span style="color:#dc2626">*</span></label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">🔒</span>
+            <input type="password" id="reg-password" class="login-input" placeholder="Min. 6 karakter">
+          </div>
+        </div>
+        <div class="login-group">
+          <label class="login-label">Konfirmasi Password <span style="color:#dc2626">*</span></label>
+          <div class="login-input-wrap">
+            <span class="login-input-icon">🔒</span>
+            <input type="password" id="reg-password2" class="login-input" placeholder="Ulangi password">
+          </div>
+        </div>
+      </div>
+      <div class="login-group" style="margin-top:4px">
+        <label class="login-label">Jabatan / Peran</label>
+        <div class="login-input-wrap">
+          <span class="login-input-icon">💼</span>
+          <select id="reg-role" class="login-input" style="padding-left:44px">
+            <option value="petugas">Petugas Pengawas</option>
+            <option value="analis">Analis Data</option>
+            <option value="koordinator">Koordinator Lapangan</option>
+            <option value="kepala">Kepala Seksi</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-login" style="margin-top:16px" onclick="doRegister()">
+        <span id="reg-btn-text">📨 Kirim Permohonan Akun</span>
+      </button>
+      <p class="login-switch-text" style="margin-top:14px">Sudah punya akun? <a href="#" onclick="switchTab('login');return false;">Masuk di sini</a></p>
+    </div><!-- /panel-register -->
+
+    <div class="login-footer">
+      <p>© 2025 <strong>Kementerian Kehutanan</strong></p>
+      <p style="margin-top:4px;">SIWASHUT v1.0 — Ditjen Penegakan Hukum Kehutanan</p>
+    </div>
+  </div><!-- /login-right -->
+</div><!-- /login-screen -->
+
+<!-- ===== APP WRAPPER ===== -->
+<div id="app-wrapper">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-icon">🌳</div>
+    <div class="brand">SIWASHUT</div>
+    <div class="sub">Kehutanan Indonesia</div>
+  </div>
+  <div class="nav-section">Menu Utama</div>
+  <div class="nav-item active" onclick="showPage('dashboard')">
+    <span class="nav-icon">📊</span> Dashboard
+  </div>
+  <div class="nav-item" onclick="showPage('peta')">
+    <span class="nav-icon">🗺️</span> Peta Indonesia
+  </div>
+  <div class="nav-item" onclick="showPage('input')">
+    <span class="nav-icon">✏️</span> Input Data
+  </div>
+  <div class="nav-item" onclick="showPage('data')">
+    <span class="nav-icon">📋</span> Rekap Data
+  </div>
+  <div class="nav-section">Laporan</div>
+  <div class="nav-item" onclick="showPage('laporan')">
+    <span class="nav-icon">📄</span> Laporan & Ekspor
+  </div>
+  <div class="nav-item" id="nav-admin" style="display:none" onclick="showPage('manajemen')">
+    <span class="nav-icon">⚙️</span> Manajemen Akun <span id="nav-notif" style="background:#dc2626;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:4px;display:none">0</span>
+  </div>
+  <div class="sidebar-footer">
+    <p>© 2025 Kementerian Kehutanan</p>
+    <p style="margin-top:4px;">SIWASHUT v1.0</p>
+    <button onclick="doLogout()" style="margin-top:12px;width:100%;padding:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:rgba(255,255,255,0.7);font-size:12px;font-family:inherit;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(220,38,38,0.3)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)'">🚪 Keluar / Logout</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Dashboard Pengawasan Kehutanan</div>
+    <div class="topbar-right">
+      <span class="badge-date" id="current-date"></span>
+      <span class="badge-user">👤 Admin BPHP</span>
+      <button class="btn btn-outline" style="font-size:12px;padding:6px 14px;color:#dc2626;border-color:#dc2626" onclick="doLogout()">🚪 Keluar</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="page active" id="page-dashboard">
+      <div id="alert-box" class="alert alert-success hidden"></div>
+
+      <div class="stat-grid">
+        <div class="stat-card s1">
+          <div class="stat-icon">🌲</div>
+          <div class="stat-label">Total Pengawasan</div>
+          <div class="stat-value" id="st-total">0</div>
+          <div class="stat-sub">Laporan terdaftar</div>
+        </div>
+        <div class="stat-card s2">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-label">Temuan Pelanggaran</div>
+          <div class="stat-value" id="st-pelanggaran">0</div>
+          <div class="stat-sub">Perlu tindak lanjut</div>
+        </div>
+        <div class="stat-card s3">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-label">Kasus Kritis</div>
+          <div class="stat-value" id="st-kritis">0</div>
+          <div class="stat-sub">Prioritas tinggi</div>
+        </div>
+        <div class="stat-card s4">
+          <div class="stat-icon">✅</div>
+          <div class="stat-label">Selesai Ditindak</div>
+          <div class="stat-value" id="st-selesai">0</div>
+          <div class="stat-sub">Laporan selesai</div>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-title">Distribusi Jenis Pelanggaran</div>
+          <div class="chart-canvas-wrap"><canvas id="chartJenis"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Status Tindak Lanjut</div>
+          <div class="chart-canvas-wrap"><canvas id="chartStatus"></canvas></div>
+        </div>
+        <div class="chart-card wide">
+          <div class="chart-title">Tren Pengawasan per Bulan</div>
+          <div class="chart-canvas-wrap"><canvas id="chartTren"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Data Pengawasan Terkini</div>
+        <button class="btn btn-outline" onclick="showPage('data')">Lihat Semua →</button>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr>
+            <th>No</th><th>Tanggal</th><th>Provinsi</th><th>Jenis Pengawasan</th><th>Temuan</th><th>Status</th>
+          </tr></thead>
+          <tbody id="recent-table-body">
+            <tr><td colspan="6"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== PETA ===== -->
+    <div class="page" id="page-peta">
+      <div class="section-header">
+        <div class="section-title">Peta Sebaran Pengawasan Kehutanan Indonesia</div>
+        <div style="display:flex;gap:8px">
+          <label class="btn btn-outline" style="cursor:pointer;font-size:12px;padding:7px 14px" title="Upload SHP (ZIP), KML, KMZ, GeoJSON, GPX">
+            📂 Upload Layer Spasial
+            <input type="file" id="spatial-file-input" accept=".zip,.shp,.kml,.kmz,.geojson,.json,.gpx" multiple style="display:none" onchange="handleSpatialUpload(event)">
+          </label>
+          <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;color:#dc2626;border-color:#fecaca" onclick="clearAllLayers()">🗑️ Hapus Semua Layer</button>
+        </div>
+      </div>
+
+      <!-- Layer Manager Panel -->
+      <div id="layer-manager" style="display:none;background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:14px;font-weight:700;color:var(--hijau)">🗂️ Manajemen Layer Spasial</div>
+          <span style="font-size:11px;color:var(--text-muted)">Atur transparansi & warna per layer</span>
+        </div>
+        <div id="layer-list"></div>
+      </div>
+
+      <!-- Upload Progress -->
+      <div id="upload-progress" style="display:none;background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="spinner" style="border-color:#1a5c2e33;border-top-color:#1a5c2e"></div>
+          <span id="upload-msg" style="font-size:13px;color:var(--text-muted)">Memproses file spasial...</span>
+        </div>
+        <div style="margin-top:10px;background:#f0f4f0;border-radius:6px;height:6px;overflow:hidden">
+          <div id="upload-bar" style="height:100%;width:0%;background:#1a5c2e;border-radius:6px;transition:width 0.3s"></div>
+        </div>
+      </div>
+
+      <div class="map-section" style="padding:0;overflow:hidden;border-radius:12px;position:relative">
+        <!-- Basemap Controls -->
+        <div id="map-layer-ctrl" style="position:absolute;top:12px;left:12px;z-index:1000;display:flex;gap:6px;flex-wrap:wrap">
+          <button onclick="setLayer('street')" id="btn-street" class="map-ctrl-btn active">🗺️ Street</button>
+          <button onclick="setLayer('satellite')" id="btn-satellite" class="map-ctrl-btn">🛰️ Satellite</button>
+          <button onclick="setLayer('terrain')" id="btn-terrain" class="map-ctrl-btn">🏔️ Terrain</button>
+          <button onclick="setLayer('topo')" id="btn-topo" class="map-ctrl-btn">📐 Topo</button>
+        </div>
+        <!-- Legend overlay -->
+        <div id="map-legend-overlay" style="position:absolute;bottom:32px;left:12px;z-index:1000;background:rgba(255,255,255,0.95);border-radius:10px;padding:12px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.15);font-size:12px;max-width:200px">
+          <div style="font-weight:700;margin-bottom:8px;color:#1a5c2e">🗂️ Keterangan</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="width:14px;height:14px;border-radius:50%;background:#1a5c2e;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div> Tidak ada temuan</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="width:14px;height:14px;border-radius:50%;background:#f59e0b;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div> Temuan ringan/sedang</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="width:14px;height:14px;border-radius:50%;background:#ef4444;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div> Pelanggaran berat/kritis</div>
+          <div style="display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;border-radius:50%;background:#93c5fd;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div> Belum dipantau</div>
+        </div>
+        <!-- Layer count badge -->
+        <div id="layer-count-badge" style="display:none;position:absolute;top:12px;right:12px;z-index:1000;background:rgba(26,92,46,0.92);color:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;backdrop-filter:blur(4px)">
+          <span id="layer-count-text">0 layer aktif</span>
+        </div>
+        <div id="indonesia-map" style="height:600px;width:100%;border-radius:12px"></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-title">Top 5 Provinsi — Jumlah Laporan</div>
+          <div class="chart-canvas-wrap"><canvas id="chartProvinsi"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Persebaran Wilayah Pengawasan</div>
+          <div class="chart-canvas-wrap"><canvas id="chartWilayah"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== INPUT DATA ===== -->
+    <div class="page" id="page-input">
+      <div class="form-card">
+        <div class="form-title">✏️ Form Input Hasil Pengawasan Kehutanan</div>
+        <div id="form-alert" class="alert alert-success hidden"></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Tanggal Pengawasan <span class="required">*</span></label>
+            <input type="date" id="f-tanggal" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">No. Surat / Kode Laporan</label>
+            <input type="text" id="f-kode" class="form-control" placeholder="Contoh: BPHP/2025/001">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Provinsi <span class="required">*</span></label>
+            <select id="f-provinsi" class="form-control">
+              <option value="">-- Pilih Provinsi --</option>
+              <option>Aceh</option><option>Sumatera Utara</option><option>Sumatera Barat</option>
+              <option>Riau</option><option>Kepulauan Riau</option><option>Jambi</option>
+              <option>Sumatera Selatan</option><option>Bangka Belitung</option><option>Bengkulu</option>
+              <option>Lampung</option><option>DKI Jakarta</option><option>Jawa Barat</option>
+              <option>Banten</option><option>Jawa Tengah</option><option>DI Yogyakarta</option>
+              <option>Jawa Timur</option><option>Bali</option><option>Nusa Tenggara Barat</option>
+              <option>Nusa Tenggara Timur</option><option>Kalimantan Barat</option>
+              <option>Kalimantan Tengah</option><option>Kalimantan Selatan</option>
+              <option>Kalimantan Timur</option><option>Kalimantan Utara</option>
+              <option>Sulawesi Utara</option><option>Gorontalo</option><option>Sulawesi Tengah</option>
+              <option>Sulawesi Barat</option><option>Sulawesi Selatan</option><option>Sulawesi Tenggara</option>
+              <option>Maluku</option><option>Maluku Utara</option><option>Papua</option>
+              <option>Papua Barat</option><option>Papua Selatan</option><option>Papua Tengah</option>
+              <option>Papua Pegunungan</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kabupaten / Kota</label>
+            <input type="text" id="f-kabupaten" class="form-control" placeholder="Nama kabupaten/kota">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jenis Kawasan Hutan <span class="required">*</span></label>
+            <select id="f-kawasan" class="form-control">
+              <option value="">-- Pilih Kawasan --</option>
+              <option>Hutan Lindung (HL)</option>
+              <option>Hutan Produksi Tetap (HP)</option>
+              <option>Hutan Produksi Terbatas (HPT)</option>
+              <option>Hutan Produksi yang Dapat Dikonversi (HPK)</option>
+              <option>Kawasan Konservasi / Taman Nasional</option>
+              <option>Cagar Alam</option>
+              <option>Suaka Margasatwa</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jenis Pengawasan <span class="required">*</span></label>
+            <select id="f-jenis" class="form-control">
+              <option value="">-- Pilih Jenis --</option>
+              <option>Pembalakan Liar (Illegal Logging)</option>
+              <option>Perambahan Hutan</option>
+              <option>Kebakaran Hutan dan Lahan</option>
+              <option>Penambangan Ilegal (PETI)</option>
+              <option>Alih Fungsi Kawasan Hutan</option>
+              <option>Perburuan Satwa Liar</option>
+              <option>Penggunaan Kawasan Tanpa Izin</option>
+              <option>Pelanggaran Perizinan Usaha</option>
+              <option>Pengawasan Rutin / Patroli</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Luas Terdampak (Ha)</label>
+            <input type="number" id="f-luas" class="form-control" placeholder="0" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jumlah Pelaku / Objek</label>
+            <input type="number" id="f-pelaku" class="form-control" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tingkat Keparahan <span class="required">*</span></label>
+            <select id="f-status" class="form-control">
+              <option value="">-- Pilih --</option>
+              <option>Normal / Tidak Ada Temuan</option>
+              <option>Pelanggaran Ringan</option>
+              <option>Pelanggaran Sedang</option>
+              <option>Pelanggaran Berat</option>
+              <option>Kritis / Darurat</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status Tindak Lanjut <span class="required">*</span></label>
+            <select id="f-tindak" class="form-control">
+              <option value="">-- Pilih --</option>
+              <option>Belum Ditindaklanjuti</option>
+              <option>Dalam Proses</option>
+              <option>Sudah Ditindaklanjuti</option>
+              <option>Dilimpahkan ke Penyidik</option>
+              <option>Selesai / Ditutup</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nama Petugas Pengawas</label>
+            <input type="text" id="f-petugas" class="form-control" placeholder="Nama petugas">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit Kerja / BPHP</label>
+            <input type="text" id="f-unit" class="form-control" placeholder="Contoh: BPHP Wilayah X">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Uraian Temuan / Keterangan</label>
+            <textarea id="f-uraian" class="form-control" rows="4" placeholder="Deskripsikan temuan pengawasan secara rinci..."></textarea>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Rekomendasi Tindak Lanjut</label>
+            <textarea id="f-rekomendasi" class="form-control" rows="3" placeholder="Rekomendasi atau saran tindak lanjut..."></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-outline" onclick="resetForm()">🔄 Reset</button>
+          <button class="btn btn-primary" onclick="submitData()">💾 Simpan Data</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== REKAP DATA ===== -->
+    <div class="page" id="page-data">
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="search-input" placeholder="Cari berdasarkan provinsi, jenis, status..." oninput="renderTable()">
+          </div>
+          <select class="form-control" style="width:160px" id="filter-provinsi" onchange="renderTable()">
+            <option value="">Semua Provinsi</option>
+          </select>
+          <select class="form-control" style="width:160px" id="filter-status" onchange="renderTable()">
+            <option value="">Semua Status</option>
+            <option>Normal / Tidak Ada Temuan</option>
+            <option>Pelanggaran Ringan</option>
+            <option>Pelanggaran Sedang</option>
+            <option>Pelanggaran Berat</option>
+            <option>Kritis / Darurat</option>
+          </select>
+          <button class="btn btn-excel" onclick="exportExcel()">⬇️ Ekspor Excel</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Tanggal</th><th>Kode</th><th>Provinsi</th><th>Kab/Kota</th>
+              <th>Jenis Pengawasan</th><th>Kawasan</th><th>Luas (Ha)</th>
+              <th>Keparahan</th><th>Tindak Lanjut</th><th>Aksi</th>
+            </tr></thead>
+            <tbody id="main-table-body"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--border)">
+          <span class="page-info" id="table-info">Menampilkan 0 data</span>
+          <div id="pagination" style="display:flex;gap:6px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== LAPORAN ===== -->
+    <div class="page" id="page-laporan">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+        <div class="form-card">
+          <div class="form-title" style="font-size:15px;margin-bottom:18px">📥 Ekspor Data Excel</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Unduh seluruh data pengawasan kehutanan dalam format Microsoft Excel (.xlsx) untuk keperluan pelaporan.</p>
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Filter Periode</label>
+            <select class="form-control" id="export-periode">
+              <option>Semua Data</option>
+              <option>Bulan Ini</option>
+              <option>3 Bulan Terakhir</option>
+              <option>Tahun Ini</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Filter Provinsi</label>
+            <select class="form-control" id="export-prov">
+              <option value="">Semua Provinsi</option>
+            </select>
+          </div>
+          <button class="btn btn-excel" style="width:100%;justify-content:center" onclick="exportExcel()">
+            ⬇️ Unduh File Excel
+          </button>
+        </div>
+        <div class="form-card">
+          <div class="form-title" style="font-size:15px;margin-bottom:18px">📊 Ringkasan Laporan</div>
+          <div id="summary-box" style="font-size:13px;color:var(--text-muted)">
+            <div style="display:grid;gap:10px" id="summary-content">
+              <p>Belum ada data tersedia.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="alert alert-info">
+        ℹ️ File Excel akan berisi semua kolom data: tanggal, lokasi, jenis kawasan, temuan, pelaku, luas terdampak, dan status tindak lanjut.
+      </div>
+    </div>
+
+    <!-- ===== MANAJEMEN AKUN (ADMIN) ===== -->
+    <div class="page" id="page-manajemen">
+      <div class="pending-card">
+        <div class="pending-header">
+          <h3>🕐 Permohonan Akun Menunggu Persetujuan</h3>
+          <span class="notif-badge" id="pending-count-badge">0</span>
+        </div>
+        <div id="pending-list"><div class="empty-pending">✅ Tidak ada permohonan akun baru.</div></div>
+      </div>
+      <div class="pending-card">
+        <div class="pending-header"><h3>👥 Daftar Pengguna Aktif</h3></div>
+        <div id="active-users-list"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ============ DATA STORE ============
+let DATA = JSON.parse(localStorage.getItem('sipak_data') || '[]');
+let currentPage = 1;
+const ROWS_PER_PAGE = 10;
+let charts = {};
+
+// ============ UTILS ============
+function today() {
+  return new Date().toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+}
+document.getElementById('current-date').textContent = today();
+document.getElementById('f-tanggal').value = new Date().toISOString().split('T')[0];
+
+function saveData() { localStorage.setItem('sipak_data', JSON.stringify(DATA)); }
+
+function statusBadge(s) {
+  const m = {
+    'Normal / Tidak Ada Temuan': 'badge-ok',
+    'Pelanggaran Ringan': 'badge-warn',
+    'Pelanggaran Sedang': 'badge-warn',
+    'Pelanggaran Berat': 'badge-danger',
+    'Kritis / Darurat': 'badge-danger'
+  };
+  return `<span class="badge ${m[s]||'badge-proc'}">${s||'-'}</span>`;
+}
+function tindakBadge(t) {
+  const m = {
+    'Selesai / Ditutup': 'badge-ok',
+    'Sudah Ditindaklanjuti': 'badge-ok',
+    'Dalam Proses': 'badge-proc',
+    'Dilimpahkan ke Penyidik': 'badge-proc',
+    'Belum Ditindaklanjuti': 'badge-danger'
+  };
+  return `<span class="badge ${m[t]||'badge-warn'}">${t||'-'}</span>`;
+}
+
+// ============ NAVIGATION ============
+const titles = {
+  dashboard: 'Dashboard Pengawasan Kehutanan',
+  peta: 'Peta Sebaran Pengawasan Indonesia',
+  input: 'Input Data Hasil Pengawasan',
+  data: 'Rekap Data Pengawasan',
+  laporan: 'Laporan & Ekspor Data',
+  manajemen: 'Manajemen Akun Pengguna'
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
+  });
+  document.getElementById('page-title').textContent = titles[id];
+  if (id === 'dashboard') updateDashboard();
+  if (id === 'peta') { updateMapCharts(); setTimeout(()=>{ if(leafletMap) leafletMap.invalidateSize(); }, 150); }
+  if (id === 'data') { populateFilters(); renderTable(); }
+  if (id === 'laporan') { updateLaporan(); populateExportFilter(); }
+  if (id === 'manajemen') { renderAdminPage(); }
+}
+
+// ============ FORM ============
+function resetForm() {
+  ['f-tanggal','f-kode','f-provinsi','f-kabupaten','f-kawasan','f-jenis',
+   'f-luas','f-pelaku','f-status','f-tindak','f-petugas','f-unit','f-uraian','f-rekomendasi']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = el.type==='date' ? new Date().toISOString().split('T')[0] : ''; });
+}
+
+function submitData() {
+  const req = {
+    tanggal: document.getElementById('f-tanggal').value,
+    provinsi: document.getElementById('f-provinsi').value,
+    kawasan: document.getElementById('f-kawasan').value,
+    jenis: document.getElementById('f-jenis').value,
+    status: document.getElementById('f-status').value,
+    tindak: document.getElementById('f-tindak').value
+  };
+  for (const [k,v] of Object.entries(req)) {
+    if (!v) { showFormAlert('Harap lengkapi semua field yang wajib diisi (*).', 'danger'); return; }
+  }
+  const row = {
+    id: Date.now(),
+    tanggal: document.getElementById('f-tanggal').value,
+    kode: document.getElementById('f-kode').value || `SIWASHUT/${new Date().getFullYear()}/${String(DATA.length+1).padStart(3,'0')}`,
+    provinsi: document.getElementById('f-provinsi').value,
+    kabupaten: document.getElementById('f-kabupaten').value,
+    kawasan: document.getElementById('f-kawasan').value,
+    jenis: document.getElementById('f-jenis').value,
+    luas: document.getElementById('f-luas').value || '0',
+    pelaku: document.getElementById('f-pelaku').value || '0',
+    status: document.getElementById('f-status').value,
+    tindak: document.getElementById('f-tindak').value,
+    petugas: document.getElementById('f-petugas').value,
+    unit: document.getElementById('f-unit').value,
+    uraian: document.getElementById('f-uraian').value,
+    rekomendasi: document.getElementById('f-rekomendasi').value
+  };
+  DATA.push(row); saveData(); resetForm();
+  showFormAlert('✅ Data berhasil disimpan! Kode laporan: ' + row.kode, 'success');
+}
+
+function showFormAlert(msg, type) {
+  const el = document.getElementById('form-alert');
+  el.className = `alert alert-${type==='danger'?'danger':'success'}`;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+// ============ DASHBOARD ============
+function updateDashboard() {
+  document.getElementById('st-total').textContent = DATA.length;
+  document.getElementById('st-pelanggaran').textContent = DATA.filter(d => d.status && !d.status.includes('Normal')).length;
+  document.getElementById('st-kritis').textContent = DATA.filter(d => d.status === 'Kritis / Darurat' || d.status === 'Pelanggaran Berat').length;
+  document.getElementById('st-selesai').textContent = DATA.filter(d => d.tindak === 'Selesai / Ditutup').length;
+
+  // Recent table
+  const tbody = document.getElementById('recent-table-body');
+  const recent = [...DATA].reverse().slice(0, 5);
+  if (!recent.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>`;
+  } else {
+    tbody.innerHTML = recent.map((d,i) => `<tr>
+      <td>${i+1}</td>
+      <td>${d.tanggal}</td>
+      <td>${d.provinsi}</td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.jenis}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td>${tindakBadge(d.tindak)}</td>
+    </tr>`).join('');
+  }
+
+  // Charts
+  buildChartJenis(); buildChartStatus(); buildChartTren();
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function buildChartJenis() {
+  destroyChart('jenis');
+  const counts = {};
+  DATA.forEach(d => { const k = (d.jenis||'Lainnya').split('(')[0].trim().slice(0,25); counts[k] = (counts[k]||0)+1; });
+  const labels = Object.keys(counts).slice(0,7);
+  const vals = labels.map(l => counts[l]);
+  const ctx = document.getElementById('chartJenis').getContext('2d');
+  charts['jenis'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: vals, backgroundColor: ['#1a5c2e','#2d8b4e','#4ade80','#f59e0b','#ef4444','#1d4ed8','#7c3aed'], borderWidth: 2, borderColor: '#fff' }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ font:{size:11}, boxWidth:12 } } } }
+  });
+}
+
+function buildChartStatus() {
+  destroyChart('status');
+  const labels = ['Normal','Ringan','Sedang','Berat','Kritis'];
+  const keys = ['Normal / Tidak Ada Temuan','Pelanggaran Ringan','Pelanggaran Sedang','Pelanggaran Berat','Kritis / Darurat'];
+  const vals = keys.map(k => DATA.filter(d => d.status===k).length);
+  const ctx = document.getElementById('chartStatus').getContext('2d');
+  charts['status'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Jumlah', data: vals, backgroundColor: ['#1a5c2e','#f59e0b','#f97316','#ef4444','#991b1b'], borderRadius: 6 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } } }
+  });
+}
+
+function buildChartTren() {
+  destroyChart('tren');
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const year = new Date().getFullYear();
+  const counts = Array(12).fill(0);
+  DATA.forEach(d => {
+    if (d.tanggal && d.tanggal.startsWith(year)) {
+      const m = parseInt(d.tanggal.split('-')[1]) - 1;
+      counts[m]++;
+    }
+  });
+  const ctx = document.getElementById('chartTren').getContext('2d');
+  charts['tren'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: months, datasets: [{ label: 'Jumlah Laporan', data: counts, borderColor: '#1a5c2e', backgroundColor: 'rgba(26,92,46,0.08)', fill: true, tension: 0.4, pointBackgroundColor: '#1a5c2e', pointRadius: 4 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } } }
+  });
+}
+
+// ============ PETA ============
+const PROVINCES = [
+  {name:'Aceh',lat:4.695,lng:96.749},
+  {name:'Sumatera Utara',lat:2.115,lng:99.535},
+  {name:'Sumatera Barat',lat:-0.740,lng:100.800},
+  {name:'Riau',lat:0.293,lng:101.707},
+  {name:'Kepulauan Riau',lat:3.946,lng:108.142},
+  {name:'Jambi',lat:-1.612,lng:103.616},
+  {name:'Sumatera Selatan',lat:-3.316,lng:103.914},
+  {name:'Bangka Belitung',lat:-2.741,lng:106.441},
+  {name:'Bengkulu',lat:-3.793,lng:102.266},
+  {name:'Lampung',lat:-4.556,lng:105.405},
+  {name:'DKI Jakarta',lat:-6.211,lng:106.845},
+  {name:'Jawa Barat',lat:-6.889,lng:107.640},
+  {name:'Banten',lat:-6.406,lng:106.064},
+  {name:'Jawa Tengah',lat:-7.150,lng:110.140},
+  {name:'DI Yogyakarta',lat:-7.874,lng:110.426},
+  {name:'Jawa Timur',lat:-7.537,lng:112.239},
+  {name:'Bali',lat:-8.409,lng:115.188},
+  {name:'Nusa Tenggara Barat',lat:-8.652,lng:117.361},
+  {name:'Nusa Tenggara Timur',lat:-8.657,lng:121.080},
+  {name:'Kalimantan Barat',lat:0.478,lng:111.069},
+  {name:'Kalimantan Tengah',lat:-1.681,lng:113.382},
+  {name:'Kalimantan Selatan',lat:-3.093,lng:115.283},
+  {name:'Kalimantan Timur',lat:1.640,lng:116.419},
+  {name:'Kalimantan Utara',lat:3.073,lng:116.041},
+  {name:'Sulawesi Utara',lat:0.625,lng:123.975},
+  {name:'Gorontalo',lat:0.545,lng:123.059},
+  {name:'Sulawesi Tengah',lat:-1.430,lng:121.445},
+  {name:'Sulawesi Barat',lat:-2.840,lng:119.233},
+  {name:'Sulawesi Selatan',lat:-3.661,lng:119.977},
+  {name:'Sulawesi Tenggara',lat:-4.145,lng:122.175},
+  {name:'Maluku',lat:-3.237,lng:130.145},
+  {name:'Maluku Utara',lat:1.570,lng:127.808},
+  {name:'Papua',lat:-4.270,lng:138.080},
+  {name:'Papua Barat',lat:-1.336,lng:133.174},
+  {name:'Papua Selatan',lat:-6.819,lng:139.876},
+  {name:'Papua Tengah',lat:-3.820,lng:136.406},
+  {name:'Papua Pegunungan',lat:-4.019,lng:138.961}
+];
+
+function getProvinceColor(name) {
+  const count = DATA.filter(d => d.provinsi === name).length;
+  const hasBerat = DATA.some(d => d.provinsi===name && (d.status==='Pelanggaran Berat' || d.status==='Kritis / Darurat'));
+  const hasRingan = DATA.some(d => d.provinsi===name && (d.status==='Pelanggaran Ringan' || d.status==='Pelanggaran Sedang'));
+  if (count===0) return '#d1fae5';
+  if (hasBerat) return '#ef4444';
+  if (hasRingan) return '#f59e0b';
+  return '#1a5c2e';
+}
+
+// ============ LEAFLET MAP ============
+let leafletMap = null;
+let leafletMarkers = [];
+let currentTileLayer = null;
+
+const TILE_LAYERS = {
+  street: {
+    url: 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    opts: { subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, attribution:'© Google Maps' }
+  },
+  satellite: {
+    url: 'https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',
+    opts: { subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, attribution:'© Google Satellite' }
+  },
+  terrain: {
+    url: 'https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+    opts: { subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, attribution:'© Google Terrain' }
+  },
+  topo: {
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    opts: { maxZoom:17, attribution:'© OpenTopoMap' }
+  }
+};
+
+function setLayer(type) {
+  if (!leafletMap) return;
+  if (currentTileLayer) leafletMap.removeLayer(currentTileLayer);
+  const l = TILE_LAYERS[type];
+  currentTileLayer = L.tileLayer(l.url, l.opts).addTo(leafletMap);
+  document.querySelectorAll('.map-ctrl-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('btn-'+type);
+  if (btn) btn.classList.add('active');
+}
+
+function getMarkerColor(name) {
+  const count = DATA.filter(d => d.provinsi === name).length;
+  const hasBerat = DATA.some(d => d.provinsi===name && (d.status==='Pelanggaran Berat'||d.status==='Kritis / Darurat'));
+  const hasRingan = DATA.some(d => d.provinsi===name && (d.status==='Pelanggaran Ringan'||d.status==='Pelanggaran Sedang'));
+  if (count===0) return '#93c5fd';
+  if (hasBerat) return '#ef4444';
+  if (hasRingan) return '#f59e0b';
+  return '#1a5c2e';
+}
+
+function makeSvgIcon(color, size) {
+  const s = size || 36;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 36 36">
+    <circle cx="18" cy="18" r="15" fill="${color}" stroke="#fff" stroke-width="3" opacity="0.92"/>
+    <circle cx="18" cy="18" r="6" fill="rgba(255,255,255,0.4)"/>
+  </svg>`;
+  return L.divIcon({
+    html: svg,
+    className: '',
+    iconSize: [s, s],
+    iconAnchor: [s/2, s/2],
+    popupAnchor: [0, -s/2]
+  });
+}
+
+function renderMap() {
+  if (!leafletMap) {
+    leafletMap = L.map('indonesia-map', {
+      center: [-2.5, 118],
+      zoom: 5,
+      zoomControl: true,
+      attributionControl: true
+    });
+    setLayer('street');
+  }
+
+  // Clear existing markers
+  leafletMarkers.forEach(m => leafletMap.removeLayer(m));
+  leafletMarkers = [];
+
+  // Add markers per province
+  PROVINCES.forEach(p => {
+    const color = getMarkerColor(p.name);
+    const count = DATA.filter(d => d.provinsi === p.name).length;
+    const violations = DATA.filter(d => d.provinsi===p.name && d.status && !d.status.includes('Normal')).length;
+    const kritis = DATA.filter(d => d.provinsi===p.name && (d.status==='Kritis / Darurat'||d.status==='Pelanggaran Berat')).length;
+    const size = Math.max(30, Math.min(52, 30 + count * 3));
+    const icon = makeSvgIcon(color, size);
+    const marker = L.marker([p.lat, p.lng], { icon, title: p.name });
+
+    const popupHtml = `
+      <div class="map-popup-title">🌲 ${p.name}</div>
+      <div class="map-popup-row"><span class="map-popup-label">Total Laporan</span><span class="map-popup-val">${count}</span></div>
+      <div class="map-popup-row"><span class="map-popup-label">Pelanggaran</span><span class="map-popup-val">${violations}</span></div>
+      <div class="map-popup-row"><span class="map-popup-label">Kasus Kritis</span><span class="map-popup-val" style="color:#dc2626">${kritis}</span></div>
+      <button class="map-popup-btn" onclick="filterByProvince('${p.name}')">📋 Lihat Data Lengkap</button>`;
+
+    marker.bindPopup(popupHtml, { maxWidth: 220 });
+    marker.addTo(leafletMap);
+    leafletMarkers.push(marker);
+  });
+}
+
+function filterByProvince(name) {
+  showPage('data');
+  document.getElementById('filter-provinsi').value = name;
+  renderTable();
+}
+
+function updateMapCharts() {
+  renderMap(); // Leaflet map
+  // Top provinces
+  destroyChart('provinsi'); destroyChart('wilayah');
+  const pcounts = {};
+  DATA.forEach(d => { pcounts[d.provinsi] = (pcounts[d.provinsi]||0)+1; });
+  const sorted = Object.entries(pcounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const ctx1 = document.getElementById('chartProvinsi').getContext('2d');
+  charts['provinsi'] = new Chart(ctx1, {
+    type: 'bar',
+    data: { labels: sorted.map(s=>s[0]), datasets: [{ label:'Laporan', data: sorted.map(s=>s[1]), backgroundColor:'#1a5c2e', borderRadius:6 }] },
+    options: { responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true,ticks:{stepSize:1}}} }
+  });
+
+  const wilayah = { Sumatera:0, Jawa:0, Kalimantan:0, Sulawesi:0, 'Nusa Tenggara':0, Maluku:0, Papua:0 };
+  DATA.forEach(d => {
+    const p = d.provinsi||'';
+    if(['Aceh','Sumatera Utara','Sumatera Barat','Riau','Kepulauan Riau','Jambi','Sumatera Selatan','Bangka Belitung','Bengkulu','Lampung'].includes(p)) wilayah.Sumatera++;
+    else if(['DKI Jakarta','Jawa Barat','Banten','Jawa Tengah','DI Yogyakarta','Jawa Timur'].includes(p)) wilayah.Jawa++;
+    else if(['Kalimantan Barat','Kalimantan Tengah','Kalimantan Selatan','Kalimantan Timur','Kalimantan Utara'].includes(p)) wilayah.Kalimantan++;
+    else if(p.includes('Sulawesi')||p==='Gorontalo') wilayah.Sulawesi++;
+    else if(['Bali','Nusa Tenggara Barat','Nusa Tenggara Timur'].includes(p)) wilayah['Nusa Tenggara']++;
+    else if(['Maluku','Maluku Utara'].includes(p)) wilayah.Maluku++;
+    else if(p.includes('Papua')) wilayah.Papua++;
+  });
+  const ctx2 = document.getElementById('chartWilayah').getContext('2d');
+  charts['wilayah'] = new Chart(ctx2, {
+    type: 'polarArea',
+    data: { labels: Object.keys(wilayah), datasets: [{ data: Object.values(wilayah), backgroundColor: ['#1a5c2e80','#2d8b4e80','#f59e0b80','#ef444480','#1d4ed880','#7c3aed80','#06b6d480'], borderColor:'#fff', borderWidth:2 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{font:{size:10},boxWidth:12} } } }
+  });
+}
+
+// ============ TABLE ============
+function populateFilters() {
+  const provs = [...new Set(DATA.map(d=>d.provinsi).filter(Boolean))].sort();
+  ['filter-provinsi'].forEach(id => {
+    const el = document.getElementById(id);
+    const cur = el.value;
+    el.innerHTML = `<option value="">Semua Provinsi</option>` + provs.map(p=>`<option ${p===cur?'selected':''}>${p}</option>`).join('');
+  });
+}
+
+function getFiltered() {
+  const q = (document.getElementById('search-input')?.value||'').toLowerCase();
+  const fp = document.getElementById('filter-provinsi')?.value||'';
+  const fs = document.getElementById('filter-status')?.value||'';
+  return DATA.filter(d => {
+    const match = !q || [d.provinsi,d.jenis,d.status,d.tindak,d.kabupaten,d.kode].some(v=>(v||'').toLowerCase().includes(q));
+    const mp = !fp || d.provinsi===fp;
+    const ms = !fs || d.status===fs;
+    return match&&mp&&ms;
+  });
+}
+
+function renderTable() {
+  const filtered = getFiltered();
+  const total = filtered.length;
+  const pages = Math.max(1, Math.ceil(total/ROWS_PER_PAGE));
+  if (currentPage > pages) currentPage = 1;
+  const slice = filtered.slice((currentPage-1)*ROWS_PER_PAGE, currentPage*ROWS_PER_PAGE);
+
+  const tbody = document.getElementById('main-table-body');
+  if (!slice.length) {
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="emoji">🔍</div><p>Tidak ada data ditemukan.</p></div></td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map((d,i) => `<tr>
+      <td>${(currentPage-1)*ROWS_PER_PAGE+i+1}</td>
+      <td>${d.tanggal||'-'}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${d.kode||'-'}</td>
+      <td><strong>${d.provinsi||'-'}</strong></td>
+      <td>${d.kabupaten||'-'}</td>
+      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.jenis}">${d.jenis||'-'}</td>
+      <td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.kawasan}">${d.kawasan||'-'}</td>
+      <td>${parseFloat(d.luas||0).toLocaleString('id-ID')}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td>${tindakBadge(d.tindak)}</td>
+      <td><button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteRow(${d.id})">Hapus</button></td>
+    </tr>`).join('');
+  }
+
+  document.getElementById('table-info').textContent = `Menampilkan ${slice.length} dari ${total} data`;
+
+  // Pagination
+  const pg = document.getElementById('pagination');
+  pg.innerHTML = '';
+  for (let i=1;i<=pages;i++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (i===currentPage?' active':'');
+    btn.textContent = i;
+    btn.onclick = () => { currentPage=i; renderTable(); };
+    pg.appendChild(btn);
+  }
+}
+
+function deleteRow(id) {
+  if (!confirm('Hapus data ini?')) return;
+  DATA = DATA.filter(d=>d.id!==id); saveData(); renderTable();
+}
+
+// ============ LAPORAN ============
+function updateLaporan() {
+  const total = DATA.length;
+  const pelanggaran = DATA.filter(d=>d.status&&!d.status.includes('Normal')).length;
+  const kritis = DATA.filter(d=>d.status==='Kritis / Darurat'||d.status==='Pelanggaran Berat').length;
+  const selesai = DATA.filter(d=>d.tindak==='Selesai / Ditutup').length;
+  const luasTotal = DATA.reduce((s,d)=>s+parseFloat(d.luas||0),0);
+
+  document.getElementById('summary-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:var(--hijau-light);padding:12px;border-radius:8px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">TOTAL LAPORAN</div>
+        <div style="font-size:24px;font-weight:700;color:var(--hijau)">${total}</div>
+      </div>
+      <div style="background:#fef9c3;padding:12px;border-radius:8px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">PELANGGARAN</div>
+        <div style="font-size:24px;font-weight:700;color:#854d0e">${pelanggaran}</div>
+      </div>
+      <div style="background:#fee2e2;padding:12px;border-radius:8px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">KASUS KRITIS</div>
+        <div style="font-size:24px;font-weight:700;color:#991b1b">${kritis}</div>
+      </div>
+      <div style="background:#dcfce7;padding:12px;border-radius:8px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">SELESAI</div>
+        <div style="font-size:24px;font-weight:700;color:#166534">${selesai}</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:12px;background:var(--bg);border-radius:8px">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Total Luas Terdampak</div>
+      <div style="font-size:18px;font-weight:700">${luasTotal.toLocaleString('id-ID')} Ha</div>
+    </div>
+  `;
+}
+
+function populateExportFilter() {
+  const provs = [...new Set(DATA.map(d=>d.provinsi).filter(Boolean))].sort();
+  const el = document.getElementById('export-prov');
+  el.innerHTML = `<option value="">Semua Provinsi</option>` + provs.map(p=>`<option>${p}</option>`).join('');
+}
+
+// ============ EXCEL EXPORT ============
+function exportExcel() {
+  if (!DATA.length) { alert('Tidak ada data untuk diekspor.'); return; }
+  let exportData = DATA;
+  const prov = document.getElementById('export-prov')?.value || document.getElementById('filter-provinsi')?.value || '';
+  if (prov) exportData = exportData.filter(d=>d.provinsi===prov);
+
+  const headers = ['No','Kode Laporan','Tanggal','Provinsi','Kab/Kota','Jenis Kawasan','Jenis Pengawasan',
+    'Luas Terdampak (Ha)','Jumlah Pelaku','Tingkat Keparahan','Status Tindak Lanjut',
+    'Nama Petugas','Unit Kerja','Uraian Temuan','Rekomendasi'];
+
+  const rows = exportData.map((d,i) => [
+    i+1, d.kode, d.tanggal, d.provinsi, d.kabupaten, d.kawasan, d.jenis,
+    parseFloat(d.luas||0), parseInt(d.pelaku||0), d.status, d.tindak,
+    d.petugas, d.unit, d.uraian, d.rekomendasi
+  ]);
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Data
+  const ws1 = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws1['!cols'] = [5,18,12,18,16,22,28,14,10,22,22,18,18,35,30].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws1, 'Data Pengawasan');
+
+  // Sheet 2: Summary
+  const summary = [
+    ['REKAPITULASI PENGAWASAN KEHUTANAN'],
+    ['Dicetak pada:', new Date().toLocaleDateString('id-ID')],
+    [],
+    ['Total Laporan', DATA.length],
+    ['Total Pelanggaran', DATA.filter(d=>d.status&&!d.status.includes('Normal')).length],
+    ['Kasus Kritis', DATA.filter(d=>d.status==='Kritis / Darurat'||d.status==='Pelanggaran Berat').length],
+    ['Selesai Ditindak', DATA.filter(d=>d.tindak==='Selesai / Ditutup').length],
+    ['Total Luas Terdampak (Ha)', DATA.reduce((s,d)=>s+parseFloat(d.luas||0),0)],
+    [],
+    ['Per Provinsi','Jumlah Laporan','Pelanggaran'],
+    ...[...new Set(DATA.map(d=>d.provinsi).filter(Boolean))].sort().map(p=>[
+      p,
+      DATA.filter(d=>d.provinsi===p).length,
+      DATA.filter(d=>d.provinsi===p&&d.status&&!d.status.includes('Normal')).length
+    ])
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(summary);
+  ws2['!cols'] = [{wch:30},{wch:18},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Rekapitulasi');
+
+  const fn = `Pengawasan_Kehutanan_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, fn);
+}
+
+// ============ REGISTER & TAB ============
+function switchTab(tab) {
+  document.getElementById('panel-login').style.display   = tab==='login'    ? 'block' : 'none';
+  document.getElementById('panel-register').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('tab-login-btn').classList.toggle('active', tab==='login');
+  document.getElementById('tab-reg-btn').classList.toggle('active', tab==='register');
+  document.getElementById('login-error').classList.add('hidden');
+  document.getElementById('reg-error').classList.add('hidden');
+  document.getElementById('reg-success').classList.add('hidden');
+}
+
+function doRegister() {
+  const nama     = document.getElementById('reg-nama').value.trim();
+  const unit     = document.getElementById('reg-unit').value.trim();
+  const username = document.getElementById('reg-username').value.trim().toLowerCase();
+  const nip      = document.getElementById('reg-nip').value.trim();
+  const pw       = document.getElementById('reg-password').value;
+  const pw2      = document.getElementById('reg-password2').value;
+  const role     = document.getElementById('reg-role').value;
+  const errEl    = document.getElementById('reg-error');
+  const sucEl    = document.getElementById('reg-success');
+  errEl.classList.add('hidden'); sucEl.classList.add('hidden');
+
+  if (!nama || !unit || !username || !pw || !pw2) {
+    errEl.textContent = '⚠️ Harap isi semua field yang wajib diisi.';
+    errEl.classList.remove('hidden'); return;
+  }
+  if (pw.length < 6) {
+    errEl.textContent = '⚠️ Password minimal 6 karakter.';
+    errEl.classList.remove('hidden'); return;
+  }
+  if (pw !== pw2) {
+    errEl.textContent = '⚠️ Konfirmasi password tidak cocok.';
+    errEl.classList.remove('hidden'); return;
+  }
+  // Cek username duplikat
+  const existing = JSON.parse(localStorage.getItem('sipak_users_db') || '[]');
+  if (USERS[username] || existing.find(u=>u.username===username)) {
+    errEl.textContent = '⚠️ Username sudah digunakan. Pilih username lain.';
+    errEl.classList.remove('hidden'); return;
+  }
+  // Simpan ke pending
+  const pending = JSON.parse(localStorage.getItem('sipak_pending') || '[]');
+  pending.push({ id: Date.now(), nama, unit, username, nip, role, pw, tgl: new Date().toLocaleDateString('id-ID'), status:'pending' });
+  localStorage.setItem('sipak_pending', JSON.stringify(pending));
+  sucEl.innerHTML = '✅ <strong>Permohonan berhasil dikirim!</strong><br>Akun Anda akan diaktifkan setelah disetujui oleh Admin. Silakan hubungi Admin untuk konfirmasi.';
+  sucEl.classList.remove('hidden');
+  ['reg-nama','reg-unit','reg-username','reg-nip','reg-password','reg-password2'].forEach(id=>document.getElementById(id).value='');
+  updateNavNotif();
+}
+
+function updateNavNotif() {
+  const pending = JSON.parse(localStorage.getItem('sipak_pending') || '[]');
+  const n = pending.length;
+  const badge = document.getElementById('nav-notif');
+  if (badge) { badge.textContent = n; badge.style.display = n>0 ? 'inline' : 'none'; }
+  const pbadge = document.getElementById('pending-count-badge');
+  if (pbadge) pbadge.textContent = n;
+}
+
+function renderAdminPage() {
+  updateNavNotif();
+  const pending = JSON.parse(localStorage.getItem('sipak_pending') || '[]');
+  const plist = document.getElementById('pending-list');
+  if (!pending.length) {
+    plist.innerHTML = '<div class="empty-pending">✅ Tidak ada permohonan akun baru.</div>';
+  } else {
+    plist.innerHTML = pending.map(u=>`
+      <div class="pending-row" id="prow-${u.id}">
+        <div style="font-size:32px">👤</div>
+        <div class="pending-info">
+          <div class="pending-name">${u.nama}</div>
+          <div class="pending-meta">Username: <strong>${u.username}</strong> &nbsp;|&nbsp; Unit: ${u.unit} &nbsp;|&nbsp; Jabatan: ${u.role} &nbsp;|&nbsp; NIP: ${u.nip||'-'} &nbsp;|&nbsp; Tgl: ${u.tgl}</div>
+        </div>
+        <button class="btn-approve" onclick="approveUser(${u.id})">✅ Setujui</button>
+        <button class="btn-reject" onclick="rejectUser(${u.id})">❌ Tolak</button>
+      </div>`).join('');
+  }
+  // Active users
+  const db = JSON.parse(localStorage.getItem('sipak_users_db') || '[]');
+  const builtIn = [{username:'admin',nama:'Administrator',unit:'Pusat',role:'admin'},{username:'petugas',nama:'Petugas Demo',unit:'BPHP Demo',role:'petugas'}];
+  const all = [...builtIn, ...db];
+  const alist = document.getElementById('active-users-list');
+  alist.innerHTML = all.map(u=>`
+    <div class="pending-row">
+      <div style="font-size:28px">${u.role==='admin'?'🛡️':'👤'}</div>
+      <div class="pending-info">
+        <div class="pending-name">${u.nama} <span class="badge ${u.role==='admin'?'badge-ok':'badge-proc'}" style="font-size:10px">${u.role.toUpperCase()}</span></div>
+        <div class="pending-meta">@${u.username} &nbsp;|&nbsp; ${u.unit}</div>
+      </div>
+      ${u.role!=='admin' && db.find(d=>d.username===u.username) ? `<button class="btn-reject" onclick="deactivateUser('${u.username}')">🚫 Nonaktifkan</button>` : ''}
+    </div>`).join('');
+}
+
+function approveUser(id) {
+  let pending = JSON.parse(localStorage.getItem('sipak_pending') || '[]');
+  const u = pending.find(p=>p.id===id);
+  if (!u) return;
+  pending = pending.filter(p=>p.id!==id);
+  localStorage.setItem('sipak_pending', JSON.stringify(pending));
+  const db = JSON.parse(localStorage.getItem('sipak_users_db') || '[]');
+  db.push({username:u.username, pw:u.pw, nama:u.nama, unit:u.unit, role:u.role});
+  localStorage.setItem('sipak_users_db', JSON.stringify(db));
+  showToast('✅ Akun @'+u.username+' berhasil disetujui dan diaktifkan!','success');
+  renderAdminPage();
+}
+
+function rejectUser(id) {
+  if (!confirm('Tolak permohonan akun ini?')) return;
+  let pending = JSON.parse(localStorage.getItem('sipak_pending') || '[]');
+  const u = pending.find(p=>p.id===id);
+  pending = pending.filter(p=>p.id!==id);
+  localStorage.setItem('sipak_pending', JSON.stringify(pending));
+  showToast('❌ Permohonan @'+(u?u.username:'')+" ditolak.",'danger');
+  renderAdminPage();
+}
+
+function deactivateUser(username) {
+  if (!confirm('Nonaktifkan akun @'+username+'?')) return;
+  let db = JSON.parse(localStorage.getItem('sipak_users_db') || '[]');
+  db = db.filter(u=>u.username!==username);
+  localStorage.setItem('sipak_users_db', JSON.stringify(db));
+  showToast('🚫 Akun @'+username+' telah dinonaktifkan.','danger');
+  renderAdminPage();
+}
+
+function showToast(msg, type) {
+  let t = document.getElementById('toast-msg');
+  if (!t) { t = document.createElement('div'); t.id='toast-msg'; document.body.appendChild(t); }
+  t.textContent = msg;
+  const bg = type==='success'?'#dcfce7':type==='danger'?'#fee2e2':type==='warn'?'#fef9c3':'#dbeafe';
+  const col = type==='success'?'#166534':type==='danger'?'#991b1b':type==='warn'?'#854d0e':'#1e40af';
+  const brd = type==='success'?'#bbf7d0':type==='danger'?'#fecaca':type==='warn'?'#fde68a':'#bfdbfe';
+  t.style.cssText = `position:fixed;bottom:28px;right:28px;z-index:99999;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:600;font-family:inherit;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.4s;opacity:1;background:${bg};color:${col};border:1px solid ${brd}`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),400); }, 3500);
+}
+
+// ============ LOGIN ============
+const USERS = { 'admin': 'kehutanan2025', 'petugas': 'bphp1234' };
+
+(function() {
+  const sess = sessionStorage.getItem('sipak_user');
+  if (sess) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-wrapper').classList.add('visible');
+    document.querySelector('.badge-user').textContent = '\u{1F464} ' + sess.toUpperCase();
+    const navAdmin = document.getElementById('nav-admin');
+    if (navAdmin) navAdmin.style.display = sess === 'admin' ? 'flex' : 'none';
+    updateNavNotif();
+    updateDashboard();
+  }
+})();
+
+function doLogin() {
+  const u = (document.getElementById('inp-username').value || '').trim();
+  const p = document.getElementById('inp-password').value || '';
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  const btnText = document.getElementById('login-btn-text');
+  errEl.classList.add('hidden');
+  document.getElementById('inp-username').classList.remove('error');
+  document.getElementById('inp-password').classList.remove('error');
+  if (!u || !p) {
+    errEl.textContent = '\u26A0\uFE0F Username dan password tidak boleh kosong.';
+    errEl.classList.remove('hidden');
+    if (!u) document.getElementById('inp-username').classList.add('error');
+    if (!p) document.getElementById('inp-password').classList.add('error');
+    return;
+  }
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner"></span> Memverifikasi...';
+  setTimeout(() => {
+    // Cek user di DB localStorage juga
+  const dbUsers = JSON.parse(localStorage.getItem('sipak_users_db') || '[]');
+  const dbUser = dbUsers.find(du => du.username === u && du.pw === p);
+  if ((USERS[u] && USERS[u] === p) || dbUser) {
+      sessionStorage.setItem('sipak_user', u);
+      btnText.innerHTML = '\u2705 Berhasil! Memuat sistem...';
+      setTimeout(() => {
+        const ls = document.getElementById('login-screen');
+        ls.style.transition = 'opacity 0.5s';
+        ls.style.opacity = '0';
+        setTimeout(() => {
+          ls.classList.add('hidden');
+          ls.style.opacity = '';
+          const aw = document.getElementById('app-wrapper');
+          aw.classList.add('visible');
+          const isAdmin = (u === 'admin');
+          const roleLabel = isAdmin ? 'ADMIN' : 'PETUGAS';
+          document.querySelector('.badge-user').textContent = '\u{1F464} ' + u.toUpperCase() + ' (' + roleLabel + ')';
+          const navAdmin = document.getElementById('nav-admin');
+          if (navAdmin) navAdmin.style.display = isAdmin ? 'flex' : 'none';
+          updateNavNotif();
+          updateDashboard();
+        }, 500);
+      }, 700);
+    } else {
+      btn.disabled = false;
+      btnText.innerHTML = '\uD83D\uDD13 Masuk ke Sistem';
+      errEl.textContent = '\u26A0\uFE0F Username atau password salah. Silakan coba lagi.';
+      errEl.classList.remove('hidden');
+      document.getElementById('inp-username').classList.add('error');
+      document.getElementById('inp-password').classList.add('error');
+      document.getElementById('inp-password').value = '';
+      document.getElementById('inp-username').focus();
+    }
+  }, 900);
+}
+
+function togglePw() {
+  const inp = document.getElementById('inp-password');
+  const btn = document.querySelector('.pw-toggle');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '\uD83D\uDC41\uFE0F' : '\uD83D\uDE48';
+}
+
+function doLogout() {
+  sessionStorage.removeItem('sipak_user');
+  document.getElementById('app-wrapper').classList.remove('visible');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('inp-username').value = '';
+  document.getElementById('inp-password').value = '';
+  document.getElementById('login-error').classList.add('hidden');
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn-text').innerHTML = '\uD83D\uDD13 Masuk ke Sistem';
+}
+
+// ============ SPATIAL LAYERS ============
+const LAYER_COLORS = ['#1a5c2e','#2563eb','#dc2626','#f59e0b','#7c3aed','#0891b2','#db2777','#16a34a','#ea580c','#6366f1'];
+let spatialLayers = []; // {id, name, type, geojsonLayer, color, opacity, visible, featureCount}
+let layerColorIdx = 0;
+
+function nextColor() { return LAYER_COLORS[layerColorIdx++ % LAYER_COLORS.length]; }
+
+function setUploadProgress(show, msg, pct) {
+  const el = document.getElementById('upload-progress');
+  const bar = document.getElementById('upload-bar');
+  const msgEl = document.getElementById('upload-msg');
+  if (el) el.style.display = show ? 'block' : 'none';
+  if (bar) bar.style.width = (pct||0) + '%';
+  if (msgEl && msg) msgEl.textContent = msg;
+}
+
+async function handleSpatialUpload(event) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  event.target.value = '';
+  for (const file of files) {
+    await processSpatialFile(file);
+  }
+}
+
+async function processSpatialFile(file) {
+  const name = file.name;
+  const ext = name.split('.').pop().toLowerCase();
+  setUploadProgress(true, `Memproses: ${name}...`, 10);
+
+  try {
+    let geojson = null;
+
+    if (ext === 'zip') {
+      // SHP inside ZIP
+      setUploadProgress(true, `Membaca SHP dari ZIP: ${name}...`, 20);
+      const arrayBuffer = await readFileAsArrayBuffer(file);
+      setUploadProgress(true, 'Mengkonversi SHP → GeoJSON...', 50);
+      geojson = await shp(arrayBuffer);
+      setUploadProgress(true, 'Menambahkan layer ke peta...', 85);
+
+    } else if (ext === 'shp') {
+      showToast('⚠️ Upload SHP dalam format ZIP (sertakan .dbf, .prj). Format ZIP lebih lengkap.', 'warn');
+      setUploadProgress(false);
+      return;
+
+    } else if (ext === 'kmz') {
+      setUploadProgress(true, `Mengekstrak KMZ: ${name}...`, 20);
+      const arrayBuffer = await readFileAsArrayBuffer(file);
+      const zip = await JSZip.loadAsync(arrayBuffer);
+      const kmlFile = Object.keys(zip.files).find(f => f.endsWith('.kml'));
+      if (!kmlFile) throw new Error('Tidak ada file KML di dalam KMZ.');
+      const kmlText = await zip.files[kmlFile].async('text');
+      setUploadProgress(true, 'Mengkonversi KML → GeoJSON...', 60);
+      const parser = new DOMParser();
+      const kmlDoc = parser.parseFromString(kmlText, 'text/xml');
+      geojson = toGeoJSON.kml(kmlDoc);
+
+    } else if (ext === 'kml') {
+      setUploadProgress(true, `Membaca KML: ${name}...`, 30);
+      const text = await readFileAsText(file);
+      const parser = new DOMParser();
+      const kmlDoc = parser.parseFromString(text, 'text/xml');
+      setUploadProgress(true, 'Mengkonversi KML → GeoJSON...', 65);
+      geojson = toGeoJSON.kml(kmlDoc);
+
+    } else if (ext === 'gpx') {
+      setUploadProgress(true, `Membaca GPX: ${name}...`, 30);
+      const text = await readFileAsText(file);
+      const parser = new DOMParser();
+      const gpxDoc = parser.parseFromString(text, 'text/xml');
+      setUploadProgress(true, 'Mengkonversi GPX → GeoJSON...', 65);
+      geojson = toGeoJSON.gpx(gpxDoc);
+
+    } else if (ext === 'geojson' || ext === 'json') {
+      setUploadProgress(true, `Membaca GeoJSON: ${name}...`, 40);
+      const text = await readFileAsText(file);
+      geojson = JSON.parse(text);
+
+    } else {
+      showToast(`❌ Format .${ext} tidak didukung. Gunakan: ZIP(SHP), KML, KMZ, GeoJSON, GPX`, 'danger');
+      setUploadProgress(false);
+      return;
+    }
+
+    setUploadProgress(true, 'Menambahkan ke peta...', 90);
+
+    // Handle FeatureCollection or array from shpjs
+    const collections = Array.isArray(geojson) ? geojson : [geojson];
+    for (let i = 0; i < collections.length; i++) {
+      const fc = collections[i];
+      if (!fc || !fc.features || fc.features.length === 0) continue;
+      const layerName = collections.length > 1
+        ? name.replace(/\.[^.]+$/, '') + '_' + (i + 1)
+        : name.replace(/\.[^.]+$/, '');
+      addGeoJSONLayer(fc, layerName, ext.toUpperCase());
+    }
+
+    setUploadProgress(true, 'Selesai!', 100);
+    setTimeout(() => setUploadProgress(false), 800);
+    showToast(`✅ Layer "${name}" berhasil dimuat ke peta!`, 'success');
+
+  } catch (err) {
+    setUploadProgress(false);
+    console.error(err);
+    showToast(`❌ Gagal memproses "${name}": ${err.message}`, 'danger');
+  }
+}
+
+function readFileAsArrayBuffer(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsArrayBuffer(file);
+  });
+}
+
+function readFileAsText(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsText(file);
+  });
+}
+
+function addGeoJSONLayer(geojson, name, type) {
+  const color = nextColor();
+  const opacity = 0.5;
+  const id = 'layer_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  const featureCount = geojson.features ? geojson.features.length : 0;
+
+  // Detect geometry types
+  const geomTypes = [...new Set((geojson.features||[]).map(f => f.geometry && f.geometry.type).filter(Boolean))];
+  const hasPolygon = geomTypes.some(t => t.includes('Polygon'));
+  const hasLine = geomTypes.some(t => t.includes('Line'));
+  const hasPoint = geomTypes.some(t => t.includes('Point'));
+
+  const leafletLayer = L.geoJSON(geojson, {
+    style: (feature) => {
+      const gt = feature.geometry && feature.geometry.type;
+      if (gt && gt.includes('Polygon')) {
+        return { color: color, weight: 1.5, opacity: 0.9, fillColor: color, fillOpacity: opacity };
+      } else if (gt && gt.includes('Line')) {
+        return { color: color, weight: 2.5, opacity: 0.9 };
+      }
+      return { color: color, weight: 1.5, opacity: 0.9, fillColor: color, fillOpacity: opacity };
+    },
+    pointToLayer: (feature, latlng) => {
+      return L.circleMarker(latlng, {
+        radius: 7, color: '#fff', weight: 2,
+        fillColor: color, fillOpacity: 0.9
+      });
+    },
+    onEachFeature: (feature, layer) => {
+      if (!feature.properties) return;
+      const props = feature.properties;
+      const keys = Object.keys(props).filter(k => props[k] !== null && props[k] !== undefined).slice(0, 8);
+      if (!keys.length) return;
+      let popupHtml = `<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;max-width:220px">
+        <div style="font-weight:700;color:#1a5c2e;margin-bottom:8px;font-size:13px">📌 ${name}</div>`;
+      keys.forEach(k => {
+        popupHtml += `<div style="display:flex;justify-content:space-between;gap:12px;margin:3px 0;border-bottom:1px solid #f3f4f6;padding-bottom:3px">
+          <span style="color:#6b7280">${k}</span>
+          <span style="font-weight:600;color:#1a2e1a;text-align:right;max-width:120px;overflow:hidden;text-overflow:ellipsis">${String(props[k]).slice(0,50)}</span>
+        </div>`;
+      });
+      popupHtml += '</div>';
+      layer.bindPopup(popupHtml, { maxWidth: 260 });
+    }
+  });
+
+  leafletLayer.addTo(leafletMap);
+
+  // Zoom to layer
+  try {
+    const bounds = leafletLayer.getBounds();
+    if (bounds.isValid()) leafletMap.fitBounds(bounds, { padding: [30, 30] });
+  } catch(e) {}
+
+  const geomLabel = [hasPolygon?'Polygon':'', hasLine?'Garis':'', hasPoint?'Titik':''].filter(Boolean).join(', ') || type;
+
+  const layerObj = { id, name, type: geomLabel, geojsonLayer: leafletLayer, color, opacity, visible: true, featureCount };
+  spatialLayers.push(layerObj);
+  renderLayerManager();
+}
+
+function renderLayerManager() {
+  const mgr = document.getElementById('layer-manager');
+  const list = document.getElementById('layer-list');
+  const badge = document.getElementById('layer-count-badge');
+  const countText = document.getElementById('layer-count-text');
+
+  if (!mgr) return;
+
+  if (spatialLayers.length === 0) {
+    mgr.style.display = 'none';
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+
+  mgr.style.display = 'block';
+  if (badge) badge.style.display = 'block';
+  if (countText) countText.textContent = spatialLayers.length + ' layer aktif';
+
+  list.innerHTML = spatialLayers.map(layer => `
+    <div class="layer-row" id="row-${layer.id}">
+      <div class="layer-icon">${layer.type.includes('Polygon') ? '⬡' : layer.type.includes('Garis') ? '〰️' : '📍'}</div>
+      <div class="layer-info">
+        <div class="layer-name" title="${layer.name}">${layer.name}</div>
+        <div class="layer-meta">${layer.type} · ${layer.featureCount.toLocaleString('id-ID')} fitur</div>
+      </div>
+      <div class="layer-controls">
+        <!-- Color picker -->
+        <input type="color" class="layer-color-btn" value="${layer.color}"
+          title="Ubah warna layer"
+          style="background:${layer.color}"
+          onchange="changeLayerColor('${layer.id}', this.value)">
+        <!-- Opacity slider -->
+        <div class="opacity-wrap">
+          <span class="opacity-label">Transparansi:</span>
+          <input type="range" class="opacity-slider" min="0" max="100" value="${Math.round(layer.opacity*100)}"
+            style="--val:${Math.round(layer.opacity*100)}%"
+            oninput="changeLayerOpacity('${layer.id}', this.value/100, this)"
+            title="Atur transparansi layer">
+          <span class="opacity-val" id="opval-${layer.id}">${Math.round(layer.opacity*100)}%</span>
+        </div>
+        <!-- Action buttons -->
+        <button class="layer-zoom-btn" onclick="zoomToLayer('${layer.id}')" title="Zoom ke layer">🔍</button>
+        <button class="layer-vis-btn" onclick="toggleLayerVisibility('${layer.id}')" id="visbtn-${layer.id}" title="Tampilkan/sembunyikan">
+          ${layer.visible ? '👁️' : '🙈'}
+        </button>
+        <button class="layer-del-btn" onclick="deleteLayer('${layer.id}')" title="Hapus layer">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function changeLayerColor(id, color) {
+  const layer = spatialLayers.find(l => l.id === id);
+  if (!layer) return;
+  layer.color = color;
+  layer.geojsonLayer.setStyle({ color, fillColor: color });
+  layer.geojsonLayer.eachLayer(l => {
+    if (l.setStyle) l.setStyle({ color, fillColor: color });
+    if (l.options && l.options.radius !== undefined) {
+      l.setStyle({ fillColor: color, color: '#fff' });
+    }
+  });
+}
+
+function changeLayerOpacity(id, opacity, sliderEl) {
+  const layer = spatialLayers.find(l => l.id === id);
+  if (!layer) return;
+  layer.opacity = opacity;
+  const pct = Math.round(opacity * 100);
+  // Update slider gradient
+  if (sliderEl) sliderEl.style.setProperty('--val', pct + '%');
+  const valEl = document.getElementById('opval-' + id);
+  if (valEl) valEl.textContent = pct + '%';
+  // Apply to all sub-layers
+  layer.geojsonLayer.eachLayer(l => {
+    if (l.setStyle) {
+      const gt = l.feature && l.feature.geometry && l.feature.geometry.type;
+      if (gt && gt.includes('Line')) {
+        l.setStyle({ opacity });
+      } else {
+        l.setStyle({ fillOpacity: opacity, opacity: Math.min(1, opacity + 0.3) });
+      }
+    }
+    // CircleMarker
+    if (l.options && l.options.radius !== undefined) {
+      l.setStyle({ fillOpacity: opacity });
+    }
+  });
+}
+
+function toggleLayerVisibility(id) {
+  const layer = spatialLayers.find(l => l.id === id);
+  if (!layer) return;
+  layer.visible = !layer.visible;
+  if (layer.visible) {
+    layer.geojsonLayer.addTo(leafletMap);
+  } else {
+    leafletMap.removeLayer(layer.geojsonLayer);
+  }
+  const btn = document.getElementById('visbtn-' + id);
+  if (btn) btn.textContent = layer.visible ? '👁️' : '🙈';
+}
+
+function zoomToLayer(id) {
+  const layer = spatialLayers.find(l => l.id === id);
+  if (!layer || !layer.visible) return;
+  try {
+    const bounds = layer.geojsonLayer.getBounds();
+    if (bounds.isValid()) leafletMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+  } catch(e) {}
+}
+
+function deleteLayer(id) {
+  const idx = spatialLayers.findIndex(l => l.id === id);
+  if (idx === -1) return;
+  leafletMap.removeLayer(spatialLayers[idx].geojsonLayer);
+  spatialLayers.splice(idx, 1);
+  renderLayerManager();
+  showToast('🗑️ Layer berhasil dihapus.', 'info');
+}
+
+function clearAllLayers() {
+  if (!spatialLayers.length) return;
+  if (!confirm('Hapus semua ' + spatialLayers.length + ' layer spasial?')) return;
+  spatialLayers.forEach(l => leafletMap.removeLayer(l.geojsonLayer));
+  spatialLayers = [];
+  renderLayerManager();
+  showToast('🗑️ Semua layer spasial dihapus.', 'info');
+}
+
+// Drag-and-drop support on the map container
+document.addEventListener('DOMContentLoaded', () => {
+  const mapEl = document.getElementById('indonesia-map');
+  if (!mapEl) return;
+  mapEl.addEventListener('dragover', e => { e.preventDefault(); mapEl.style.outline = '3px dashed #1a5c2e'; });
+  mapEl.addEventListener('dragleave', () => { mapEl.style.outline = ''; });
+  mapEl.addEventListener('drop', async e => {
+    e.preventDefault();
+    mapEl.style.outline = '';
+    const files = Array.from(e.dataTransfer.files);
+    for (const f of files) await processSpatialFile(f);
+  });
+});
+
+// ============ INIT ============
+// updateDashboard dipanggil setelah login berhasil
+</script>
+</div><!-- /app-wrapper -->
+</body>
+</html>
