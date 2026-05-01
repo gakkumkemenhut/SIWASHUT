@@ -684,7 +684,7 @@
           </div>
 
           <!-- Upload format hint bar -->
-          <div id="dash-gis-hint" style="display:none;background:#f0fdf4;border-bottom:1px solid #bbf7d0;padding:6px 14px;font-size:11px;color:#166534;align-items:center;gap:8px;flex-wrap:wrap">
+          <div id="dash-gis-hint" style="display:none;background:#f0fdf4;border-bottom:1px solid #bbf7d0;padding:6px 14px;font-size:11px;color:#166534;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span>✅ Format didukung:</span>
             <span style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:1px 7px;font-weight:700">📦 SHP (ZIP)</span>
             <span style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:5px;padding:1px 7px;font-weight:700;color:#1e40af">🗺️ KMZ</span>
@@ -695,7 +695,7 @@
           </div>
 
           <!-- Processing bar -->
-          <div id="dash-gis-progress" style="display:none;background:#fff7ed;border-bottom:1px solid #fed7aa;padding:8px 14px;font-size:12px;color:#c2410c;align-items:center;gap:8px">
+          <div id="dash-gis-progress" style="display:none;background:#fff7ed;border-bottom:1px solid #fed7aa;padding:8px 14px;font-size:12px;color:#c2410c;display:flex;align-items:center;gap:8px">
             <div class="spinner" style="border-color:#fed7aa;border-top-color:#f59e0b;width:14px;height:14px"></div>
             <span id="dash-gis-progress-msg">Memproses file GIS...</span>
           </div>
@@ -1159,7 +1159,7 @@ async function loadDataFromSupabase() {
       files: r.files ? (typeof r.files==='string' ? JSON.parse(r.files) : r.files) : [],
       uraian: r.uraian, rekomendasi: r.rekomendasi
     }));
-    localStorage.setItem('siwashut_data', JSON.stringify(DATA));
+    try { localStorage.setItem('siwashut_data', JSON.stringify(sanitizeForStorage(DATA))); } catch(e){}
     showToast('✅ ' + DATA.length + ' data berhasil dimuat dari server.', 'success');
     updateDashboard(); renderTable();
   } catch(e) {
@@ -1169,7 +1169,24 @@ async function loadDataFromSupabase() {
   }
 }
 
-function saveData() { localStorage.setItem('siwashut_data', JSON.stringify(DATA)); }
+function sanitizeForStorage(data) {
+  // Pastikan tidak ada File object / Headers / non-serializable masuk ke localStorage
+  return data.map(r => ({
+    id: r.id, tanggal: r.tanggal, kode: r.kode, subjek: r.subjek,
+    provinsi: r.provinsi, kabupaten: r.kabupaten, kawasan: r.kawasan,
+    jenis: r.jenis, luas: r.luas, status: r.status, tindak: r.tindak,
+    petugas: Array.isArray(r.petugas) ? r.petugas.map(p=>({nama:p.nama||'',unit:p.unit||''})) : [],
+    files: Array.isArray(r.files)
+      ? r.files.map(f => typeof f === 'string' ? {name:f,url:null,path:null} : {name:f.name||'',url:f.url||null,path:f.path||null})
+      : [],
+    uraian: r.uraian || '', rekomendasi: r.rekomendasi || ''
+  }));
+}
+function saveData() {
+  try {
+    localStorage.setItem('siwashut_data', JSON.stringify(sanitizeForStorage(DATA)));
+  } catch(e) { console.warn('saveData error:', e.message); }
+}
 
 async function saveRowToSupabase(row) {
   try {
@@ -1177,7 +1194,8 @@ async function saveRowToSupabase(row) {
       tanggal:row.tanggal, kode:row.kode, subjek:row.subjek,
       provinsi:row.provinsi, kabupaten:row.kabupaten, kawasan:row.kawasan,
       jenis:row.jenis, luas:row.luas, status:row.status, tindak:row.tindak,
-      petugas:JSON.stringify(row.petugas||[]), files:JSON.stringify(row.files||[]),
+      petugas:JSON.stringify((row.petugas||[]).map(p=>({nama:p.nama||'',unit:p.unit||''}))),
+      files:JSON.stringify((row.files||[]).map(f=> typeof f==='string' ? {name:f,url:null,path:null} : {name:f.name||'',url:f.url||null,path:f.path||null})),
       uraian:row.uraian, rekomendasi:row.rekomendasi
     };
     const { data, error } = await supa.from('patroli').insert(payload).select().single();
@@ -1281,7 +1299,7 @@ function today() {
 document.getElementById('current-date').textContent = today();
 document.getElementById('f-tanggal').value = new Date().toISOString().split('T')[0];
 
-function saveData() { localStorage.setItem('siwashut_data', JSON.stringify(DATA)); }
+function saveData() { try { localStorage.setItem('siwashut_data', JSON.stringify(sanitizeForStorage(DATA))); } catch(e){} }
 
 function objekBadge(s) {
   const m = {
@@ -1347,7 +1365,7 @@ function resetForm() {
       <button type="button" onclick="removePetugas(this)" style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;cursor:pointer;color:#dc2626;font-size:14px" title="Hapus">✕</button>
     </div>`;
   // Reset file list
-  uploadedFiles = [];
+  uploadedFiles = []; // reset array file objects
   renderFileList();
 }
 
@@ -2728,7 +2746,7 @@ async function processDashGISFile(file) {
 
   const prog = document.getElementById('dash-gis-progress');
   const msg  = document.getElementById('dash-gis-progress-msg');
-  if (prog) { prog.style.display = 'flex'; prog.style.alignItems = 'center'; }
+  if (prog) prog.style.display = 'flex';
   if (msg)  msg.textContent = `Memproses: ${file.name}…`;
 
   try {
