@@ -433,48 +433,6 @@
   .format-tag.geojson { background:#f3e8ff; color:#7c3aed; border:1px solid #ddd6fe; }
   .format-tag.gpx { background:#ffe4e6; color:#9f1239; border:1px solid #fecdd3; }
 
-
-  /* ===== FILE LAMPIRAN — STORAGE ===== */
-  .file-badge {
-    display:inline-flex;align-items:center;gap:4px;
-    background:#f0fdf4;border:1px solid #bbf7d0;
-    color:#166534;font-size:10px;font-weight:600;
-    padding:2px 8px;border-radius:20px;
-    cursor:pointer;transition:all 0.15s;white-space:nowrap;text-decoration:none;
-  }
-  .file-badge:hover{background:#dcfce7;border-color:#4ade80;}
-  .file-badge.pdf{background:#fee2e2;border-color:#fecaca;color:#991b1b;}
-  .file-badge.doc{background:#dbeafe;border-color:#bfdbfe;color:#1e40af;}
-  .file-badge.xls{background:#dcfce7;border-color:#bbf7d0;color:#166534;}
-  .file-badge.img{background:#f3e8ff;border-color:#ddd6fe;color:#7c3aed;}
-  .file-badge.zip{background:#fef9c3;border-color:#fde68a;color:#854d0e;}
-  .file-badge.more{background:#f3f4f6;border-color:#d1d5db;color:#374151;}
-  .file-badge-wrap{display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
-  .file-upload-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8fdf9;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;}
-  .file-upload-progress{height:4px;border-radius:4px;background:#e5e7eb;margin-top:4px;overflow:hidden;}
-  .file-upload-bar{height:100%;background:#1a5c2e;border-radius:4px;transition:width 0.3s;width:0%;}
-  /* Modal file viewer */
-  .fv-overlay{display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;}
-  .fv-overlay.open{display:flex;}
-  .fv-box{background:#fff;border-radius:14px;padding:0;max-width:560px;width:94%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
-  .fv-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
-  .fv-title{font-size:14px;font-weight:700;color:var(--hijau);}
-  .fv-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
-  .fv-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);line-height:1;padding:2px 6px;}
-  .fv-close:hover{color:var(--merah);}
-  .fv-list{overflow-y:auto;padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:8px;}
-  .fv-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:#fafafa;transition:background 0.15s;}
-  .fv-item:hover{background:#f0fdf4;border-color:#d1e7d9;}
-  .fv-icon{font-size:24px;flex-shrink:0;}
-  .fv-info{flex:1;min-width:0;}
-  .fv-name{font-size:13px;font-weight:600;color:var(--text);word-break:break-all;}
-  .fv-type{font-size:11px;color:var(--text-muted);margin-top:2px;}
-  .fv-btn{display:inline-flex;align-items:center;gap:5px;background:#1a5c2e;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;white-space:nowrap;}
-  .fv-btn:hover{background:#2d8b4e;}
-  .fv-btn.loading{opacity:0.6;pointer-events:none;}
-  .fv-empty{text-align:center;color:#9ca3af;padding:32px;font-size:13px;}
-  .fv-uploading{font-size:11px;color:var(--hijau);background:#f0fdf4;border:1px solid #d1e7d9;border-radius:6px;padding:4px 10px;display:none;}
-
   /* Layer Attribute Popup */
   .attr-modal { display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; }
   .attr-modal.open { display:flex; }
@@ -806,10 +764,10 @@
       <div class="table-card">
         <table>
           <thead><tr>
-            <th>No</th><th>Tanggal</th><th>Provinsi</th><th>Nama Subjek Hukum</th><th>Jenis Pengawasan</th><th>Objek Pengawasan</th><th>Status</th><th>File</th>
+            <th>No</th><th>Tanggal</th><th>Provinsi</th><th>Nama Subjek Hukum</th><th>Jenis Pengawasan</th><th>Objek Pengawasan</th><th>Status</th>
           </tr></thead>
           <tbody id="recent-table-body">
-            <tr><td colspan="8"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>
+            <tr><td colspan="7"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -1088,7 +1046,7 @@
               <th>#</th><th>Tanggal</th><th>No. Surat Tugas</th><th>Nama Subjek Hukum</th>
               <th>Provinsi</th><th>Kab/Kota</th><th>Jenis Pengawasan</th>
               <th>Objek Pengawasan</th><th>Luasan SH (Ha)</th>
-              <th>Tindak Lanjut</th><th>File Lampiran</th><th>Aksi</th>
+              <th>Tindak Lanjut</th><th>Aksi</th>
             </tr></thead>
             <tbody id="main-table-body"></tbody>
           </table>
@@ -1393,7 +1351,7 @@ function resetForm() {
   renderFileList();
 }
 
-async function submitData() {
+function submitData() {
   const req = {
     tanggal: document.getElementById('f-tanggal').value,
     subjek: document.getElementById('f-subjek').value,
@@ -1414,27 +1372,10 @@ async function submitData() {
     const unit = row.querySelector('.petugas-unit').value.trim();
     if (nama) petugasList.push({ nama, unit });
   });
-  const tempId = Date.now();
-  const kode = document.getElementById('f-kode').value || `ST/BPHP/${new Date().getFullYear()}/${String(DATA.length+1).padStart(3,'0')}`;
-
-  // Tampilkan progress upload jika ada file
-  if (uploadedFiles.length) {
-    showFormAlert(`⏳ Mengupload ${uploadedFiles.length} file ke server...`, 'success');
-    renderFileList(); // pastikan progress bar tampil
-  } else {
-    showFormAlert('Menyimpan data ke server...', 'success');
-  }
-
-  // Upload semua file ke Supabase Storage dulu
-  let fileObjects = [];
-  if (uploadedFiles.length) {
-    fileObjects = await uploadAllFiles(tempId);
-  }
-
   const row = {
-    id: tempId,
+    id: Date.now(),
     tanggal: document.getElementById('f-tanggal').value,
-    kode,
+    kode: document.getElementById('f-kode').value || `ST/BPHP/${new Date().getFullYear()}/${String(DATA.length+1).padStart(3,'0')}`,
     subjek: document.getElementById('f-subjek').value,
     provinsi: document.getElementById('f-provinsi').value,
     kabupaten: document.getElementById('f-kabupaten').value,
@@ -1444,16 +1385,16 @@ async function submitData() {
     status: document.getElementById('f-status').value,
     tindak: document.getElementById('f-tindak').value,
     petugas: petugasList,
-    files: fileObjects,   // [{name, url, path}]
+    files: uploadedFiles.map(f => f.name),
     uraian: document.getElementById('f-uraian').value,
     rekomendasi: document.getElementById('f-rekomendasi').value
   };
   DATA.push(row); saveData(); resetForm();
-  const ok = await saveRowToSupabase(row);
-  showFormAlert(ok
-    ? `✅ Data & ${fileObjects.length} file berhasil disimpan! No: ${kode}`
-    : '⚠️ Tersimpan lokal, cek koneksi server.', ok ? 'success' : 'danger');
-  updateDashboard();
+  showFormAlert('Menyimpan data ke server...', 'success');
+  saveRowToSupabase(row).then(ok => {
+    showFormAlert(ok ? '✅ Data berhasil disimpan ke server! No. Surat Tugas: ' + row.kode : '⚠️ Tersimpan lokal, cek koneksi server.', ok ? 'success' : 'danger');
+    updateDashboard();
+  });
 }
 
 function showFormAlert(msg, type) {
@@ -1475,7 +1416,7 @@ function updateDashboard() {
   const tbody = document.getElementById('recent-table-body');
   const recent = [...DATA].reverse().slice(0, 5);
   if (!recent.length) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>`;
   } else {
     tbody.innerHTML = recent.map((d,i) => `<tr>
       <td>${i+1}</td>
@@ -1485,7 +1426,6 @@ function updateDashboard() {
       <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.jenis||'-'}</td>
       <td>${objekBadge(d.status)}</td>
       <td>${tindakBadge(d.tindak)}</td>
-      <td>${renderFileBadges(d.files,1,d)}</td>
     </tr>`).join('');
   }
 
@@ -1775,7 +1715,7 @@ function renderTable() {
 
   const tbody = document.getElementById('main-table-body');
   if (!slice.length) {
-    tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><div class="emoji">🔍</div><p>Tidak ada data ditemukan.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="emoji">🔍</div><p>Tidak ada data ditemukan.</p></div></td></tr>`;
   } else {
     tbody.innerHTML = slice.map((d,i) => {
       const petugasStr = Array.isArray(d.petugas) ? d.petugas.map(p=>`${p.nama}${p.unit?' ('+p.unit+')':''}`).join(', ') : (d.petugas||'-');
@@ -1790,8 +1730,7 @@ function renderTable() {
         <td>${objekBadge(d.status)}</td>
         <td>${parseFloat(d.luas||0).toLocaleString('id-ID')}</td>
         <td>${tindakBadge(d.tindak)}</td>
-        <td style="min-width:130px">${renderFileBadges(d.files,2,d)}</td>
-        <td><button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteRow('${d.id}')">Hapus</button></td>
+        <td><button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteRow(${d.id})">Hapus</button></td>
       </tr>`;
     }).join('');
   }
@@ -1812,8 +1751,9 @@ function renderTable() {
 
 function deleteRow(id) {
   if (!confirm('Hapus data ini?')) return;
-  DATA = DATA.filter(d=>String(d.id)!==String(id)); saveData(); renderTable();
-  deleteRowFromSupabase(id);
+  const _delId = id;
+  DATA = DATA.filter(d=>d.id!==_delId); saveData(); renderTable();
+  deleteRowFromSupabase(_delId);
 }
 
 // ============ LAPORAN ============
@@ -2177,87 +2117,11 @@ function removePetugas(btn) {
 }
 
 // ============ FILE UPLOAD ============
-let uploadedFiles = []; // [{file: File, url: null}]
-
-// ── Helper ikon & tipe ────────────────────────────────────────────────────────
-function getFileIcon(name) {
-  const ext = (name||'').split('.').pop().toLowerCase();
-  const m = {pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',webp:'🖼️',zip:'📦',rar:'📦'};
-  return m[ext] || '📎';
-}
-function getFileExt(name) { return (name||'').split('.').pop().toLowerCase(); }
-function getFileBadgeClass(name) {
-  const e = getFileExt(name);
-  if(e==='pdf') return 'pdf';
-  if(['doc','docx'].includes(e)) return 'doc';
-  if(['xls','xlsx'].includes(e)) return 'xls';
-  if(['jpg','jpeg','png','gif','webp'].includes(e)) return 'img';
-  if(['zip','rar','7z'].includes(e)) return 'zip';
-  return '';
-}
-function getFileType(name) {
-  const m = {pdf:'PDF Document',doc:'Word',docx:'Word',xls:'Excel',xlsx:'Excel',
-    jpg:'Gambar',jpeg:'Gambar',png:'Gambar',gif:'Gambar',webp:'Gambar',zip:'ZIP',rar:'RAR'};
-  return m[getFileExt(name)] || 'File';
-}
-
-// ── Upload file ke Supabase Storage ──────────────────────────────────────────
-async function uploadFileToStorage(file, rowId) {
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const path = `patroli/${rowId}/${Date.now()}_${safeName}`;
-  const { data, error } = await supa.storage.from('lampiran').upload(path, file, {
-    cacheControl: '3600', upsert: false
-  });
-  if (error) throw error;
-  const { data: urlData } = supa.storage.from('lampiran').getPublicUrl(path);
-  return { name: file.name, url: urlData.publicUrl, path };
-}
-
-async function uploadAllFiles(rowId) {
-  const results = [];
-  for (let i = 0; i < uploadedFiles.length; i++) {
-    const item = uploadedFiles[i];
-    // Update progress bar
-    const bar = document.getElementById('fup-bar-'+i);
-    const label = document.getElementById('fup-label-'+i);
-    if(label) label.textContent = 'Mengupload...';
-    try {
-      const res = await uploadFileToStorage(item.file, rowId);
-      results.push(res);
-      if(bar) bar.style.width = '100%';
-      if(label) { label.textContent = 'Selesai ✓'; label.style.color='#166534'; }
-    } catch(e) {
-      results.push({ name: item.file.name, url: null, path: null });
-      if(label) { label.textContent = 'Gagal upload'; label.style.color='#dc2626'; }
-      console.warn('Upload gagal:', e.message);
-    }
-  }
-  return results;
-}
-
-// ── Render daftar file di form input ─────────────────────────────────────────
-function renderFileList() {
-  const el = document.getElementById('file-list');
-  if (!el) return;
-  if (!uploadedFiles.length) { el.innerHTML = ''; return; }
-  el.innerHTML = uploadedFiles.map((item, i) => {
-    const f = item.file;
-    return `<div class="file-upload-item" id="fup-item-${i}">
-      <span style="font-size:20px">${getFileIcon(f.name)}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</div>
-        <div style="font-size:11px;color:var(--text-muted)">${(f.size/1024).toFixed(0)} KB · ${getFileType(f.name)}</div>
-        <div class="file-upload-progress"><div class="file-upload-bar" id="fup-bar-${i}"></div></div>
-      </div>
-      <span id="fup-label-${i}" style="font-size:11px;color:var(--text-muted)">Siap</span>
-      <button onclick="removeFile(${i})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:16px;padding:2px 6px" title="Hapus">✕</button>
-    </div>`;
-  }).join('');
-}
+let uploadedFiles = [];
 
 function handleFileSelect(event) {
   const files = Array.from(event.target.files);
-  files.forEach(f => { if (!uploadedFiles.find(u=>u.file.name===f.name)) uploadedFiles.push({file:f,url:null}); });
+  files.forEach(f => { if (!uploadedFiles.find(u=>u.name===f.name)) uploadedFiles.push(f); });
   renderFileList();
 }
 
@@ -2266,8 +2130,27 @@ function handleFileDrop(event) {
   document.getElementById('file-upload-area').style.borderColor = '';
   document.getElementById('file-upload-area').style.background = '#fafafa';
   const files = Array.from(event.dataTransfer.files);
-  files.forEach(f => { if (!uploadedFiles.find(u=>u.file.name===f.name)) uploadedFiles.push({file:f,url:null}); });
+  files.forEach(f => { if (!uploadedFiles.find(u=>u.name===f.name)) uploadedFiles.push(f); });
   renderFileList();
+}
+
+function renderFileList() {
+  const el = document.getElementById('file-list');
+  if (!el) return;
+  if (!uploadedFiles.length) { el.innerHTML = ''; return; }
+  el.innerHTML = uploadedFiles.map((f,i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8fdf9;border:1px solid var(--border);border-radius:8px;margin-bottom:6px">
+      <span style="font-size:18px">${getFileIcon(f.name)}</span>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+      <span style="font-size:11px;color:var(--text-muted)">${(f.size/1024).toFixed(0)} KB</span>
+      <button onclick="removeFile(${i})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:16px;padding:2px 6px" title="Hapus">✕</button>
+    </div>`).join('');
+}
+
+function getFileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const icons = { pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊', jpg:'🖼️', jpeg:'🖼️', png:'🖼️', zip:'🗜️' };
+  return icons[ext] || '📎';
 }
 
 function removeFile(i) {
@@ -2275,69 +2158,15 @@ function removeFile(i) {
   renderFileList();
 }
 
-// ── Badge render di tabel (dari array file objects) ────────────────────────
-function renderFileBadges(files, maxShow, rowData) {
-  let arr = [];
-  try { arr = Array.isArray(files) ? files : JSON.parse(files||'[]'); } catch(e){ arr=[]; }
-  if(!arr.length) return '<span style="font-size:11px;color:#9ca3af">—</span>';
-  const show = maxShow||2;
-  const visible = arr.slice(0, show);
-  const rest = arr.length - show;
-  const rowStr = encodeURIComponent(JSON.stringify(rowData));
-  const badges = visible.map(f => {
-    const name = typeof f==='string' ? f : (f.name||'file');
-    const short = name.length>16 ? name.substring(0,14)+'…' : name;
-    return `<span class="file-badge ${getFileBadgeClass(name)}" onclick="openFV('${rowStr}')" title="${name}">${getFileIcon(name)} ${short}</span>`;
-  }).join('');
-  const more = rest>0 ? `<span class="file-badge more" onclick="openFV('${rowStr}')">+${rest} file</span>` : '';
-  return `<div class="file-badge-wrap">${badges}${more}</div>`;
-}
-
-// ── Modal File Viewer ─────────────────────────────────────────────────────────
-function openFV(encodedRow) {
-  let row;
-  try { row = JSON.parse(decodeURIComponent(encodedRow)); } catch(e){ return; }
-  let arr = [];
-  try { arr = Array.isArray(row.files) ? row.files : JSON.parse(row.files||'[]'); } catch(e){ arr=[]; }
-
-  document.getElementById('fv-title').textContent = '📂 File Lampiran';
-  document.getElementById('fv-sub').textContent = (row.subjek||'') + (row.tanggal?' · '+row.tanggal:'');
-
-  const list = document.getElementById('fv-list');
-  if(!arr.length) {
-    list.innerHTML = '<div class="fv-empty">Tidak ada file lampiran untuk data ini.</div>';
-  } else {
-    list.innerHTML = arr.map((f,i) => {
-      const name = typeof f==='string' ? f : (f.name||'file');
-      const url  = typeof f==='object' ? f.url : null;
-      const hasUrl = !!url;
-      return `<div class="fv-item">
-        <div class="fv-icon">${getFileIcon(name)}</div>
-        <div class="fv-info">
-          <div class="fv-name">${name}</div>
-          <div class="fv-type">${getFileType(name)} · File #${i+1}</div>
-        </div>
-        ${hasUrl
-          ? `<a class="fv-btn" href="${url}" target="_blank" rel="noopener">🔗 Buka</a>`
-          : `<span style="font-size:11px;color:#9ca3af;white-space:nowrap">Tidak ada URL</span>`
-        }
-      </div>`;
-    }).join('');
-  }
-  document.getElementById('fv-overlay').classList.add('open');
-}
-
-function closeFV() {
-  document.getElementById('fv-overlay').classList.remove('open');
-}
-
 // ============ DASHBOARD MAP ============
 function renderDashboardMap() {
   if (!dashMap) {
     dashMap = L.map('dashboard-map', { center: [-2.5, 118], zoom: 4, zoomControl: true, attributionControl: false });
+    dashMapRef = dashMap; // sinkronkan agar getDashMap() tidak null
     const l = TILE_LAYERS['street'];
     dashTileLayer = L.tileLayer(l.url, l.opts).addTo(dashMap);
   }
+  if (!dashMapRef) dashMapRef = dashMap; // pastikan selalu sinkron
   dashMarkers.forEach(m => dashMap.removeLayer(m));
   dashMarkers = [];
   PROVINCES.forEach(p => {
@@ -2833,21 +2662,18 @@ let dashMapRef = null; // will be set after dashMap init
 const _origSetLayerDash = typeof setLayerDash === 'function' ? setLayerDash : null;
 
 function getDashMap() {
-  // Try to get the Leaflet map instance for dashboard-map div
+  // Prioritas 1: dashMap (variabel global langsung dari renderDashboardMap)
+  if (dashMap) { dashMapRef = dashMap; return dashMap; }
+  // Prioritas 2: dashMapRef yang sudah diset sebelumnya
   if (dashMapRef) return dashMapRef;
-  // Search all leaflet map containers
+  // Prioritas 3: cari dari elemen DOM
   const el = document.getElementById('dashboard-map');
   if (el && el._leaflet_id) {
-    for (const key in window) {
-      try {
-        const obj = window[key];
-        if (obj && obj._container && obj._container === el) { dashMapRef = obj; return obj; }
-      } catch(e){}
-    }
-    // fallback: iterate Leaflet internal maps
     if (window.L && L.Map && L.Map._instances) {
       for (const m of Object.values(L.Map._instances)) {
-        if (m._container && m._container.id === 'dashboard-map') { dashMapRef = m; return m; }
+        if (m._container && m._container.id === 'dashboard-map') {
+          dashMapRef = m; dashMap = m; return m;
+        }
       }
     }
   }
@@ -2856,14 +2682,7 @@ function getDashMap() {
 
 // Also capture the map reference when it's created by hooking L.map
 document.addEventListener('DOMContentLoaded', () => {
-  const origLMap = L.map.bind(L);
-  L.map = function(el, opts) {
-    const m = origLMap(el, opts);
-    const id = typeof el === 'string' ? el : (el && el.id);
-    if (id === 'dashboard-map') dashMapRef = m;
-    return m;
-  };
-  // Also add drag support for dashboard map div
+  // drag support for dashboard map div
   const dmEl = document.getElementById('dashboard-map');
   if (dmEl) {
     dmEl.addEventListener('dragover', e => { e.preventDefault(); const ov = document.getElementById('dash-drop-overlay'); if(ov) ov.style.display='flex'; });
@@ -3138,23 +2957,6 @@ function clearDashLayers() {
   showToast('🗑️ Semua layer GIS dashboard dihapus.', 'info');
 }
 </script>
-
-<!-- ===== FILE VIEWER MODAL ===== -->
-<div class="fv-overlay" id="fv-overlay" onclick="if(event.target===this)closeFV()">
-  <div class="fv-box">
-    <div class="fv-header">
-      <div>
-        <div class="fv-title" id="fv-title">File Lampiran</div>
-        <div class="fv-sub" id="fv-sub"></div>
-      </div>
-      <button class="fv-close" onclick="closeFV()">✕</button>
-    </div>
-    <div class="fv-list" id="fv-list">
-      <div class="fv-empty">Memuat file...</div>
-    </div>
-  </div>
-</div>
-
 </div><!-- /app-wrapper -->
 </body>
 </html>
