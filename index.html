@@ -601,6 +601,9 @@
   <div class="nav-item" onclick="showPage('data')">
     <span class="nav-icon">📋</span> Rekap Data
   </div>
+  <div class="nav-item" onclick="showPage('petapengawasan')">
+    <span class="nav-icon">🗺️</span> Peta Pengawasan
+  </div>
   <div class="nav-section">Laporan</div>
   <div class="nav-item" onclick="showPage('laporan')">
     <span class="nav-icon">📄</span> Laporan & Ekspor
@@ -662,67 +665,13 @@
       <!-- Map + Charts row -->
       <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;margin-bottom:28px">
         <!-- Mini Map -->
+        <!-- Peta Sebaran Sederhana -->
         <div class="chart-card" style="padding:0;overflow:hidden">
-          <div style="padding:14px 18px;font-size:13px;font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="padding:14px 18px;font-size:13px;font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
             <span>🗺️ Peta Sebaran Pengawasan</span>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <!-- Basemap buttons -->
-              <button onclick="setLayerDash('street')" id="dbtn-street" class="map-ctrl-btn active" style="font-size:11px;padding:4px 9px">Street</button>
-              <button onclick="setLayerDash('satellite')" id="dbtn-satellite" class="map-ctrl-btn" style="font-size:11px;padding:4px 9px">Satelit</button>
-              <button onclick="setLayerDash('terrain')" id="dbtn-terrain" class="map-ctrl-btn" style="font-size:11px;padding:4px 9px">Terrain</button>
-              <!-- Divider -->
-              <div style="width:1px;height:22px;background:var(--border);margin:0 2px"></div>
-              <!-- Upload GIS Button -->
-              <button onclick="document.getElementById('dash-gis-input').click()" class="map-ctrl-btn" title="Upload file GIS: SHP (ZIP), KMZ, KML, GeoJSON, GPX"
-                style="font-size:11px;padding:4px 10px;background:#1a5c2e;color:#fff;border-color:#1a5c2e;display:flex;align-items:center;gap:5px;font-weight:700">
-                <span>📂</span><span>Upload GIS</span>
-              </button>
-              <input type="file" id="dash-gis-input" accept=".zip,.shp,.kml,.kmz,.geojson,.json,.gpx" multiple style="display:none" onchange="handleDashGISUpload(event)">
-              <!-- Layer Count Badge (shows when layers loaded) -->
-              <span id="dash-layer-badge" style="display:none;background:#f59e0b;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:2px 8px;cursor:pointer" onclick="toggleDashLayerPanel()" title="Klik untuk atur layer">0 Layer</span>
-            </div>
+            <button onclick="showPage('petapengawasan')" style="font-size:11px;padding:5px 14px;background:#1a5c2e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600">Buka Peta Lengkap →</button>
           </div>
-
-          <!-- Upload format hint bar -->
-          <div id="dash-gis-hint" style="display:none;background:#f0fdf4;border-bottom:1px solid #bbf7d0;padding:6px 14px;font-size:11px;color:#166534;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span>✅ Format didukung:</span>
-            <span style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:1px 7px;font-weight:700">📦 SHP (ZIP)</span>
-            <span style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:5px;padding:1px 7px;font-weight:700;color:#1e40af">🗺️ KMZ</span>
-            <span style="background:#fef9c3;border:1px solid #fde68a;border-radius:5px;padding:1px 7px;font-weight:700;color:#854d0e">📌 KML</span>
-            <span style="background:#f3e8ff;border:1px solid #ddd6fe;border-radius:5px;padding:1px 7px;font-weight:700;color:#7c3aed">{ } GeoJSON</span>
-            <span style="background:#ffe4e6;border:1px solid #fecdd3;border-radius:5px;padding:1px 7px;font-weight:700;color:#9f1239">🧭 GPX</span>
-            <button onclick="document.getElementById('dash-gis-hint').style.display='none'" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px">✕</button>
-          </div>
-
-          <!-- Processing bar -->
-          <div id="dash-gis-progress" style="display:none;background:#fff7ed;border-bottom:1px solid #fed7aa;padding:8px 14px;font-size:12px;color:#c2410c;display:flex;align-items:center;gap:8px">
-            <div class="spinner" style="border-color:#fed7aa;border-top-color:#f59e0b;width:14px;height:14px"></div>
-            <span id="dash-gis-progress-msg">Memproses file GIS...</span>
-          </div>
-
-          <!-- Inline Layer Manager Panel (collapsible) -->
-          <div id="dash-layer-panel" style="display:none;background:#fafafa;border-bottom:1.5px solid #d1e7d9;max-height:220px;overflow-y:auto">
-            <div style="padding:8px 14px 4px;display:flex;align-items:center;justify-content:space-between">
-              <span style="font-size:12px;font-weight:700;color:var(--hijau)">🗂️ Layer GIS di Dashboard</span>
-              <div style="display:flex;gap:6px">
-                <button onclick="clearDashLayers()" style="background:#fee2e2;border:1px solid #fecaca;border-radius:5px;padding:2px 8px;font-size:11px;color:#dc2626;cursor:pointer;font-family:inherit;font-weight:600">🗑️ Hapus Semua</button>
-                <button onclick="toggleDashLayerPanel()" style="background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;color:var(--text-muted);cursor:pointer;font-family:inherit">✕ Tutup</button>
-              </div>
-            </div>
-            <div id="dash-layer-list" style="padding:4px 10px 10px"></div>
-          </div>
-
-          <!-- Drag-over zone overlay on map -->
-          <div id="dashboard-map" style="height:340px;width:100%;position:relative"
-            ondragover="event.preventDefault();document.getElementById('dash-drop-overlay').style.display='flex'"
-            ondragleave="document.getElementById('dash-drop-overlay').style.display='none'"
-            ondrop="document.getElementById('dash-drop-overlay').style.display='none';handleDashGISDrop(event)">
-            <div id="dash-drop-overlay" style="display:none;position:absolute;inset:0;z-index:500;background:rgba(26,92,46,0.85);border:3px dashed #4ade80;border-radius:0;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-weight:700;font-size:16px;gap:10px;pointer-events:none">
-              <div style="font-size:48px">📂</div>
-              <div>Lepaskan file GIS di sini</div>
-              <div style="font-size:12px;opacity:0.8">SHP (ZIP) · KMZ · KML · GeoJSON · GPX</div>
-            </div>
-          </div>
+          <div id="dashboard-map" style="height:340px;width:100%"></div>
         </div>
         <!-- Charts stacked -->
         <div style="display:flex;flex-direction:column;gap:16px">
@@ -863,14 +812,7 @@
           <button onclick="setLayer('terrain')" id="btn-terrain" class="map-ctrl-btn">🏔️ Terrain</button>
           <button onclick="setLayer('topo')" id="btn-topo" class="map-ctrl-btn">📐 Topo</button>
         </div>
-        <!-- Legend overlay -->
-        <div id="map-legend-overlay" style="position:absolute;bottom:32px;left:12px;z-index:1000;background:rgba(255,255,255,0.95);border-radius:10px;padding:12px 16px;box-shadow:0 2px 12px rgba(0,0,0,0.15);font-size:12px;max-width:200px">
-          <div style="font-weight:700;margin-bottom:8px;color:#1a5c2e">🗂️ Keterangan</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="width:14px;height:14px;border-radius:50%;background:#1a5c2e;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div> Tidak ada temuan</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="width:14px;height:14px;border-radius:50%;background:#f59e0b;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div> Temuan ringan/sedang</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="width:14px;height:14px;border-radius:50%;background:#ef4444;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div> Pelanggaran berat/kritis</div>
-          <div style="display:flex;align-items:center;gap:8px"><div style="width:14px;height:14px;border-radius:50%;background:#93c5fd;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div> Belum dipantau</div>
-        </div>
+
         <!-- Layer count badge -->
         <div id="layer-count-badge" style="display:none;position:absolute;top:12px;right:12px;z-index:1000;background:rgba(26,92,46,0.92);color:#fff;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;backdrop-filter:blur(4px)">
           <span id="layer-count-text">0 layer aktif</span>
@@ -882,6 +824,78 @@
           <div class="chart-title">Persebaran Wilayah Pengawasan</div>
           <div class="chart-canvas-wrap"><canvas id="chartWilayah"></canvas></div>
         </div>
+      </div>
+    </div>
+
+
+    <!-- ===== PETA PENGAWASAN ===== -->
+    <div class="page" id="page-petapengawasan">
+      <!-- Toolbar -->
+      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;flex-wrap:wrap;gap:10px">
+        <!-- Basemap -->
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button onclick="setPetaLayer('street')"    id="pl-street"    class="map-ctrl-btn active" style="font-size:11px;padding:5px 10px">🗺️ Street</button>
+          <button onclick="setPetaLayer('satellite')" id="pl-satellite" class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">🛰️ Satelit</button>
+          <button onclick="setPetaLayer('terrain')"   id="pl-terrain"   class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">🏔️ Terrain</button>
+          <button onclick="setPetaLayer('topo')"      id="pl-topo"      class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">📐 Topo</button>
+          <button onclick="setPetaLayer('hybrid')"    id="pl-hybrid"    class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">🌍 Hybrid</button>
+          <button onclick="setPetaLayer('osm')"       id="pl-osm"       class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">🔵 OSM</button>
+        </div>
+        <div style="width:1px;height:28px;background:var(--border)"></div>
+        <!-- Upload GIS -->
+        <button onclick="document.getElementById('peta-pw-input').click()"
+          style="font-size:11px;padding:6px 14px;background:#1a5c2e;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;gap:6px">
+          📂 Upload GIS
+        </button>
+        <input type="file" id="peta-pw-input" accept=".zip,.shp,.kml,.kmz,.geojson,.json,.gpx" multiple style="display:none" onchange="handlePetaPWUpload(event)">
+        <!-- Lokasi Real-time -->
+        <button onclick="locateMePeta()" id="btn-locate-peta"
+          style="font-size:11px;padding:6px 14px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;gap:6px">
+          📍 Lokasi Saya
+        </button>
+        <!-- Hapus layer -->
+        <button onclick="clearPetaPWLayers()"
+          style="font-size:11px;padding:6px 14px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:600;margin-left:auto">
+          🗑️ Hapus Semua Layer
+        </button>
+      </div>
+
+      <!-- Format support bar -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:11px;color:#166534;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-weight:700">Format didukung:</span>
+        <span style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:4px;padding:1px 8px;font-weight:700">📦 SHP (ZIP)</span>
+        <span style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:4px;padding:1px 8px;font-weight:700;color:#1e40af">🗺️ KMZ</span>
+        <span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 8px;font-weight:700;color:#854d0e">📌 KML</span>
+        <span style="background:#f3e8ff;border:1px solid #ddd6fe;border-radius:4px;padding:1px 8px;font-weight:700;color:#7c3aed">{ } GeoJSON</span>
+        <span style="background:#ffe4e6;border:1px solid #fecdd3;border-radius:4px;padding:1px 8px;font-weight:700;color:#9f1239">🧭 GPX</span>
+        <span id="peta-pw-layer-badge" style="display:none;background:#f59e0b;color:#fff;border-radius:20px;padding:2px 10px;font-weight:700;margin-left:auto;cursor:pointer" onclick="togglePetaPWLayerPanel()">0 Layer</span>
+      </div>
+
+      <!-- Progress -->
+      <div id="peta-pw-progress" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#c2410c;align-items:center;gap:8px">
+        <div class="spinner" style="border-color:#fed7aa;border-top-color:#f59e0b;width:14px;height:14px;flex-shrink:0"></div>
+        <span id="peta-pw-progress-msg">Memproses file GIS...</span>
+      </div>
+
+      <!-- Layer Manager -->
+      <div id="peta-pw-layer-panel" style="display:none;background:#fff;border:1.5px solid #d1e7d9;border-radius:10px;padding:12px 16px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:13px;font-weight:700;color:var(--hijau)">🗂️ Layer Aktif</span>
+          <button onclick="togglePetaPWLayerPanel()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px">✕</button>
+        </div>
+        <div id="peta-pw-layer-list"></div>
+      </div>
+
+      <!-- Info lokasi -->
+      <div id="peta-pw-loc-info" style="display:none;background:#dbeafe;border:1px solid #bfdbfe;border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:12px;color:#1e40af;display:none;align-items:center;gap:8px">
+        📍 <span id="peta-pw-loc-text">Mendeteksi lokasi...</span>
+        <button onclick="clearLocatePeta()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px">✕</button>
+      </div>
+
+      <!-- Peta -->
+      <div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border)">
+        <div id="peta-pw-map" style="height:620px;width:100%"></div>
+
       </div>
     </div>
 
@@ -1334,7 +1348,8 @@ const titles = {
   input: 'Input Data Hasil Pengawasan',
   data: 'Rekap Data Pengawasan',
   laporan: 'Laporan & Ekspor Data',
-  manajemen: 'Manajemen Akun Pengguna'
+  manajemen: 'Manajemen Akun Pengguna',
+  petapengawasan: 'Peta Pengawasan Kehutanan'
 };
 
 function showPage(id) {
@@ -1350,6 +1365,7 @@ function showPage(id) {
   if (id === 'data') { populateFilters(); renderTable(); }
   if (id === 'laporan') { updateLaporan(); populateExportFilter(); }
   if (id === 'manajemen') { renderAdminPage(); }
+  if (id === 'petapengawasan') { initPetaPW(); setTimeout(()=>{ if(petaPWMap) petaPWMap.invalidateSize(); }, 200); }
 }
 
 // ============ FORM ============
@@ -1596,6 +1612,14 @@ const TILE_LAYERS = {
   topo: {
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     opts: { maxZoom:17, attribution:'© OpenTopoMap' }
+  },
+  hybrid: {
+    url: 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    opts: { subdomains:['mt0','mt1','mt2','mt3'], maxZoom:20, attribution:'© Google Hybrid' }
+  },
+  osm: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    opts: { maxZoom:19, attribution:'© OpenStreetMap contributors' }
   }
 };
 
@@ -2022,6 +2046,291 @@ function showToast(msg, type) {
   t.style.cssText = `position:fixed;bottom:28px;right:28px;z-index:99999;padding:14px 20px;border-radius:10px;font-size:13px;font-weight:600;font-family:inherit;box-shadow:0 4px 20px rgba(0,0,0,0.15);transition:opacity 0.4s;opacity:1;background:${bg};color:${col};border:1px solid ${brd}`;
   clearTimeout(t._timer);
   t._timer = setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),400); }, 3500);
+}
+
+
+// ============ PETA PENGAWASAN ============
+let petaPWMap        = null;
+let petaPWTileLayer  = null;
+let petaPWLayers     = [];
+let petaPWLocMarker  = null;
+let petaPWLocCircle  = null;
+let petaPWLocWatch   = null;
+const PETA_PW_COLORS = ['#1a5c2e','#1d4ed8','#dc2626','#f59e0b','#7c3aed','#0891b2','#059669','#db2777','#d97706'];
+
+function initPetaPW() {
+  if (petaPWMap) return; // sudah diinit
+  petaPWMap = L.map('peta-pw-map', { center: [-2.5, 118], zoom: 5, zoomControl: true });
+  petaPWTileLayer = L.tileLayer(TILE_LAYERS['street'].url, TILE_LAYERS['street'].opts).addTo(petaPWMap);
+
+  // Tambahkan marker sebaran data pengawasan
+  renderPetaPWDataMarkers();
+
+  // Drag-drop support
+  const el = document.getElementById('peta-pw-map');
+  if (el) {
+    el.addEventListener('dragover', e => e.preventDefault());
+    el.addEventListener('drop', async e => { e.preventDefault(); await handlePetaPWDrop(e); });
+  }
+}
+
+function renderPetaPWDataMarkers() {
+  if (!petaPWMap) return;
+  // Hapus marker data lama (bukan layer GIS)
+  if (petaPWMap._dataMakers) {
+    petaPWMap._dataMakers.forEach(m => petaPWMap.removeLayer(m));
+  }
+  petaPWMap._dataMakers = [];
+  PROVINCES.forEach(p => {
+    const count = DATA.filter(d => d.provinsi === p.name).length;
+    if (count === 0) return;
+    const color = getMarkerColor(p.name);
+    const size = Math.max(26, Math.min(46, 26 + count * 3));
+    const icon = makeSvgIcon(color, size);
+    const marker = L.marker([p.lat, p.lng], { icon, title: p.name });
+    const popup = `<div class="map-popup-title">🌲 ${p.name}</div>
+      <div class="map-popup-row"><span class="map-popup-label">Total</span><span class="map-popup-val">${count}</span></div>
+      <button class="map-popup-btn" onclick="filterByProvince('${p.name}')">📋 Lihat Data</button>`;
+    marker.bindPopup(popup, { maxWidth:200 });
+    marker.addTo(petaPWMap);
+    petaPWMap._dataMakers.push(marker);
+  });
+}
+
+function setPetaLayer(type) {
+  if (!petaPWMap) return;
+  if (petaPWTileLayer) petaPWMap.removeLayer(petaPWTileLayer);
+  const l = TILE_LAYERS[type];
+  petaPWTileLayer = L.tileLayer(l.url, l.opts).addTo(petaPWMap);
+  ['street','satellite','terrain','topo','hybrid','osm'].forEach(t => {
+    const btn = document.getElementById('pl-'+t);
+    if (btn) btn.classList.toggle('active', t===type);
+  });
+}
+
+// ── GPS Real-time ──────────────────────────────────────────────────────────────
+function locateMePeta() {
+  if (!navigator.geolocation) {
+    showToast('⚠️ Browser tidak mendukung geolokasi.', 'warn'); return;
+  }
+  const btn = document.getElementById('btn-locate-peta');
+  if (btn) { btn.textContent = '⏳ Mendeteksi...'; btn.disabled = true; }
+
+  if (petaPWLocWatch) { navigator.geolocation.clearWatch(petaPWLocWatch); }
+
+  petaPWLocWatch = navigator.geolocation.watchPosition(
+    pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const acc = Math.round(pos.coords.accuracy);
+
+      if (!petaPWMap) initPetaPW();
+
+      // Hapus marker lama
+      if (petaPWLocMarker) petaPWMap.removeLayer(petaPWLocMarker);
+      if (petaPWLocCircle) petaPWMap.removeLayer(petaPWLocCircle);
+
+      // Ikon lokasi
+      const locIcon = L.divIcon({
+        html: `<div style="width:18px;height:18px;border-radius:50%;background:#1d4ed8;border:3px solid #fff;box-shadow:0 0 0 3px rgba(29,78,216,0.4)"></div>`,
+        className:'', iconSize:[18,18], iconAnchor:[9,9]
+      });
+      petaPWLocMarker = L.marker([lat,lng], { icon:locIcon, zIndexOffset:1000 })
+        .bindPopup(`<b style="color:#1d4ed8">📍 Lokasi Anda</b><br>
+          <span style="font-size:11px">Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}<br>Akurasi: ±${acc} m</span>`)
+        .addTo(petaPWMap);
+      petaPWLocCircle = L.circle([lat,lng], {
+        radius: pos.coords.accuracy, color:'#1d4ed8',
+        fillColor:'#3b82f6', fillOpacity:0.1, weight:1
+      }).addTo(petaPWMap);
+
+      petaPWMap.setView([lat,lng], 13);
+
+      // Info bar
+      const info = document.getElementById('peta-pw-loc-info');
+      const txt  = document.getElementById('peta-pw-loc-text');
+      if (info) info.style.display = 'flex';
+      if (txt)  txt.textContent = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)} · Akurasi ±${acc} m`;
+
+      if (btn) { btn.textContent = '📍 Update Lokasi'; btn.disabled = false; }
+      showToast('📍 Lokasi berhasil ditemukan!', 'success');
+    },
+    err => {
+      if (btn) { btn.textContent = '📍 Lokasi Saya'; btn.disabled = false; }
+      const msg = err.code===1 ? 'Izin lokasi ditolak. Aktifkan di pengaturan browser.' :
+                  err.code===2 ? 'Lokasi tidak tersedia.' : 'Timeout. Coba lagi.';
+      showToast('⚠️ ' + msg, 'warn');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+  );
+}
+
+function clearLocatePeta() {
+  if (petaPWLocWatch) { navigator.geolocation.clearWatch(petaPWLocWatch); petaPWLocWatch = null; }
+  if (petaPWMap) {
+    if (petaPWLocMarker) { petaPWMap.removeLayer(petaPWLocMarker); petaPWLocMarker = null; }
+    if (petaPWLocCircle) { petaPWMap.removeLayer(petaPWLocCircle); petaPWLocCircle = null; }
+  }
+  const info = document.getElementById('peta-pw-loc-info');
+  if (info) info.style.display = 'none';
+  const btn = document.getElementById('btn-locate-peta');
+  if (btn) { btn.textContent = '📍 Lokasi Saya'; btn.disabled = false; }
+}
+
+// ── Upload GIS ke Peta Pengawasan ─────────────────────────────────────────────
+async function handlePetaPWUpload(event) {
+  const files = Array.from(event.target.files);
+  event.target.value = '';
+  for (const f of files) await processPetaPWFile(f);
+}
+
+async function handlePetaPWDrop(event) {
+  const files = Array.from(event.dataTransfer.files);
+  for (const f of files) await processPetaPWFile(f);
+}
+
+async function processPetaPWFile(file) {
+  if (!petaPWMap) initPetaPW();
+
+  const prog = document.getElementById('peta-pw-progress');
+  const msg  = document.getElementById('peta-pw-progress-msg');
+  if (prog) { prog.style.display = 'flex'; prog.style.alignItems = 'center'; }
+  if (msg)  msg.textContent = `Memproses: ${file.name}…`;
+
+  try {
+    const ext = file.name.split('.').pop().toLowerCase();
+    let geojson = null;
+
+    if (ext === 'zip') {
+      if (msg) msg.textContent = 'Membaca Shapefile ZIP…';
+      geojson = await shp(await file.arrayBuffer());
+    } else if (ext === 'kmz') {
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      let kmlStr = null;
+      for (const fn of Object.keys(zip.files)) {
+        if (fn.toLowerCase().endsWith('.kml')) { kmlStr = await zip.files[fn].async('string'); break; }
+      }
+      if (!kmlStr) throw new Error('KML tidak ditemukan di KMZ.');
+      geojson = toGeoJSON.kml(new DOMParser().parseFromString(kmlStr, 'text/xml'));
+    } else if (ext === 'kml') {
+      geojson = toGeoJSON.kml(new DOMParser().parseFromString(await file.text(), 'text/xml'));
+    } else if (ext === 'gpx') {
+      geojson = toGeoJSON.gpx(new DOMParser().parseFromString(await file.text(), 'text/xml'));
+    } else if (ext === 'geojson' || ext === 'json') {
+      geojson = JSON.parse(await file.text());
+    } else {
+      throw new Error(`Format .${ext} tidak didukung.`);
+    }
+
+    if (!geojson) throw new Error('Gagal membaca file.');
+    if (Array.isArray(geojson)) geojson = { type:'FeatureCollection', features: geojson.flatMap(g=>g.features||[]) };
+    if (geojson.type !== 'FeatureCollection') geojson = { type:'FeatureCollection', features:[{type:'Feature',geometry:geojson,properties:{}}] };
+
+    const color   = PETA_PW_COLORS[petaPWLayers.length % PETA_PW_COLORS.length];
+    const opacity = 0.55;
+    const id      = 'pwlayer_' + Date.now();
+    const name    = file.name;
+
+    const glayer = L.geoJSON(geojson, {
+      style: feat => {
+        const t = feat?.geometry?.type || '';
+        if (t.includes('Line')) return { color, weight:2, opacity };
+        return { color, fillColor:color, fillOpacity:opacity, weight:1.5, opacity:Math.min(1,opacity+0.3) };
+      },
+      pointToLayer: (feat,latlng) => L.circleMarker(latlng,{radius:6,fillColor:color,color:'#fff',weight:1.5,fillOpacity:opacity}),
+      onEachFeature: (feat,layer) => {
+        if (feat.properties && Object.keys(feat.properties).length) {
+          const rows = Object.entries(feat.properties).slice(0,8)
+            .map(([k,v])=>`<tr><td style="color:#6b7280;padding:2px 6px;font-size:11px">${k}</td><td style="font-weight:600;padding:2px 6px;font-size:11px">${v||''}</td></tr>`).join('');
+          layer.bindPopup(`<b style="color:#1a5c2e;font-size:13px">${name}</b><table style="margin-top:6px">${rows}</table>`);
+        }
+      }
+    }).addTo(petaPWMap);
+
+    const fCount = geojson.features?.length || 0;
+    const geomTypes = [...new Set((geojson.features||[]).map(f=>f.geometry?.type).filter(Boolean))];
+    petaPWLayers.push({ id, name, color, opacity, visible:true, geojsonLayer:glayer, fCount, geomTypes });
+
+    try { const b = glayer.getBounds(); if (b.isValid()) petaPWMap.fitBounds(b,{padding:[20,20],maxZoom:13}); } catch(e){}
+
+    renderPetaPWLayerList();
+    updatePetaPWLayerBadge();
+    showToast(`✅ ${name} — ${fCount.toLocaleString('id-ID')} fitur dimuat`, 'success');
+  } catch(err) {
+    showToast(`❌ Gagal: ${err.message}`, 'error');
+  } finally {
+    if (prog) prog.style.display = 'none';
+  }
+}
+
+function updatePetaPWLayerBadge() {
+  const b = document.getElementById('peta-pw-layer-badge');
+  if (!b) return;
+  if (!petaPWLayers.length) { b.style.display='none'; return; }
+  b.style.display='inline-block'; b.textContent = petaPWLayers.length + ' Layer';
+}
+
+function togglePetaPWLayerPanel() {
+  const p = document.getElementById('peta-pw-layer-panel');
+  if (p) p.style.display = p.style.display==='none' ? 'block' : 'none';
+}
+
+function renderPetaPWLayerList() {
+  const list = document.getElementById('peta-pw-layer-list');
+  if (!list) return;
+  if (!petaPWLayers.length) { list.innerHTML='<p style="font-size:12px;color:var(--text-muted)">Belum ada layer.</p>'; return; }
+  document.getElementById('peta-pw-layer-panel').style.display = 'block';
+  list.innerHTML = petaPWLayers.map(l => {
+    const pct = Math.round(l.opacity*100);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:#fafafa">
+      <input type="color" value="${l.color}" style="width:24px;height:24px;border-radius:4px;border:none;cursor:pointer;padding:0"
+        oninput="changePetaPWColor('${l.id}',this.value)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.name}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${l.fCount} fitur · ${l.geomTypes.join(', ')}</div>
+        <input type="range" min="0" max="100" value="${pct}" style="width:100%;margin-top:4px"
+          oninput="changePetaPWOpacity('${l.id}',this.value/100)">
+      </div>
+      <button onclick="togglePetaPWLayerVis('${l.id}')" id="pvbtn-${l.id}" style="background:none;border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:12px;cursor:pointer">${l.visible?'👁️':'🙈'}</button>
+      <button onclick="zoomPetaPWLayer('${l.id}')" style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:5px;padding:2px 7px;font-size:12px;cursor:pointer;color:#1d4ed8">🔍</button>
+      <button onclick="deletePetaPWLayer('${l.id}')" style="background:#fee2e2;border:1px solid #fecaca;border-radius:5px;padding:2px 7px;font-size:12px;cursor:pointer;color:#dc2626">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function changePetaPWColor(id,color){
+  const l=petaPWLayers.find(x=>x.id===id); if(!l)return;
+  l.color=color; l.geojsonLayer.setStyle({color,fillColor:color});
+}
+function changePetaPWOpacity(id,opacity){
+  const l=petaPWLayers.find(x=>x.id===id); if(!l)return;
+  l.opacity=opacity;
+  l.geojsonLayer.eachLayer(ly=>{ if(ly.setStyle) ly.setStyle({fillOpacity:opacity,opacity:Math.min(1,opacity+0.3)}); });
+}
+function togglePetaPWLayerVis(id){
+  const l=petaPWLayers.find(x=>x.id===id); if(!l||!petaPWMap)return;
+  l.visible=!l.visible;
+  if(l.visible) l.geojsonLayer.addTo(petaPWMap); else petaPWMap.removeLayer(l.geojsonLayer);
+  const b=document.getElementById('pvbtn-'+id); if(b) b.textContent=l.visible?'👁️':'🙈';
+}
+function zoomPetaPWLayer(id){
+  const l=petaPWLayers.find(x=>x.id===id); if(!l||!petaPWMap||!l.visible)return;
+  try{ const b=l.geojsonLayer.getBounds(); if(b.isValid()) petaPWMap.fitBounds(b,{padding:[20,20],maxZoom:13}); }catch(e){}
+}
+function deletePetaPWLayer(id){
+  const idx=petaPWLayers.findIndex(x=>x.id===id); if(idx===-1)return;
+  if(petaPWMap) petaPWMap.removeLayer(petaPWLayers[idx].geojsonLayer);
+  petaPWLayers.splice(idx,1);
+  renderPetaPWLayerList(); updatePetaPWLayerBadge();
+  showToast('🗑️ Layer dihapus.','info');
+}
+function clearPetaPWLayers(){
+  if(!petaPWLayers.length)return;
+  if(!confirm('Hapus semua '+petaPWLayers.length+' layer?'))return;
+  petaPWLayers.forEach(l=>{ if(petaPWMap) petaPWMap.removeLayer(l.geojsonLayer); });
+  petaPWLayers=[];
+  renderPetaPWLayerList(); updatePetaPWLayerBadge();
+  showToast('🗑️ Semua layer dihapus.','info');
 }
 
 // ============ LOGIN ============
