@@ -35,6 +35,10 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
 
+  /* ===== INPUT ACTION BAR ===== */
+  #page-input #input-action-bar { display: flex !important; }
+  .page:not(.active) #input-action-bar { display: none !important; }
+
   /* ===== PANDUAN PENGAWASAN ===== */
   .panduan-tab {
     padding: 9px 18px; border-radius: 8px; border: 1.5px solid var(--border);
@@ -670,8 +674,9 @@
   <div class="nav-item" onclick="showPage('petapengawasan')">
     <span class="nav-icon">🗺️</span> Peta Pengawasan
   </div>
-  <div class="nav-item" onclick="showPage('input')">
+  <div class="nav-item" onclick="showPage('input')" style="position:relative">
     <span class="nav-icon">✏️</span> Input Data
+    <span id="nav-input-notif" style="background:#dc2626;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:4px;display:none">0</span>
   </div>
   <div class="nav-item" onclick="showPage('sanksi')">
     <span class="nav-icon">⚖️</span> Sanksi Administratif
@@ -701,8 +706,8 @@
   <div class="topbar">
     <div class="topbar-title" id="page-title">Dashboard Pengawasan Kehutanan</div>
     <div class="topbar-right">
-      <span class="badge-date" id="current-date"></span>
-      <span class="badge-user">👤 Admin PPSA</span>
+      <span class="badge-date" id="current-date">Memuat...</span>
+      <span class="badge-user" id="topbar-user-badge">👤 —</span>
       <button class="btn btn-outline" style="font-size:12px;padding:6px 14px;color:#dc2626;border-color:#dc2626" onclick="doLogout()">🚪 Keluar</button>
     </div>
   </div>
@@ -1031,17 +1036,49 @@
 
     <!-- ===== INPUT DATA ===== -->
     <div class="page" id="page-input">
-      <!-- Tab Navigation -->
-      <div style="display:flex;gap:0;margin-bottom:0;background:#fff;border-radius:16px 16px 0 0;border:1px solid var(--border);border-bottom:none;overflow:hidden">
-        <button id="input-tab-pengawasan" onclick="switchInputTab('pengawasan')" style="flex:1;padding:16px 20px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:var(--hijau);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;border-right:1px solid rgba(255,255,255,0.2)">
-          <span style="font-size:18px">📋</span> Form Hasil Pengawasan Kehutanan
-        </button>
-        <button id="input-tab-sarpras" onclick="switchInputTab('sarpras')" style="flex:1;padding:16px 20px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:#f0fdf4;color:var(--hijau);display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;border-right:1px solid var(--border)">
-          <span style="font-size:18px">🔥</span> Input Sarpras Kebakaran
-        </button>
-        <button id="input-tab-kebakaran" onclick="switchInputTab('kebakaran')" style="flex:1;padding:16px 20px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:#fff5f5;color:#dc2626;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s">
-          <span style="font-size:18px">🗺️</span> Area Kebakaran
-        </button>
+      <!-- Tab Navigation + Per-Tab Action Buttons -->
+      <div style="display:flex;gap:0;margin-bottom:0;background:#fff;border-radius:16px 16px 0 0;border:1px solid var(--border);border-bottom:none;overflow:hidden;flex-wrap:wrap">
+        <!-- Tab Buttons -->
+        <div style="display:flex;flex:1;min-width:0">
+          <button id="input-tab-pengawasan" onclick="switchInputTab('pengawasan')" style="flex:1;padding:14px 16px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:var(--hijau);color:#fff;display:flex;align-items:center;justify-content:center;gap:7px;transition:all 0.2s;border-right:1px solid rgba(255,255,255,0.2)">
+            <span style="font-size:17px">📋</span> Form Hasil Pengawasan Kehutanan
+          </button>
+          <button id="input-tab-sarpras" onclick="switchInputTab('sarpras')" style="flex:1;padding:14px 16px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:#f0fdf4;color:var(--hijau);display:flex;align-items:center;justify-content:center;gap:7px;transition:all 0.2s;border-right:1px solid var(--border)">
+            <span style="font-size:17px">🔥</span> Input Sarpras Kebakaran
+          </button>
+          <button id="input-tab-kebakaran" onclick="switchInputTab('kebakaran')" style="flex:1;padding:14px 16px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:#fff5f5;color:#dc2626;display:flex;align-items:center;justify-content:center;gap:7px;transition:all 0.2s;border-right:1px solid var(--border)">
+            <span style="font-size:17px">🗺️</span> Area Kebakaran
+          </button>
+        </div>
+        <!-- Action buttons pindah ke sticky footer bawah -->
+      </div>
+
+      <!-- Draft & Submission Status Banner -->
+      <div id="draft-status-banner" style="display:none;padding:10px 18px;background:#eff6ff;border:1px solid #bfdbfe;border-bottom:none;font-size:12px;color:#1e40af;align-items:center;gap:10px">
+        <span style="font-size:16px">💾</span>
+        <span id="draft-status-text">Draft tersimpan di perangkat ini</span>
+        <button onclick="loadDraftAll()" style="padding:4px 10px;background:#1d4ed8;color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:4px">Muat Draft</button>
+        <button onclick="clearAllDrafts()" style="padding:4px 10px;background:#fff;color:#6b7280;border:1.5px solid #d1d5db;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hapus Draft</button>
+      </div>
+
+      <!-- Admin Submission Inbox Banner -->
+      <div id="admin-submission-inbox" style="display:none;padding:12px 18px;background:#eff6ff;border:1px solid #bfdbfe;border-bottom:none;font-size:12px;color:#1e40af;align-items:center;gap:10px">
+        <span style="font-size:18px">📬</span>
+        <div style="flex:1">
+          <strong>Ada pengajuan input data menunggu persetujuan</strong>
+          <span id="admin-inbox-detail" style="color:#1e40af;font-size:11px;margin-left:6px"></span>
+        </div>
+        <button onclick="openAdminPengajuanModal()" style="padding:6px 14px;background:#1d4ed8;border:none;border-radius:7px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit">🛡️ Kelola Pengajuan</button>
+      </div>
+
+      <!-- Submission Locked Banner -->
+      <div id="submission-locked-banner" style="display:none;padding:12px 18px;background:#fef3c7;border:1px solid #fde68a;border-bottom:none;font-size:12px;color:#92400e;align-items:center;gap:10px">
+        <span style="font-size:18px">🔒</span>
+        <div>
+          <strong>Data telah diajukan</strong> — formulir dikunci menunggu persetujuan admin.
+          <span id="submission-info-text" style="color:#b45309;font-size:11px"></span>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px" id="admin-unlock-actions"></div>
       </div>
 
       <!-- TAB 1: FORM PENGAWASAN -->
@@ -1128,21 +1165,11 @@
               <option>Legalitas Kegiatan Lain</option>
             </select>
           </div>
-          <div class="form-group">
+          <div class="form-group full">
             <label class="form-label">Luasan Subjek Hukum (Ha)</label>
-            <input type="number" id="f-luas" class="form-control" placeholder="0" min="0" step="0.01">
+            <input type="number" id="f-luas" class="form-control" placeholder="0" min="0" step="0.01" style="max-width:300px">
           </div>
-          <div class="form-group">
-            <label class="form-label">Status Tindak Lanjut <span class="required">*</span></label>
-            <select id="f-tindak" class="form-control">
-              <option value="">-- Pilih --</option>
-              <option>Belum Ditindaklanjuti</option>
-              <option>Dalam Proses</option>
-              <option>Sudah Ditindaklanjuti</option>
-              <option>Dilimpahkan ke Penyidik</option>
-              <option>Selesai / Ditutup</option>
-            </select>
-          </div>
+          <select id="f-tindak" style="display:none"></select>
 
           <!-- Petugas multi-entry section -->
           <div class="form-group full">
@@ -1213,10 +1240,6 @@
           </div>
         </div>
 
-        <div class="form-actions">
-          <button class="btn btn-outline" onclick="resetForm()">🔄 Reset</button>
-          <button class="btn btn-primary" onclick="submitData()">💾 Simpan Data</button>
-        </div>
       </div>
       </div><!-- /input-panel-pengawasan -->
 
@@ -1298,6 +1321,27 @@
         </div>
       </div>
       </div><!-- /input-panel-kebakaran -->
+    <!-- ===== STICKY ACTION BAR (bawah kanan) ===== -->
+    <div id="input-action-bar" style="position:sticky;bottom:0;left:0;right:0;z-index:200;background:#fff;border-top:1.5px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:flex-end;gap:10px;box-shadow:0 -4px 20px rgba(0,0,0,0.08);margin-top:8px;border-radius:0 0 16px 16px">
+      <!-- Tab-specific buttons (Reset & Simpan) -->
+      <div id="tab-actions-pengawasan" style="display:flex;gap:8px;align-items:center">
+        <button onclick="resetTabDraft('pengawasan')" style="padding:9px 18px;background:#fff;border:1.5px solid #d1e7d9;border-radius:9px;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all 0.2s" onmouseover="this.style.borderColor='#dc2626';this.style.color='#dc2626'" onmouseout="this.style.borderColor='#d1e7d9';this.style.color='var(--text-muted)'">🔄 Reset</button>
+        <button onclick="saveDraft('pengawasan')" style="padding:9px 18px;background:#1d4ed8;border:none;border-radius:9px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all 0.2s" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1d4ed8'">💾 Simpan</button>
+      </div>
+      <div id="tab-actions-sarpras" style="display:none;gap:8px;align-items:center">
+        <button onclick="resetTabDraft('sarpras')" style="padding:9px 18px;background:#fff;border:1.5px solid #d1e7d9;border-radius:9px;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all 0.2s" onmouseover="this.style.borderColor='#dc2626';this.style.color='#dc2626'" onmouseout="this.style.borderColor='#d1e7d9';this.style.color='var(--text-muted)'">🔄 Reset</button>
+        <button onclick="saveDraft('sarpras')" style="padding:9px 18px;background:#1d4ed8;border:none;border-radius:9px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all 0.2s" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1d4ed8'">💾 Simpan</button>
+      </div>
+      <div id="tab-actions-kebakaran" style="display:none;gap:8px;align-items:center">
+        <button onclick="resetTabDraft('kebakaran')" style="padding:9px 18px;background:#fff;border:1.5px solid #d1e7d9;border-radius:9px;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all 0.2s" onmouseover="this.style.borderColor='#dc2626';this.style.color='#dc2626'" onmouseout="this.style.borderColor='#d1e7d9';this.style.color='var(--text-muted)'">🔄 Reset</button>
+        <button onclick="saveDraft('kebakaran')" style="padding:9px 18px;background:#1d4ed8;border:none;border-radius:9px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all 0.2s" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1d4ed8'">💾 Simpan</button>
+      </div>
+      <!-- Divider -->
+      <div style="width:1px;height:32px;background:var(--border)"></div>
+      <!-- Ajukan button -->
+      <button id="btn-ajukan" onclick="showAjukanModal()" style="padding:10px 22px;background:linear-gradient(135deg,var(--hijau),var(--hijau-mid));border:none;border-radius:9px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px;transition:all 0.2s;box-shadow:0 4px 12px rgba(26,92,46,0.25)" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📤 Ajukan</button>
+    </div>
+
     </div><!-- /page-input -->
 
     <!-- Legacy stubs to avoid JS errors -->
@@ -1318,7 +1362,10 @@
 
       <!-- Section 1: Rekap Input Data -->
       <div style="margin-bottom:8px">
-        <div style="font-size:16px;font-weight:700;color:var(--hijau);margin-bottom:12px;display:flex;align-items:center;gap:8px">📋 Rekap Data Hasil Input Pengawasan</div>
+        <div style="font-size:16px;font-weight:700;color:var(--hijau);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+          📋 Rekap Data Hasil Input Pengawasan & Kejadian Kebakaran
+          <span style="font-size:11px;font-weight:400;color:var(--text-muted);background:#fef2f2;border:1px solid #fecaca;padding:2px 10px;border-radius:12px">🔥 Data kebakaran terintegrasi</span>
+        </div>
       </div>
       <div class="table-card" style="margin-bottom:32px">
         <div class="table-toolbar">
@@ -1400,46 +1447,6 @@
         </div>
       </div>
 
-      <!-- Section 3: Rekap Kebakaran -->
-      <div style="margin-bottom:8px;margin-top:28px">
-        <div style="font-size:16px;font-weight:700;color:#dc2626;margin-bottom:12px;display:flex;align-items:center;gap:8px">🔥 Rekap Data Kejadian Kebakaran</div>
-      </div>
-      <div class="table-card">
-        <div class="table-toolbar" style="padding:14px 18px">
-          <div class="search-box">
-            <span>🔍</span>
-            <input type="text" id="rekap-kebakaran-search" placeholder="Cari lokasi, subjek hukum..." oninput="renderRekapKebakaran()">
-          </div>
-          <select class="form-control" style="width:220px" id="rekap-kebakaran-filter-unit" onchange="renderRekapKebakaran()">
-            <option value="">Semua Unit Kerja</option>
-            <option>Dit. PPSAKK</option>
-            <option>Gakkum Kehutanan Wilayah Sumatera</option>
-            <option>Gakkum Kehutanan Wilayah Jabalnusra</option>
-            <option>Gakkum Kehutanan Wilayah Kalimantan</option>
-            <option>Gakkum Kehutanan Wilayah Sulawesi</option>
-            <option>Gakkum Kehutanan Wilayah Mapua</option>
-          </select>
-        </div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead><tr>
-              <th>#</th>
-              <th>Tanggal Kejadian</th>
-              <th>Unit Kerja PJ</th>
-              <th>Nama Subjek Hukum</th>
-              <th>Provinsi</th>
-              <th>Luasan Terbakar (Ha)</th>
-              <th>Koordinat</th>
-              <th>Status Tindak Lanjut</th>
-              <th>Keterangan</th>
-            </tr></thead>
-            <tbody id="rekap-kebakaran-tbody"></tbody>
-          </table>
-        </div>
-        <div style="padding:10px 18px;border-top:1px solid var(--border)">
-          <span class="page-info" id="rekap-kebakaran-info">Menampilkan 0 kejadian kebakaran</span>
-        </div>
-      </div>
     </div><!-- /page-data -->
 
     <!-- ===== LAPORAN ===== -->
@@ -1507,12 +1514,7 @@
         <button class="panduan-tab" onclick="switchPanduanTab('sanksi_adm',this)">⚖️ Sanksi Administratif</button>
         <button class="panduan-tab" onclick="switchPanduanTab('sarpras',this)">🔥 Sarpras Kebakaran</button>
         <button class="panduan-tab" onclick="switchPanduanTab('dokumen',this)">📁 Dokumen Upload</button>
-        <div style="margin-left:auto" id="panduan-upload-area" style="display:none">
-          <label style="background:var(--hijau);color:#fff;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">
-            ⬆️ Upload Dokumen
-            <input type="file" id="panduan-file-input" multiple accept=".pdf,.doc,.docx,.xlsx,.pptx,.png,.jpg" style="display:none" onchange="handlePanduanUpload(event)">
-          </label>
-        </div>
+
       </div>
 
       <!-- TAB: Klasifikasi PB & PP -->
@@ -1996,8 +1998,21 @@ let layerColorIdx = 0;
 function today() {
   return new Date().toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
 }
-document.getElementById('current-date').textContent = today();
-document.getElementById('f-tanggal').value = new Date().toISOString().split('T')[0];
+// Inisialisasi tanggal — pastikan elemen sudah tersedia
+function updateTopbarDate() {
+  const el = document.getElementById('current-date');
+  if (el) el.textContent = today();
+}
+// Jalankan segera dan juga saat DOM siap (untuk keamanan)
+updateTopbarDate();
+document.addEventListener('DOMContentLoaded', function() {
+  updateTopbarDate();
+  const tanggalEl = document.getElementById('f-tanggal');
+  if (tanggalEl && !tanggalEl.value) tanggalEl.value = new Date().toISOString().split('T')[0];
+});
+// Fallback: update setiap menit agar tanggal selalu fresh
+setInterval(updateTopbarDate, 60000);
+try { document.getElementById('f-tanggal').value = new Date().toISOString().split('T')[0]; } catch(e) {}
 
 function saveData() { try { localStorage.setItem('siwashut_data', JSON.stringify(sanitizeForStorage(DATA))); } catch(e){} }
 
@@ -2073,12 +2088,27 @@ function showPage(id) {
   if (id === 'manajemen') { renderAdminPage(); }
   if (id === 'petapengawasan') { initPetaPW(); setTimeout(()=>{ if(petaPWMap) petaPWMap.invalidateSize(); }, 200); }
   if (id === 'input') {
-    // Auto-isi unit kerja berdasarkan role/unit pengguna
+    // Auto-isi dan kunci unit kerja berdasarkan role/unit pengguna
     const unitEl = document.getElementById('f-unitkerja');
     if (unitEl) {
       const myUnit = getCurrentUnitKerja();
-      if (myUnit && !isSuperAdmin()) { unitEl.value = myUnit; }
+      if (myUnit && !isSuperAdmin()) {
+        unitEl.value = myUnit;
+        // Kunci untuk petugas dan admin wilayah — hanya superadmin yang bisa ubah
+        if (isPetugas() || isAdminWilayah()) {
+          unitEl.setAttribute('disabled', 'disabled');
+          unitEl.style.background = '#f0fdf4';
+          unitEl.style.cursor = 'not-allowed';
+          unitEl.title = 'Unit kerja dikunci sesuai akun terdaftar: ' + myUnit;
+        } else {
+          unitEl.removeAttribute('disabled');
+          unitEl.style.background = '';
+          unitEl.style.cursor = '';
+        }
+      }
     }
+    // Tampilkan admin inbox banner jika admin/superadmin
+    setTimeout(checkAdminSubmissionInbox, 200);
   }
   if (id === 'sanksi') { renderSanksiPage(); }
   if (id === 'panduan') { initPanduanPage(); }
@@ -2126,6 +2156,19 @@ function resetForm() {
   if (kbEntriesListEl) kbEntriesListEl.innerHTML = '';
   // Switch back to first tab
   switchInputTab('pengawasan');
+  // Re-apply unit kerja lock
+  const unitEl = document.getElementById('f-unitkerja');
+  if (unitEl) {
+    const myUnit = getCurrentUnitKerja();
+    if (myUnit && !isSuperAdmin()) {
+      unitEl.value = myUnit;
+      if (isPetugas() || isAdminWilayah()) {
+        unitEl.setAttribute('disabled', 'disabled');
+        unitEl.style.background = '#f0fdf4';
+        unitEl.style.cursor = 'not-allowed';
+      }
+    }
+  }
 }
 
 function submitData() {
@@ -2206,11 +2249,18 @@ function submitData() {
     rekomendasi: document.getElementById('f-rekomendasi').value,
     kebakaran: kebakaran
   };
-  DATA.push(row); saveData(); resetForm();
+  DATA.push(row); saveData();
+  resetForm();
+  // Bersihkan draft setelah submit
+  ['pengawasan','sarpras','kebakaran'].forEach(tab => {
+    try { localStorage.removeItem(DRAFT_KEY[tab]); } catch(e) {}
+  });
   showFormAlert('Menyimpan data ke server...', 'success');
   saveRowToSupabase(row).then(ok => {
     showFormAlert(ok ? '✅ Data berhasil disimpan ke server! No. Surat Tugas: ' + row.kode : '⚠️ Tersimpan lokal, cek koneksi server.', ok ? 'success' : 'danger');
     updateDashboard();
+    renderTable();
+    updateNavNotif();
   });
 }
 
@@ -2865,6 +2915,125 @@ async function updateNavNotif() {
   if (badge) { badge.textContent = n; badge.style.display = n>0 ? 'inline' : 'none'; }
   const pbadge = document.getElementById('pending-count-badge');
   if (pbadge) pbadge.textContent = n;
+
+  // Notifikasi pengajuan input data (dari petugas ke admin)
+  if (isSuperAdmin() || isAdminWilayah()) {
+    updateInputSubmissionNotif();
+  }
+}
+
+function updateInputSubmissionNotif() {
+  // Hitung total pengajuan yang masuk dari unit kerja yang relevan
+  const myUnit = getCurrentUnitKerja();
+  const allSubmissions = [];
+  const seenKeys = new Set(); // Cegah duplikat
+
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      // Hanya cek key per-user (bukan key global 'siwashut_submission_status')
+      if (key && key.startsWith('siwashut_submission_') && key !== 'siwashut_submission_status') {
+        const sub = JSON.parse(localStorage.getItem(key) || 'null');
+        if (sub && sub.status === 'diajukan') {
+          const dedupeKey = sub.user + '_' + sub.waktu;
+          if (seenKeys.has(dedupeKey)) continue;
+          // Admin wilayah HANYA menerima dari unit kerjanya sendiri — unit harus ada dan cocok
+          if (isAdminWilayah()) {
+            if (sub.unit && sub.unit === myUnit) {
+              allSubmissions.push(sub);
+              seenKeys.add(dedupeKey);
+            }
+          } else {
+            // superadmin lihat semua
+            allSubmissions.push(sub);
+            seenKeys.add(dedupeKey);
+          }
+        }
+      }
+    }
+  } catch(e) {}
+
+  // Cek submission global HANYA jika tidak ada per-user submission (mode single-browser)
+  try {
+    const globalSub = JSON.parse(localStorage.getItem('siwashut_submission_status') || 'null');
+    if (globalSub && globalSub.status === 'diajukan') {
+      const dedupeKey = globalSub.user + '_' + globalSub.waktu;
+      if (!seenKeys.has(dedupeKey)) {
+        // Admin wilayah: unit HARUS ada dan cocok — jangan tampilkan jika unit kosong
+        if (isAdminWilayah()) {
+          if (globalSub.unit && globalSub.unit === myUnit) {
+            allSubmissions.push(globalSub);
+          }
+        } else {
+          allSubmissions.push(globalSub);
+        }
+      }
+    }
+  } catch(e) {}
+  
+  const inputBadge = document.getElementById('nav-input-notif');
+  if (inputBadge) {
+    const cnt = allSubmissions.length;
+    inputBadge.textContent = cnt;
+    inputBadge.style.display = cnt > 0 ? 'inline' : 'none';
+  }
+}
+
+function checkAdminSubmissionInbox() {
+  const inboxEl = document.getElementById('admin-submission-inbox');
+  if (!inboxEl) return;
+  // Hanya admin/superadmin yang perlu lihat inbox
+  if (!isSuperAdmin() && !isAdminWilayah()) { inboxEl.style.display = 'none'; return; }
+  
+  const myUnit = getCurrentUnitKerja();
+  const submissions = [];
+  const seenKeys = new Set();
+  try {
+    // Cek semua submission per-user dari localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('siwashut_submission_') && key !== 'siwashut_submission_status') {
+        const sub = JSON.parse(localStorage.getItem(key) || 'null');
+        if (sub && sub.status === 'diajukan') {
+          const dedupeKey = sub.user + '_' + sub.waktu;
+          if (seenKeys.has(dedupeKey)) continue;
+          // Admin wilayah HANYA dari unit kerjanya — unit HARUS ada dan cocok
+          if (isAdminWilayah()) {
+            if (sub.unit && sub.unit === myUnit) {
+              submissions.push(sub);
+              seenKeys.add(dedupeKey);
+            }
+          } else {
+            submissions.push(sub);
+            seenKeys.add(dedupeKey);
+          }
+        }
+      }
+    }
+    // Cek global submission hanya jika belum tercatat
+    const globalSub = JSON.parse(localStorage.getItem('siwashut_submission_status') || 'null');
+    if (globalSub && globalSub.status === 'diajukan') {
+      const dedupeKey = globalSub.user + '_' + globalSub.waktu;
+      if (!seenKeys.has(dedupeKey)) {
+        if (isAdminWilayah()) {
+          if (globalSub.unit && globalSub.unit === myUnit) submissions.push(globalSub);
+        } else {
+          submissions.push(globalSub);
+        }
+      }
+    }
+  } catch(e) {}
+  
+  if (submissions.length > 0) {
+    inboxEl.style.display = 'flex';
+    const detail = document.getElementById('admin-inbox-detail');
+    if (detail) {
+      const unitList = [...new Set(submissions.map(s => s.unit || 'Tidak diketahui'))].join(', ');
+      detail.textContent = '— ' + submissions.length + ' pengajuan dari: ' + unitList;
+    }
+  } else {
+    inboxEl.style.display = 'none';
+  }
 }
 
 async function renderAdminPage() {
@@ -3380,7 +3549,15 @@ function getWilayahAdmin() {
   if (sess) {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-wrapper').classList.add('visible');
-    document.querySelector('.badge-user').textContent = '\u{1F464} ' + sess.toUpperCase();
+    // Perbarui badge user dengan nama + role
+    const role = sessionStorage.getItem('siwashut_role') || 'petugas';
+    const roleLabel = role === 'superadmin' ? 'SUPER ADMIN' :
+                      role === 'admin_wilayah' ? 'ADMIN WILAYAH' :
+                      role === 'struktural' ? 'STRUKTURAL' : 'PETUGAS';
+    const badgeUser = document.getElementById('topbar-user-badge') || document.querySelector('.badge-user');
+    if (badgeUser) badgeUser.textContent = '\u{1F464} ' + sess.toUpperCase() + ' (' + roleLabel + ')';
+    // Pastikan tanggal juga ter-update
+    updateTopbarDate();
     applyRoleBasedNavigation();
     updateNavNotif();
     updateDashboard();
@@ -3438,7 +3615,9 @@ function doLogin() {
           const roleLabel = isSuperAdmin() ? 'SUPER ADMIN' :
                             isAdminWilayah() ? 'ADMIN WILAYAH' :
                             isStruktural() ? 'STRUKTURAL' : 'PETUGAS';
-          document.querySelector('.badge-user').textContent = '\u{1F464} ' + u.toUpperCase() + ' (' + roleLabel + ')';
+          const badgeUser = document.getElementById('topbar-user-badge') || document.querySelector('.badge-user');
+          if (badgeUser) badgeUser.textContent = '\u{1F464} ' + u.toUpperCase() + ' (' + roleLabel + ')';
+          updateTopbarDate();
           applyRoleBasedNavigation();
           updateNavNotif();
           updateDashboard();
@@ -4876,6 +5055,65 @@ const SARPRAS_DATA = {
 // Panduan documents stored in localStorage
 let PANDUAN_DOCS = JSON.parse(localStorage.getItem('siwashut_panduan_docs') || '[]');
 
+// Dokumen panduan default (referensi URL resmi pemerintah)
+const PANDUAN_DOCS_DEFAULT = [
+  {
+    id: 'default_uu41_1999',
+    name: 'UU Nomor 41 Tahun 1999 tentang Kehutanan',
+    size: 251904,
+    type: 'application/pdf',
+    uploaded: '01/01/2024',
+    uploader: 'Sistem',
+    isDefault: true,
+    url: 'https://jdih.menlhk.go.id/uploads/files/UU_Nomor_41_Tahun_1999.pdf',
+    data: null
+  },
+  {
+    id: 'default_pp23_2021',
+    name: 'PP Nomor 23 Tahun 2021 tentang Penyelenggaraan Kehutanan',
+    size: 10223616,
+    type: 'application/pdf',
+    uploaded: '01/01/2024',
+    uploader: 'Sistem',
+    isDefault: true,
+    url: 'https://jdih.menlhk.go.id/uploads/files/PP_Nomor_23_Tahun_2021.pdf',
+    data: null
+  },
+  {
+    id: 'default_permen7_2021',
+    name: 'PermenLHK Nomor 7 Tahun 2021 tentang Perencanaan Kehutanan',
+    size: 5976064,
+    type: 'application/pdf',
+    uploaded: '01/01/2024',
+    uploader: 'Sistem',
+    isDefault: true,
+    url: 'https://jdih.menlhk.go.id/uploads/files/Permen_LHK_Nomor_7_Tahun_2021.pdf',
+    data: null
+  },
+  {
+    id: 'default_permen8_2021',
+    name: 'PermenLHK Nomor 8 Tahun 2021 tentang Pengelolaan Kawasan Hutan',
+    size: 16777216,
+    type: 'application/pdf',
+    uploaded: '01/01/2024',
+    uploader: 'Sistem',
+    isDefault: true,
+    url: 'https://jdih.menlhk.go.id/uploads/files/Permen_LHK_Nomor_8_Tahun_2021.pdf',
+    data: null
+  },
+  {
+    id: 'default_permen9_2021',
+    name: 'PermenLHK Nomor 9 Tahun 2021 tentang Pengelolaan Perhutanan Sosial',
+    size: 7864320,
+    type: 'application/pdf',
+    uploaded: '01/01/2024',
+    uploader: 'Sistem',
+    isDefault: true,
+    url: 'https://jdih.menlhk.go.id/uploads/files/Permen_LHK_Nomor_9_Tahun_2021.pdf',
+    data: null
+  }
+];
+
 function savePanduanDocs() {
   try { localStorage.setItem('siwashut_panduan_docs', JSON.stringify(PANDUAN_DOCS)); } catch(e) {}
 }
@@ -5658,7 +5896,14 @@ function renderPanduanDocs() {
   const adminUpload = document.getElementById('panduan-upload-section-admin');
   if (adminUpload) adminUpload.style.display = isSuperAdmin() ? 'block' : 'none';
   if (!el) return;
-  if (!PANDUAN_DOCS.length) {
+
+  // Gabungkan dokumen default + dokumen yang diupload user
+  // Filter: jangan tampilkan default jika sudah dihapus user (tracking via localStorage)
+  const hiddenDefaults = JSON.parse(localStorage.getItem('siwashut_hidden_default_docs') || '[]');
+  const defaults = PANDUAN_DOCS_DEFAULT.filter(d => !hiddenDefaults.includes(d.id));
+  const allDocs = [...defaults, ...PANDUAN_DOCS];
+
+  if (!allDocs.length) {
     el.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted)">
       <div style="font-size:48px;margin-bottom:12px">📂</div>
       <div style="font-weight:600;margin-bottom:6px">Belum ada dokumen</div>
@@ -5666,22 +5911,70 @@ function renderPanduanDocs() {
     </div>`;
     return;
   }
-  el.innerHTML = PANDUAN_DOCS.map(doc => {
-    const isPreviewable = doc.name.match(/\.(pdf|png|jpg|jpeg|webp|gif)$/i) || (doc.type && (doc.type.includes('pdf') || doc.type.startsWith('image/')));
-    return `
-    <div class="panduan-doc-item">
-      <div class="panduan-doc-icon">${getFileIcon(doc.name, doc.type || '')}</div>
+
+  // Header untuk dokumen default
+  let html = '';
+  if (defaults.length) {
+    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--hijau);padding:10px 16px 6px;background:var(--hijau-light);border-radius:8px;margin-bottom:10px">
+      📚 Dokumen Peraturan Perundangan (Referensi Resmi)
+    </div>`;
+    html += defaults.map(doc => `
+    <div class="panduan-doc-item" style="border-left:3px solid var(--hijau-mid)">
+      <div class="panduan-doc-icon">📄</div>
       <div class="panduan-doc-meta">
         <div class="panduan-doc-name">${doc.name}</div>
-        <div class="panduan-doc-info">Ukuran: ${formatBytes(doc.size)} &nbsp;|&nbsp; Upload: ${doc.uploaded} &nbsp;|&nbsp; Oleh: ${doc.uploader}</div>
+        <div class="panduan-doc-info">Ukuran: ${formatBytes(doc.size)} &nbsp;|&nbsp; Referensi Resmi Sistem</div>
       </div>
       <div class="panduan-doc-actions">
-        ${isPreviewable ? `<button class="btn-doc-dl" style="background:#1d4ed8" onclick="previewPanduanDoc('${doc.id}')">👁️ Preview</button>` : ''}
-        <button class="btn-doc-dl" onclick="downloadPanduanDoc('${doc.id}')">⬇️ Unduh</button>
-        ${isSuperAdmin() ? `<button class="btn-doc-del" style="display:inline-block" onclick="deletePanduanDoc('${doc.id}')">🗑️</button>` : ''}
+        <button class="btn-doc-dl" style="background:#1d4ed8" onclick="openPanduanDocUrl('${doc.id}')">🔗 Buka</button>
+        ${isSuperAdmin() ? `<button class="btn-doc-del" style="display:inline-block" onclick="hideDefaultDoc('${doc.id}')">🗑️</button>` : ''}
       </div>
-    </div>
-  `}).join('');
+    </div>`).join('');
+  }
+
+  if (PANDUAN_DOCS.length) {
+    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);padding:10px 16px 6px;background:#f9fafb;border-radius:8px;margin:14px 0 10px">
+      📁 Dokumen Yang Diupload Admin
+    </div>`;
+    html += PANDUAN_DOCS.map(doc => {
+      const isPreviewable = doc.name.match(/\.(pdf|png|jpg|jpeg|webp|gif)$/i) || (doc.type && (doc.type.includes('pdf') || doc.type.startsWith('image/')));
+      return `
+      <div class="panduan-doc-item">
+        <div class="panduan-doc-icon">${getFileIcon(doc.name, doc.type || '')}</div>
+        <div class="panduan-doc-meta">
+          <div class="panduan-doc-name">${doc.name}</div>
+          <div class="panduan-doc-info">Ukuran: ${formatBytes(doc.size)} &nbsp;|&nbsp; Upload: ${doc.uploaded} &nbsp;|&nbsp; Oleh: ${doc.uploader}</div>
+        </div>
+        <div class="panduan-doc-actions">
+          ${isPreviewable ? `<button class="btn-doc-dl" style="background:#1d4ed8" onclick="previewPanduanDoc('${doc.id}')">👁️ Preview</button>` : ''}
+          <button class="btn-doc-dl" onclick="downloadPanduanDoc('${doc.id}')">⬇️ Unduh</button>
+          ${isSuperAdmin() ? `<button class="btn-doc-del" style="display:inline-block" onclick="deletePanduanDoc('${doc.id}')">🗑️</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = html;
+}
+
+function openPanduanDocUrl(id) {
+  const doc = PANDUAN_DOCS_DEFAULT.find(d => d.id === id);
+  if (doc && doc.url) {
+    window.open(doc.url, '_blank');
+  } else {
+    showToast('⚠️ URL dokumen tidak tersedia.', 'warn');
+  }
+}
+
+function hideDefaultDoc(id) {
+  if (!isSuperAdmin()) return;
+  if (!confirm('Sembunyikan dokumen referensi ini dari daftar?')) return;
+  try {
+    const hidden = JSON.parse(localStorage.getItem('siwashut_hidden_default_docs') || '[]');
+    if (!hidden.includes(id)) hidden.push(id);
+    localStorage.setItem('siwashut_hidden_default_docs', JSON.stringify(hidden));
+  } catch(e) {}
+  renderPanduanDocs();
+  showToast('🗑️ Dokumen referensi disembunyikan.', 'info');
 }
 
 function downloadPanduanDoc(id) {
@@ -5760,6 +6053,9 @@ function switchInputTab(tab) {
       btn.style.background = isActive ? '#dc2626' : '#fff5f5';
       btn.style.color = isActive ? '#fff' : '#dc2626';
     }
+    // Sync action buttons per tab
+    const actionEl = document.getElementById('tab-actions-' + t);
+    if (actionEl) actionEl.style.display = (t === tab) ? 'flex' : 'none';
   });
   if (tab === 'sarpras') {
     // show sarpras panel (previously inside form, now standalone)
@@ -5901,7 +6197,7 @@ function buildKbEntryHTML(entry, idx) {
     <!-- Keterangan -->
     <div>
       <label style="font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Keterangan Kebakaran</label>
-      <textarea id="kb-ket-${id}" class="form-control" rows="3" placeholder="Penyebab, dampak, upaya pemadaman, dll..." style="border-color:#fecaca" onchange="updateKbEntry(${id},'keterangan',this.value)">${entry.keterangan}</textarea>
+      <textarea id="kb-ket-${id}" class="form-control" rows="6" placeholder="Penyebab, dampak, upaya pemadaman, dll..." style="border-color:#fecaca;width:100%;resize:vertical" onchange="updateKbEntry(${id},'keterangan',this.value)">${entry.keterangan}</textarea>
     </div>
   </div>`;
 }
@@ -6320,6 +6616,526 @@ function renderDashboardKebakaranMap() {
 // (renderRekapKebakaran is called from showPage when id==='data')
 
 
+</script>
+
+<!-- ===== MODAL PENGAJUAN ===== -->
+<div id="modal-ajukan" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#fff;border-radius:16px;padding:28px 32px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);position:relative">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:48px;margin-bottom:8px">📤</div>
+      <h3 style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px">Ajukan Hasil Penginputan</h3>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.6">Setelah diajukan, data akan dikunci dan menunggu persetujuan admin. Anda tidak dapat mengedit hingga admin memberikan akses kembali atau menyetujui.</p>
+    </div>
+    <div style="background:#fef9f0;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px;margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px">📋 Ringkasan Data yang Diajukan:</div>
+      <div id="ajukan-summary" style="font-size:12px;color:#6b7280;line-height:1.8"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Catatan Pengajuan (opsional)</label>
+      <textarea id="ajukan-catatan" class="form-control" rows="3" placeholder="Tambahkan catatan untuk admin..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('modal-ajukan').style.display='none'" style="flex:1;padding:11px;background:#fff;border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.2s">Batal</button>
+      <button onclick="doAjukan()" style="flex:2;padding:11px;background:linear-gradient(135deg,var(--hijau),var(--hijau-mid));border:none;border-radius:9px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:all 0.2s">📤 Konfirmasi Pengajuan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL ADMIN KELOLA PENGAJUAN ===== -->
+<div id="modal-admin-pengajuan" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#fff;border-radius:16px;padding:28px 32px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <h3 style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">🛡️ Kelola Pengajuan — Admin</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px">Pilih tindakan untuk pengajuan data dari pengawas kehutanan.</p>
+    <div id="admin-pengajuan-detail" style="background:#f8fdf9;border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:12px;line-height:1.8;color:var(--text-muted)"></div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Catatan Balasan Admin</label>
+      <textarea id="admin-catatan-balas" class="form-control" rows="2" placeholder="Alasan penolakan / catatan persetujuan..."></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <button onclick="adminTindakPengajuan('buka')" style="padding:10px;background:#fff;border:1.5px solid #1d4ed8;border-radius:8px;font-size:12px;font-weight:700;color:#1d4ed8;cursor:pointer;font-family:inherit">✏️ Buka Kunci Edit</button>
+      <button onclick="adminTindakPengajuan('tolak')" style="padding:10px;background:#fff;border:1.5px solid #dc2626;border-radius:8px;font-size:12px;font-weight:700;color:#dc2626;cursor:pointer;font-family:inherit">❌ Tolak</button>
+      <button onclick="adminTindakPengajuan('setuju')" style="padding:10px;background:var(--hijau);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit">✅ Setujui</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ DRAFT SYSTEM (Per-Tab localStorage) ============
+const DRAFT_KEY = {
+  pengawasan: 'siwashut_draft_pengawasan',
+  sarpras:    'siwashut_draft_sarpras',
+  kebakaran:  'siwashut_draft_kebakaran'
+};
+const SUBMISSION_KEY = 'siwashut_submission_status';
+
+// Kembalikan key submission yang spesifik untuk user yang sedang login
+// sehingga admin wilayah berbeda tidak membaca submission user lain
+function getSubmissionKeyForCurrentUser() {
+  const u = getCurrentUser();
+  return u ? ('siwashut_submission_' + u) : SUBMISSION_KEY;
+}
+
+function getSubmissionStatus() {
+  try {
+    // Cek dulu per-user key (versi baru)
+    const u = getCurrentUser();
+    if (u) {
+      const perUser = JSON.parse(localStorage.getItem('siwashut_submission_' + u) || 'null');
+      if (perUser) return perUser;
+    }
+    // Fallback ke global key (backward compat)
+    return JSON.parse(localStorage.getItem(SUBMISSION_KEY) || 'null');
+  } catch(e) { return null; }
+}
+function setSubmissionStatus(obj) {
+  try {
+    const u = getCurrentUser();
+    // Simpan ke per-user key (utama)
+    const perUserKey = u ? ('siwashut_submission_' + u) : SUBMISSION_KEY;
+    if (obj) {
+      localStorage.setItem(perUserKey, JSON.stringify(obj));
+      // Juga update global key agar backward compat dengan kode lain yang membacanya
+      localStorage.setItem(SUBMISSION_KEY, JSON.stringify(obj));
+    } else {
+      localStorage.removeItem(perUserKey);
+      localStorage.removeItem(SUBMISSION_KEY);
+    }
+  } catch(e) {}
+}
+function isFormLocked() {
+  const s = getSubmissionStatus();
+  return s && (s.status === 'diajukan' || s.status === 'disetujui');
+}
+
+function saveDraft(tab) {
+  if (isFormLocked()) { showToast('🔒 Form dikunci. Minta admin untuk membuka kunci.', 'warn'); return; }
+  let data = {};
+  if (tab === 'pengawasan') {
+    const fields = ['f-tanggal','f-kode','f-subjek','f-provinsi','f-kabupaten','f-kawasan','f-jenis','f-luas','f-status','f-tindak','f-uraian','f-rekomendasi','f-unitkerja'];
+    fields.forEach(id => { const el = document.getElementById(id); if(el) data[id] = el.value; });
+    // petugas
+    const petugas = [];
+    document.querySelectorAll('#petugas-list .petugas-row').forEach(row => {
+      petugas.push({ nama: row.querySelector('.petugas-nama')?.value||'', unit: row.querySelector('.petugas-unit')?.value||'' });
+    });
+    data._petugas = petugas;
+  } else if (tab === 'sarpras') {
+    const el = document.getElementById('sarpras-regu');
+    const jEl = document.getElementById('sarpras-jenis');
+    const lEl = document.getElementById('sarpras-luas');
+    data._regu = el ? el.value : 1;
+    data._jenis = jEl ? jEl.value : '';
+    data._luas = lEl ? lEl.value : '';
+    // save all sarpras input quantities
+    document.querySelectorAll('.sarpras-qty-input').forEach(inp => {
+      if(inp.id) data[inp.id] = inp.value;
+    });
+  } else if (tab === 'kebakaran') {
+    data._entries = kbEntriesList ? JSON.parse(JSON.stringify(kbEntriesList)) : [];
+  }
+  data._savedAt = new Date().toLocaleString('id-ID');
+  try { localStorage.setItem(DRAFT_KEY[tab], JSON.stringify(data)); } catch(e) {}
+  showToast('💾 Draft ' + {pengawasan:'Pengawasan',sarpras:'Sarpras',kebakaran:'Kebakaran'}[tab] + ' tersimpan di perangkat.', 'success');
+  checkDraftBanner();
+}
+
+function resetTabDraft(tab) {
+  if (isFormLocked()) { showToast('🔒 Form dikunci. Minta admin untuk membuka kunci.', 'warn'); return; }
+  if (tab === 'pengawasan') {
+    resetForm();
+  } else if (tab === 'sarpras') {
+    if(document.getElementById('sarpras-regu')) document.getElementById('sarpras-regu').value = 1;
+    if(document.getElementById('sarpras-jenis')) document.getElementById('sarpras-jenis').value = '';
+    if(document.getElementById('sarpras-luas')) document.getElementById('sarpras-luas').value = '';
+    document.querySelectorAll('.sarpras-qty-input').forEach(inp => { inp.value = 0; });
+    if(document.getElementById('sarpras-regu-result')) document.getElementById('sarpras-regu-result').style.display='none';
+  } else if (tab === 'kebakaran') {
+    kbEntriesList = []; kbEntryIdCounter = 0;
+    const kbEl = document.getElementById('kb-entries-list');
+    if(kbEl) kbEl.innerHTML = '';
+  }
+  showToast('🔄 Data ' + {pengawasan:'Pengawasan',sarpras:'Sarpras',kebakaran:'Kebakaran'}[tab] + ' direset.', 'warn');
+}
+
+function loadDraftAll() {
+  ['pengawasan','sarpras','kebakaran'].forEach(tab => loadDraft(tab));
+  showToast('📂 Semua draft berhasil dimuat.', 'success');
+}
+
+function loadDraft(tab) {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY[tab]);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (tab === 'pengawasan') {
+      const fields = ['f-tanggal','f-kode','f-subjek','f-provinsi','f-kabupaten','f-kawasan','f-jenis','f-luas','f-status','f-tindak','f-uraian','f-rekomendasi','f-unitkerja'];
+      fields.forEach(id => { const el = document.getElementById(id); if(el && data[id] !== undefined) el.value = data[id]; });
+      // Restore petugas
+      if (data._petugas && data._petugas.length) {
+        const list = document.getElementById('petugas-list');
+        if (list) {
+          list.innerHTML = '';
+          data._petugas.forEach(p => {
+            const row = document.createElement('div');
+            row.className = 'petugas-row';
+            row.style = 'display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:8px';
+            row.innerHTML = `<input type="text" class="form-control petugas-nama" value="${p.nama||''}" placeholder="Nama petugas">
+              <input type="text" class="form-control petugas-unit" value="${p.unit||''}" placeholder="Unit kerja">
+              <button type="button" onclick="removePetugas(this)" style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;cursor:pointer;color:#dc2626;font-size:14px" title="Hapus">✕</button>`;
+            list.appendChild(row);
+          });
+        }
+      }
+    } else if (tab === 'sarpras') {
+      if(document.getElementById('sarpras-regu') && data._regu) document.getElementById('sarpras-regu').value = data._regu;
+      if(document.getElementById('sarpras-jenis') && data._jenis !== undefined) { document.getElementById('sarpras-jenis').value = data._jenis; recalcSarprasRegu(); }
+      if(document.getElementById('sarpras-luas') && data._luas !== undefined) { document.getElementById('sarpras-luas').value = data._luas; recalcSarprasRegu(); }
+      setTimeout(() => {
+        document.querySelectorAll('.sarpras-qty-input').forEach(inp => {
+          if(inp.id && data[inp.id] !== undefined) inp.value = data[inp.id];
+        });
+      }, 400);
+    } else if (tab === 'kebakaran') {
+      if (data._entries && data._entries.length) {
+        kbEntriesList = data._entries;
+        kbEntryIdCounter = Math.max(...kbEntriesList.map(e=>e.id||0)) + 1;
+        const kbEl = document.getElementById('kb-entries-list');
+        if(kbEl) kbEl.innerHTML = '';
+        kbEntriesList.forEach(e => renderKbEntryCard(e));
+      }
+    }
+  } catch(e) {}
+}
+
+function clearAllDrafts() {
+  if (!confirm('Hapus semua draft tersimpan di perangkat ini?')) return;
+  ['pengawasan','sarpras','kebakaran'].forEach(tab => {
+    try { localStorage.removeItem(DRAFT_KEY[tab]); } catch(e) {}
+  });
+  document.getElementById('draft-status-banner').style.display = 'none';
+  showToast('🗑️ Semua draft dihapus.', 'warn');
+}
+
+function checkDraftBanner() {
+  const hasDraft = ['pengawasan','sarpras','kebakaran'].some(tab => {
+    try { return !!localStorage.getItem(DRAFT_KEY[tab]); } catch(e) { return false; }
+  });
+  const banner = document.getElementById('draft-status-banner');
+  if (!banner) return;
+  const submission = getSubmissionStatus();
+
+  // Jika ada submission, pastikan relevan untuk user/role yang sedang login
+  if (submission && (submission.status === 'diajukan' || submission.status === 'disetujui')) {
+    // Admin wilayah hanya tampilkan submission dari unitnya sendiri
+    if (isAdminWilayah()) {
+      const myUnit = getCurrentUnitKerja();
+      if (submission.unit && submission.unit !== myUnit) {
+        // Bukan unit saya — sembunyikan banner, jangan lock form admin
+        banner.style.display = 'none';
+        return;
+      }
+    }
+    banner.style.display = 'none';
+    showSubmissionLockedBanner(submission);
+    return;
+  }
+  if (hasDraft) {
+    const latestTab = ['pengawasan','sarpras','kebakaran'].reduce((acc, tab) => {
+      try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY[tab])||'{}'); return d._savedAt ? tab : acc; } catch(e) { return acc; }
+    }, null);
+    const latest = latestTab ? JSON.parse(localStorage.getItem(DRAFT_KEY[latestTab])||'{}') : {};
+    document.getElementById('draft-status-text').textContent = `Draft tersimpan di perangkat ini${latest._savedAt ? ' — ' + latest._savedAt : ''}. Muat untuk melanjutkan.`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function showSubmissionLockedBanner(sub) {
+  const banner = document.getElementById('submission-locked-banner');
+  if (!banner) return;
+  
+  // Jika sudah disetujui — bersihkan dan sembunyikan
+  if (sub.status === 'disetujui') {
+    banner.style.display = 'none';
+    return;
+  }
+
+  // Admin wilayah: jangan tampilkan banner dan jangan lock form jika bukan unit mereka
+  if (isAdminWilayah()) {
+    const myUnit = getCurrentUnitKerja();
+    if (sub.unit && sub.unit !== myUnit) {
+      // Submission ini bukan dari unit wilayah admin ini — abaikan sama sekali
+      banner.style.display = 'none';
+      return;
+    }
+  }
+  
+  document.getElementById('submission-info-text').textContent = ` — Diajukan ${sub.waktu || ''} ${sub.catatan ? '| Catatan: '+sub.catatan : ''}`;
+
+  // Lock semua form inputs
+  setFormLockState(true);
+
+  // Tombol admin — hanya tampilkan ke admin unit yang relevan
+  const adminActions = document.getElementById('admin-unlock-actions');
+  if (adminActions) {
+    const myUnit = getCurrentUnitKerja();
+    const isRelevantAdmin = isSuperAdmin() || (isAdminWilayah() && sub.unit && sub.unit === myUnit);
+    if (isRelevantAdmin) {
+      adminActions.innerHTML = `
+        <button onclick="openAdminPengajuanModal()" style="padding:6px 14px;background:var(--hijau);border:none;border-radius:7px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit">🛡️ Kelola Pengajuan</button>`;
+    } else {
+      adminActions.innerHTML = `<span style="font-size:11px;color:#b45309">Menunggu admin...</span>`;
+    }
+  }
+  banner.style.display = 'flex';
+}
+
+function setFormLockState(locked) {
+  const selector = '#page-input input, #page-input select, #page-input textarea, #page-input button:not(#btn-ajukan)';
+  document.querySelectorAll(selector).forEach(el => {
+    if (locked) {
+      el.setAttribute('disabled', 'disabled');
+      el.style.opacity = '0.6';
+      el.style.cursor = 'not-allowed';
+    } else {
+      el.removeAttribute('disabled');
+      el.style.opacity = '';
+      el.style.cursor = '';
+    }
+  });
+  const ajukanBtn = document.getElementById('btn-ajukan');
+  if (ajukanBtn) {
+    if (locked) {
+      ajukanBtn.textContent = '🔒 Diajukan';
+      ajukanBtn.style.background = '#9ca3af';
+      ajukanBtn.onclick = () => showToast('Data sudah diajukan. Tunggu keputusan admin.', 'warn');
+    } else {
+      ajukanBtn.innerHTML = '📤 Ajukan';
+      ajukanBtn.style.background = 'linear-gradient(135deg,var(--hijau),var(--hijau-mid))';
+      ajukanBtn.onclick = showAjukanModal;
+    }
+  }
+}
+
+// ============ PENGAJUAN MODAL ============
+function showAjukanModal() {
+  if (isFormLocked()) { showToast('Data sudah diajukan. Tunggu keputusan admin.', 'warn'); return; }
+  // Build summary
+  const subjek = document.getElementById('f-subjek')?.value || '—';
+  const tanggal = document.getElementById('f-tanggal')?.value || '—';
+  const unit = document.getElementById('f-unitkerja')?.value || '—';
+  const provinsi = document.getElementById('f-provinsi')?.value || '—';
+  const hasSarpras = ['pengawasan','sarpras','kebakaran'].some(t => { try { return !!localStorage.getItem(DRAFT_KEY[t]); } catch(e) { return false; } });
+
+  document.getElementById('ajukan-summary').innerHTML = `
+    <div>📋 <strong>Subjek Hukum:</strong> ${subjek}</div>
+    <div>📅 <strong>Tanggal Pengawasan:</strong> ${tanggal}</div>
+    <div>🏢 <strong>Unit Kerja:</strong> ${unit}</div>
+    <div>📍 <strong>Provinsi:</strong> ${provinsi}</div>
+    <div>💾 <strong>Status Draft:</strong> ${hasSarpras ? 'Ada draft tersimpan di perangkat' : 'Belum ada draft — isi formulir terlebih dahulu'}</div>`;
+
+  document.getElementById('ajukan-catatan').value = '';
+  const m = document.getElementById('modal-ajukan');
+  m.style.display = 'flex';
+}
+
+function doAjukan() {
+  const catatan = document.getElementById('ajukan-catatan')?.value || '';
+  const unitKerjaValue = document.getElementById('f-unitkerja')?.value || getCurrentUnitKerja() || '';
+  const currentUser = getCurrentUser() || 'pengawas';
+
+  // ── Kumpulkan semua data form untuk disimpan bersama submission ──
+  const petugasRows = document.querySelectorAll('#petugas-list .petugas-row');
+  const petugasList = [];
+  petugasRows.forEach(row => {
+    const nama = row.querySelector('.petugas-nama')?.value.trim() || '';
+    const unit = row.querySelector('.petugas-unit')?.value.trim() || '';
+    if (nama) petugasList.push({ nama, unit });
+  });
+
+  // Kebakaran multi-entry
+  let kebakaranData = null;
+  const kbEntriesData = getKbEntriesData();
+  if (kbEntriesData.length > 0) {
+    const first = kbEntriesData[0];
+    kebakaranData = { tanggal: first.tanggal, luas: first.luas, lat: first.lat, lng: first.lng, keterangan: first.keterangan, fotos: first.fotos, entries: kbEntriesData };
+  }
+
+  const formSnapshot = {
+    tanggal:     document.getElementById('f-tanggal')?.value || '',
+    kode:        document.getElementById('f-kode')?.value || '',
+    subjek:      document.getElementById('f-subjek')?.value || '',
+    provinsi:    document.getElementById('f-provinsi')?.value || '',
+    kabupaten:   document.getElementById('f-kabupaten')?.value || '',
+    kawasan:     document.getElementById('f-kawasan')?.value || '',
+    jenis:       document.getElementById('f-jenis')?.value || '',
+    luas:        document.getElementById('f-luas')?.value || '0',
+    status:      document.getElementById('f-status')?.value || '',
+    tindak:      document.getElementById('f-tindak')?.value || '',
+    unitkerja:   unitKerjaValue,
+    uraian:      document.getElementById('f-uraian')?.value || '',
+    rekomendasi: document.getElementById('f-rekomendasi')?.value || '',
+    petugas:     petugasList,
+    kebakaran:   kebakaranData,
+    files:       uploadedFiles.map(f => f.name)
+  };
+
+  const submission = {
+    status: 'diajukan',
+    waktu: new Date().toLocaleString('id-ID'),
+    user: currentUser,
+    unit: unitKerjaValue,
+    subjek: formSnapshot.subjek,
+    catatan: catatan,
+    formSnapshot: formSnapshot  // ← data lengkap untuk rekap saat disetujui
+  };
+  // Hapus pengajuan lama dari user ini (jika ada) untuk cegah duplikat
+  try { localStorage.removeItem('siwashut_submission_' + currentUser); } catch(e) {}
+  // Simpan per-user agar admin bisa filter berdasarkan unit
+  try {
+    localStorage.setItem('siwashut_submission_' + currentUser, JSON.stringify(submission));
+  } catch(e) {}
+  // Simpan juga sebagai submission status lokal untuk form lock
+  setSubmissionStatus(submission);
+  document.getElementById('modal-ajukan').style.display = 'none';
+  document.getElementById('draft-status-banner').style.display = 'none';
+  showSubmissionLockedBanner(submission);
+  showToast('✅ Pengajuan berhasil dikirim! Menunggu persetujuan admin.', 'success');
+}
+
+// ============ ADMIN PENGAJUAN MANAGEMENT ============
+function openAdminPengajuanModal() {
+  const sub = getSubmissionStatus();
+  if (!sub) return;
+  document.getElementById('admin-pengajuan-detail').innerHTML = `
+    <div>👤 <strong>Pengaju:</strong> ${sub.user || '—'}</div>
+    <div>🏢 <strong>Unit Kerja:</strong> ${sub.unit || '—'}</div>
+    <div>📋 <strong>Subjek:</strong> ${sub.subjek || '—'}</div>
+    <div>📅 <strong>Waktu Pengajuan:</strong> ${sub.waktu || '—'}</div>
+    ${sub.catatan ? `<div>📝 <strong>Catatan:</strong> ${sub.catatan}</div>` : ''}`;
+  document.getElementById('admin-catatan-balas').value = '';
+  const m2 = document.getElementById('modal-admin-pengajuan');
+  m2.style.display = 'flex';
+}
+
+function adminTindakPengajuan(action) {
+  const catatan = document.getElementById('admin-catatan-balas')?.value || '';
+  const sub = getSubmissionStatus() || {};
+  
+  // Verifikasi akses admin wilayah — hanya bisa kelola pengajuan dari unit kerjanya sendiri
+  if (isAdminWilayah() && sub.unit) {
+    const myUnit = getCurrentUnitKerja();
+    if (myUnit && sub.unit !== myUnit) {
+      showToast('⚠️ Pengajuan ini bukan dari unit kerja Anda (' + myUnit + ').', 'warn');
+      document.getElementById('modal-admin-pengajuan').style.display = 'none';
+      return;
+    }
+  }
+
+  if (action === 'buka') {
+    // Unlock for re-editing
+    setSubmissionStatus(null);
+    // Hapus juga key per-user
+    try { localStorage.removeItem('siwashut_submission_' + (sub.user || '')); } catch(e) {}
+    setFormLockState(false);
+    document.getElementById('submission-locked-banner').style.display = 'none';
+    checkDraftBanner();
+    showToast('✏️ Formulir dibuka kembali untuk pengeditan.', 'success');
+    updateNavNotif();
+  } else if (action === 'tolak') {
+    setSubmissionStatus({ ...sub, status: 'ditolak', catatanAdmin: catatan, waktuAdmin: new Date().toLocaleString('id-ID') });
+    setFormLockState(false);
+    document.getElementById('submission-locked-banner').style.display = 'none';
+    setSubmissionStatus(null);
+    try { localStorage.removeItem('siwashut_submission_' + (sub.user || '')); } catch(e) {}
+    showToast('❌ Pengajuan ditolak. Formulir dibuka kembali.', 'warn');
+    checkDraftBanner();
+    updateNavNotif();
+  } else if (action === 'setuju') {
+    // ── Simpan data ke rekap dari formSnapshot (bukan form field yang mungkin kosong) ──
+    const snap = sub.formSnapshot || null;
+    if (snap && snap.subjek && snap.unitkerja) {
+      const row = {
+        id: Date.now(),
+        tanggal:     snap.tanggal || '',
+        kode:        snap.kode || ('ST/PPSA/' + new Date().getFullYear() + '/' + String(DATA.length+1).padStart(3,'0')),
+        subjek:      snap.subjek,
+        provinsi:    snap.provinsi || '',
+        kabupaten:   snap.kabupaten || '',
+        kawasan:     snap.kawasan || '',
+        jenis:       snap.jenis || '',
+        luas:        snap.luas || '0',
+        status:      snap.status || '',
+        tindak:      snap.tindak || '',
+        unitkerja:   snap.unitkerja,
+        petugas:     snap.petugas || [],
+        files:       snap.files || [],
+        uraian:      snap.uraian || '',
+        rekomendasi: snap.rekomendasi || '',
+        kebakaran:   snap.kebakaran || null
+      };
+      DATA.push(row);
+      saveData();
+      saveRowToSupabase(row).then(ok => {
+        showToast(ok ? '✅ Pengajuan disetujui! Data berhasil masuk ke rekap & laporan.' : '✅ Disetujui — tersimpan lokal, cek koneksi server.', ok ? 'success' : 'warn');
+        updateDashboard();
+        renderTable();
+        updateNavNotif();
+      });
+    } else {
+      // Fallback: tidak ada snapshot (pengajuan lama tanpa snapshot)
+      showToast('✅ Pengajuan disetujui! Data form telah dikirim ke rekap.', 'success');
+      setTimeout(() => { submitData(); updateNavNotif(); }, 300);
+    }
+    // Hapus submission per-user dan global
+    try { localStorage.removeItem('siwashut_submission_' + (sub.user || '')); } catch(e) {}
+    setSubmissionStatus(null);
+    // Sembunyikan banner locked dan unlock form
+    const lockedBanner = document.getElementById('submission-locked-banner');
+    if (lockedBanner) lockedBanner.style.display = 'none';
+    setFormLockState(false);
+    ['pengawasan','sarpras','kebakaran'].forEach(tab => {
+      try { localStorage.removeItem(DRAFT_KEY[tab]); } catch(e) {}
+    });
+    checkDraftBanner();
+  }
+  document.getElementById('modal-admin-pengajuan').style.display = 'none';
+}
+
+// ============ Action button tab sync — integrated into main switchInputTab ============
+// (duplicate removed — handled inside main switchInputTab below)
+
+// ============ INIT on page load ============
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    checkDraftBanner();
+    const sub = getSubmissionStatus();
+    // Hanya tampilkan locked banner jika status masih 'diajukan' (belum disetujui)
+    // dan submission ini memang relevan untuk user yang sedang login
+    if (sub && sub.status === 'diajukan') {
+      // Admin wilayah: hanya tampilkan banner jika submission dari unitnya sendiri
+      if (isAdminWilayah()) {
+        const myUnit = getCurrentUnitKerja();
+        if (!sub.unit || sub.unit === myUnit) {
+          showSubmissionLockedBanner(sub);
+        }
+      } else {
+        showSubmissionLockedBanner(sub);
+      }
+    } else if (sub && sub.status === 'disetujui') {
+      // Sudah disetujui — bersihkan status agar tidak menghambat form lagi
+      setSubmissionStatus(null);
+      setFormLockState(false);
+    }
+    // Pastikan tab pengawasan aktif saat init
+    switchInputTab('pengawasan');
+    // Update notifikasi admin jika sudah login
+    if (isSuperAdmin() || isAdminWilayah()) {
+      updateInputSubmissionNotif();
+    }
+  }, 800);
+});
 </script>
 </div><!-- /app-wrapper -->
 </body>
