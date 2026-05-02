@@ -590,7 +590,15 @@
           <label class="login-label">Unit Kerja <span style="color:#dc2626">*</span></label>
           <div class="login-input-wrap">
             <span class="login-input-icon">🏢</span>
-            <input type="text" id="reg-unit" class="login-input" placeholder="Contoh: Unit Kerja">
+            <select id="reg-unit" class="login-input" style="padding-left:44px">
+              <option value="">-- Pilih Unit Kerja --</option>
+              <option value="Dit. PPSAKK">Dit. PPSAKK</option>
+              <option value="Gakkum Kehutanan Wilayah Sumatera">Gakkum Kehutanan Wilayah Sumatera</option>
+              <option value="Gakkum Kehutanan Wilayah Jabalnusra">Gakkum Kehutanan Wilayah Jabalnusra</option>
+              <option value="Gakkum Kehutanan Wilayah Kalimantan">Gakkum Kehutanan Wilayah Kalimantan</option>
+              <option value="Gakkum Kehutanan Wilayah Sulawesi">Gakkum Kehutanan Wilayah Sulawesi</option>
+              <option value="Gakkum Kehutanan Wilayah Mapua">Gakkum Kehutanan Wilayah Mapua</option>
+            </select>
           </div>
         </div>
         <div class="login-group">
@@ -628,9 +636,7 @@
           <span class="login-input-icon">💼</span>
           <select id="reg-role" class="login-input" style="padding-left:44px">
             <option value="petugas">Petugas Pengawas</option>
-            <option value="analis">Analis Data</option>
-            <option value="koordinator">Koordinator Lapangan</option>
-            <option value="kepala">Kepala Seksi</option>
+            <option value="struktural">Struktural</option>
           </select>
         </div>
       </div>
@@ -740,6 +746,24 @@
         </div>
       </div>
 
+      <!-- Stat kebakaran -->
+      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);margin-top:-12px;margin-bottom:16px">
+        <div class="stat-card" style="background:linear-gradient(135deg,#fef2f2 0%,#fff5f5 100%);border:1.5px solid #fecaca">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-label" style="color:#991b1b">Kejadian Kebakaran</div>
+          <div class="stat-value" id="st-kebakaran" style="color:#dc2626">0</div>
+          <div class="stat-sub">Total laporan kebakaran</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#fff7ed 0%,#fff 100%);border:1.5px solid #fed7aa">
+          <div class="stat-icon">📏</div>
+          <div class="stat-label" style="color:#c2410c">Total Luasan Terbakar</div>
+          <div class="stat-value" id="st-luas-kebakaran" style="color:#ea580c;font-size:20px">0</div>
+          <div class="stat-sub">Hektar terbakar</div>
+        </div>
+        <div id="st-kebakaran-peta" style="display:none">0</div>
+        <div id="st-kebakaran-selesai" style="display:none">0</div>
+      </div>
+
       <!-- Map + Charts row -->
       <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;margin-bottom:28px">
         <!-- Mini Map -->
@@ -795,6 +819,20 @@
             <div class="chart-title">⚖️ Rincian Sanksi Administratif</div>
             <p style="font-size:13px;color:var(--text-muted);padding:8px 0">Belum ada sanksi administratif.</p>
           </div>
+        </div>
+      </div>
+
+      <!-- Kebakaran Dashboard Section -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
+        <div class="chart-card" style="border:1.5px solid #fecaca">
+          <div class="chart-title" style="color:#dc2626">🔥 Sebaran Kebakaran — Peta</div>
+          <div id="dash-kebakaran-map" style="height:300px;width:100%;border-radius:8px;background:#fef2f2;display:flex;align-items:center;justify-content:center">
+            <span style="color:var(--text-muted);font-size:13px">🔥 Belum ada data koordinat kebakaran</span>
+          </div>
+        </div>
+        <div class="chart-card" style="border:1.5px solid #fecaca">
+          <div class="chart-title" style="color:#dc2626">🔥 Statistik Kebakaran per Provinsi</div>
+          <div class="chart-canvas-wrap" style="height:260px"><canvas id="chartKebakaran"></canvas></div>
         </div>
       </div>
 
@@ -993,10 +1031,36 @@
 
     <!-- ===== INPUT DATA ===== -->
     <div class="page" id="page-input">
-      <div class="form-card">
-        <div class="form-title">✏️ Form Input Hasil Pengawasan Kehutanan</div>
+      <!-- Tab Navigation -->
+      <div style="display:flex;gap:0;margin-bottom:0;background:#fff;border-radius:16px 16px 0 0;border:1px solid var(--border);border-bottom:none;overflow:hidden">
+        <button id="input-tab-pengawasan" onclick="switchInputTab('pengawasan')" style="flex:1;padding:16px 20px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:var(--hijau);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;border-right:1px solid rgba(255,255,255,0.2)">
+          <span style="font-size:18px">📋</span> Form Hasil Pengawasan Kehutanan
+        </button>
+        <button id="input-tab-sarpras" onclick="switchInputTab('sarpras')" style="flex:1;padding:16px 20px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:#f0fdf4;color:var(--hijau);display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;border-right:1px solid var(--border)">
+          <span style="font-size:18px">🔥</span> Input Sarpras Kebakaran
+        </button>
+        <button id="input-tab-kebakaran" onclick="switchInputTab('kebakaran')" style="flex:1;padding:16px 20px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;background:#fff5f5;color:#dc2626;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s">
+          <span style="font-size:18px">🗺️</span> Area Kebakaran
+        </button>
+      </div>
+
+      <!-- TAB 1: FORM PENGAWASAN -->
+      <div id="input-panel-pengawasan" style="display:block">
+      <div class="form-card" style="border-radius:0 0 16px 16px;border-top:none">
         <div id="form-alert" class="alert alert-success hidden"></div>
         <div class="form-grid">
+          <div class="form-group full">
+            <label class="form-label">Unit Kerja Penanggung Jawab <span class="required">*</span></label>
+            <select id="f-unitkerja" class="form-control">
+              <option value="">-- Pilih Unit Kerja Penanggung Jawab --</option>
+              <option>Dit. PPSAKK</option>
+              <option>Gakkum Kehutanan Wilayah Sumatera</option>
+              <option>Gakkum Kehutanan Wilayah Jabalnusra</option>
+              <option>Gakkum Kehutanan Wilayah Kalimantan</option>
+              <option>Gakkum Kehutanan Wilayah Sulawesi</option>
+              <option>Gakkum Kehutanan Wilayah Mapua</option>
+            </select>
+          </div>
           <div class="form-group">
             <label class="form-label">Tanggal Pengawasan <span class="required">*</span></label>
             <input type="date" id="f-tanggal" class="form-control">
@@ -1114,7 +1178,7 @@
             <textarea id="f-rekomendasi" class="form-control" rows="3" placeholder="Rekomendasi atau saran tindak lanjut..."></textarea>
           </div>
 
-          <!-- ===== FOTO REALTIME ===== -->
+        <!-- ===== FOTO REALTIME (in form) ===== -->
           <div class="form-group full">
             <label class="form-label" style="display:flex;align-items:center;gap:8px">
               📸 Foto Dokumentasi Realtime
@@ -1149,91 +1213,105 @@
           </div>
         </div>
 
-        <!-- ===== SARPRAS KEBAKARAN INPUT ===== -->
-        <div style="border-top:2px solid var(--border);margin-top:8px;padding-top:24px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <div>
-              <div style="font-size:16px;font-weight:700;color:var(--hijau);display:flex;align-items:center;gap:8px">🔥 Input Sarpras Kebakaran</div>
-              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Sesuai standar panduan pengawasan — kebutuhan dikalkulasi berdasarkan jenis pemegang izin dan luasan areal</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-              <button type="button" onclick="toggleSarprasSection()" id="btn-toggle-sarpras" class="btn btn-outline" style="font-size:12px;padding:7px 14px">
-                🔽 Tampilkan Sarpras
-              </button>
-            </div>
-          </div>
-
-          <!-- Panel Sarpras (collapsible) -->
-          <div id="sarpras-input-panel" style="display:none">
-
-            <!-- Konfigurasi SDM / Regu berdasarkan Jenis & Luasan -->
-            <div style="background:var(--hijau-light);border:1.5px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:18px">
-              <div style="font-size:13px;font-weight:700;color:var(--hijau);margin-bottom:12px">⚙️ Konfigurasi Regu Berdasarkan Panduan Pengawasan</div>
-              <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
-
-                <!-- Jenis Pemegang -->
-                <div>
-                  <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Jenis Pemegang</label>
-                  <select id="sarpras-jenis" class="form-control" style="font-size:12px;min-width:300px" onchange="recalcSarprasRegu()">
-                    <option value="">— Pilih Jenis Pemegang —</option>
-                    <option value="A">A. IUPHHK / IUPHHBK / IUPHHK-RE Hutan Alam & Izin Pinjam Pakai</option>
-                    <option value="B">B. IUPHHK / IUPHHBK dalam HTI atau HTHR</option>
-                  </select>
-                </div>
-
-                <!-- Luasan -->
-                <div>
-                  <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Luasan Areal (Ha)</label>
-                  <input type="number" id="sarpras-luas" min="0" step="100" placeholder="Masukkan luas (Ha)" class="form-control" style="width:180px;font-size:12px" oninput="recalcSarprasRegu()">
-                </div>
-
-                <!-- Hasil kalkulasi regu -->
-                <div id="sarpras-regu-result" style="display:none;background:#fff;border:1.5px solid var(--hijau-mid);border-radius:8px;padding:10px 16px;min-width:180px">
-                  <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Jumlah Regu Wajib</div>
-                  <div style="display:flex;align-items:center;gap:8px">
-                    <span id="sarpras-regu-nilai" style="font-size:24px;font-weight:700;color:var(--hijau)">—</span>
-                    <span style="font-size:12px;color:var(--text-muted)">regu</span>
-                  </div>
-                  <div id="sarpras-regu-dasar" style="font-size:10px;color:var(--hijau-mid);margin-top:2px"></div>
-                </div>
-
-                <!-- Atau input manual -->
-                <div style="border-left:1.5px solid var(--border);padding-left:14px">
-                  <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Atau Input Manual</label>
-                  <div style="display:flex;align-items:center;gap:6px">
-                    <input type="number" id="sarpras-regu" min="1" max="20" value="1" class="form-control" style="width:70px;text-align:center;font-size:13px" oninput="recalcSarpras()">
-                    <span style="font-size:12px;color:var(--text-muted)">regu</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Info standar SDM berdasarkan jenis -->
-              <div id="sarpras-sdm-info" style="display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
-                <div style="font-size:11px;font-weight:700;color:var(--hijau);margin-bottom:6px">📋 Standar SDM setiap 1 Regu: <span style="font-weight:400;color:var(--text-muted)">minimal 1 Kepala Regu + 14 Anggota = 15 orang</span></div>
-                <div id="sarpras-sdm-detail" style="font-size:11px;color:var(--text-muted);line-height:1.7"></div>
-              </div>
-            </div>
-
-            <!-- Filter kategori -->
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-              <button type="button" class="sarpras-cat-btn active" onclick="filterSarprasInput('all',this)">🗂️ Semua</button>
-              <button type="button" class="sarpras-cat-btn" onclick="filterSarprasInput('pemadaman',this)">🚒 Pemadaman</button>
-              <button type="button" class="sarpras-cat-btn" onclick="filterSarprasInput('pencegahan',this)">🛡️ Pencegahan</button>
-              <button type="button" class="sarpras-cat-btn" onclick="filterSarprasInput('lainnya',this)">📦 Lainnya</button>
-            </div>
-
-            <div id="sarpras-input-content"></div>
-
-
-          </div>
-        </div>
-
         <div class="form-actions">
           <button class="btn btn-outline" onclick="resetForm()">🔄 Reset</button>
           <button class="btn btn-primary" onclick="submitData()">💾 Simpan Data</button>
         </div>
       </div>
-    </div>
+      </div><!-- /input-panel-pengawasan -->
+
+      <!-- TAB 2: SARPRAS KEBAKARAN (standalone panel) -->
+      <div id="input-panel-sarpras" style="display:none">
+      <div class="form-card" style="border-radius:0 0 16px 16px;border-top:none">
+        <div style="background:linear-gradient(135deg,#e8f5ed,#f0fdf4);border:1.5px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:18px">
+          <div style="font-size:13px;font-weight:700;color:var(--hijau);margin-bottom:4px">⚙️ Konfigurasi Regu Berdasarkan Panduan Pengawasan</div>
+          <div style="font-size:12px;color:var(--text-muted)">Sesuai standar panduan pengawasan — kebutuhan dikalkulasi berdasarkan jenis pemegang izin dan luasan areal</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:18px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px">
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Jenis Pemegang</label>
+            <select id="sarpras-jenis" class="form-control" style="font-size:12px;min-width:300px" onchange="recalcSarprasRegu()">
+              <option value="">— Pilih Jenis Pemegang —</option>
+              <option value="A">A. IUPHHK / IUPHHBK / IUPHHK-RE Hutan Alam & Izin Pinjam Pakai</option>
+              <option value="B">B. IUPHHK / IUPHHBK dalam HTI atau HTHR</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Luasan Areal (Ha)</label>
+            <input type="number" id="sarpras-luas" min="0" step="100" placeholder="Masukkan luas (Ha)" class="form-control" style="width:180px;font-size:12px" oninput="recalcSarprasRegu()">
+          </div>
+          <div id="sarpras-regu-result" style="display:none;background:#fff;border:1.5px solid var(--hijau-mid);border-radius:8px;padding:10px 16px;min-width:180px">
+            <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Jumlah Regu Wajib</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="sarpras-regu-nilai" style="font-size:24px;font-weight:700;color:var(--hijau)">—</span>
+              <span style="font-size:12px;color:var(--text-muted)">regu</span>
+            </div>
+            <div id="sarpras-regu-dasar" style="font-size:10px;color:var(--hijau-mid);margin-top:2px"></div>
+          </div>
+          <div style="border-left:1.5px solid var(--border);padding-left:14px">
+            <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px">Atau Input Manual</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="number" id="sarpras-regu" min="1" max="20" value="1" class="form-control" style="width:70px;text-align:center;font-size:13px" oninput="recalcSarpras()">
+              <span style="font-size:12px;color:var(--text-muted)">regu</span>
+            </div>
+          </div>
+        </div>
+        <div id="sarpras-sdm-info" style="display:none;margin-bottom:14px;background:var(--hijau-light);border:1px solid var(--border);border-radius:8px;padding:12px 16px">
+          <div style="font-size:11px;font-weight:700;color:var(--hijau);margin-bottom:6px">📋 Standar SDM setiap 1 Regu: <span style="font-weight:400;color:var(--text-muted)">minimal 1 Kepala Regu + 14 Anggota = 15 orang</span></div>
+          <div id="sarpras-sdm-detail" style="font-size:11px;color:var(--text-muted);line-height:1.7"></div>
+        </div>
+        <!-- Filter kategori -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <button type="button" class="sarpras-cat-btn active" onclick="filterSarprasInput('all',this)">🗂️ Semua</button>
+          <button type="button" class="sarpras-cat-btn" onclick="filterSarprasInput('pemadaman',this)">🚒 Pemadaman</button>
+          <button type="button" class="sarpras-cat-btn" onclick="filterSarprasInput('pencegahan',this)">🛡️ Pencegahan</button>
+          <button type="button" class="sarpras-cat-btn" onclick="filterSarprasInput('lainnya',this)">📦 Lainnya</button>
+        </div>
+        <div id="sarpras-input-content"></div>
+      </div>
+      </div><!-- /input-panel-sarpras -->
+
+      <!-- TAB 3: AREA KEBAKARAN (multi-entry) -->
+      <div id="input-panel-kebakaran" style="display:none">
+      <div class="form-card" style="border-radius:0 0 16px 16px;border-top:none">
+        <div style="background:linear-gradient(135deg,#fef2f2,#fff5f5);border:1.5px solid #fecaca;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px">
+          <span style="font-size:28px">🔥</span>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#dc2626">Input Area Kebakaran</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Tambahkan satu atau beberapa kejadian kebakaran. Setiap entri memiliki tanggal, koordinat, luasan, dan foto dokumentasi tersendiri.</div>
+          </div>
+        </div>
+
+        <!-- Daftar entri kebakaran -->
+        <div id="kb-entries-list"></div>
+
+        <!-- Tombol tambah entri -->
+        <div style="text-align:center;margin:18px 0">
+          <button type="button" onclick="addKbEntry()" style="background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(220,38,38,0.2);transition:all 0.2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+            ➕ Tambah Entri Kebakaran Lagi
+          </button>
+        </div>
+
+        <!-- Info -->
+        <div style="background:#fef9f0;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-top:8px">
+          ℹ️ Data area kebakaran akan tersimpan bersama data pengawasan yang terkait. Pastikan data pengawasan utama sudah diisi di tab <strong>Form Hasil Pengawasan</strong> sebelum menyimpan.
+        </div>
+      </div>
+      </div><!-- /input-panel-kebakaran -->
+    </div><!-- /page-input -->
+
+    <!-- Legacy stubs to avoid JS errors -->
+    <div id="sarpras-input-panel" style="display:block"></div>
+    <div id="btn-toggle-sarpras" style="display:none"></div>
+    <div id="btn-toggle-kebakaran" style="display:none"></div>
+    <div id="kebakaran-input-panel" style="display:none"></div>
+    <input id="kb-tanggal" style="display:none"><input id="kb-luas" style="display:none">
+    <input id="kb-lat" style="display:none"><input id="kb-lng" style="display:none">
+    <textarea id="kb-keterangan" style="display:none"></textarea>
+    <div id="kb-foto-grid" style="display:none"></div><div id="kb-foto-empty" style="display:none"></div>
+    <div id="kb-camera-container" style="display:none"><video id="kb-camera-preview" style="display:none"></video><canvas id="kb-camera-canvas" style="display:none"></canvas></div>
+    <div id="kb-map-picker" style="display:none"><div id="kb-map" style="display:none"></div></div>
+    <div id="kb-koordinat-info" style="display:none"><span id="kb-koordinat-text"></span></div>
 
     <!-- ===== REKAP DATA ===== -->
     <div class="page" id="page-data">
@@ -1264,14 +1342,15 @@
             <option>Identifikasi dan Verifikasi Lapangan</option>
           </select>
           <button class="btn btn-excel" onclick="exportExcel()">⬇️ Ekspor Excel</button>
+          <button id="btn-hapus-semua-data" class="btn btn-danger" style="display:none;font-size:12px;padding:7px 14px" onclick="clearAllRekapData()">🗑️ Hapus Semua Data</button>
         </div>
         <div style="overflow-x:auto">
           <table>
             <thead><tr>
               <th>#</th><th>Tanggal</th><th>No. Surat Tugas</th><th>Nama Subjek Hukum</th>
-              <th>Provinsi</th><th>Kab/Kota</th><th>Jenis Pengawasan</th>
+              <th>Unit Kerja PJ</th><th>Provinsi</th><th>Kab/Kota</th><th>Jenis Pengawasan</th>
               <th>Objek Pengawasan</th><th>Luasan SH (Ha)</th>
-              <th>Tindak Lanjut</th><th>Aksi</th>
+              <th>Kebakaran</th><th>Tindak Lanjut</th><th>Aksi</th>
             </tr></thead>
             <tbody id="main-table-body"></tbody>
           </table>
@@ -1318,6 +1397,47 @@
         </div>
         <div style="padding:10px 18px;border-top:1px solid var(--border)">
           <span class="page-info" id="rekap-sanksi-info">Menampilkan 0 sanksi</span>
+        </div>
+      </div>
+
+      <!-- Section 3: Rekap Kebakaran -->
+      <div style="margin-bottom:8px;margin-top:28px">
+        <div style="font-size:16px;font-weight:700;color:#dc2626;margin-bottom:12px;display:flex;align-items:center;gap:8px">🔥 Rekap Data Kejadian Kebakaran</div>
+      </div>
+      <div class="table-card">
+        <div class="table-toolbar" style="padding:14px 18px">
+          <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="rekap-kebakaran-search" placeholder="Cari lokasi, subjek hukum..." oninput="renderRekapKebakaran()">
+          </div>
+          <select class="form-control" style="width:220px" id="rekap-kebakaran-filter-unit" onchange="renderRekapKebakaran()">
+            <option value="">Semua Unit Kerja</option>
+            <option>Dit. PPSAKK</option>
+            <option>Gakkum Kehutanan Wilayah Sumatera</option>
+            <option>Gakkum Kehutanan Wilayah Jabalnusra</option>
+            <option>Gakkum Kehutanan Wilayah Kalimantan</option>
+            <option>Gakkum Kehutanan Wilayah Sulawesi</option>
+            <option>Gakkum Kehutanan Wilayah Mapua</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>#</th>
+              <th>Tanggal Kejadian</th>
+              <th>Unit Kerja PJ</th>
+              <th>Nama Subjek Hukum</th>
+              <th>Provinsi</th>
+              <th>Luasan Terbakar (Ha)</th>
+              <th>Koordinat</th>
+              <th>Status Tindak Lanjut</th>
+              <th>Keterangan</th>
+            </tr></thead>
+            <tbody id="rekap-kebakaran-tbody"></tbody>
+          </table>
+        </div>
+        <div style="padding:10px 18px;border-top:1px solid var(--border)">
+          <span class="page-info" id="rekap-kebakaran-info">Menampilkan 0 kejadian kebakaran</span>
         </div>
       </div>
     </div><!-- /page-data -->
@@ -1375,7 +1495,7 @@
         </div>
       </div>
       <div class="alert alert-info">
-        ℹ️ File Excel akan berisi 3 sheet: <strong>Data Pengawasan</strong> (semua kolom input data), <strong>Rekapitulasi</strong> (ringkasan per provinsi), dan <strong>Sanksi Administratif</strong> (data teguran tertulis, denda administratif, pembekuan, dan pencabutan).
+        ℹ️ File Excel akan berisi 4 sheet: <strong>Data Pengawasan</strong> (semua kolom input data), <strong>Rekapitulasi</strong> (ringkasan per provinsi), <strong>Sanksi Administratif</strong> (data teguran tertulis, denda administratif, pembekuan, dan pencabutan), dan <strong>Kejadian Kebakaran</strong> (data area kebakaran dengan koordinat).
       </div>
     </div>
 
@@ -1528,6 +1648,30 @@
 
     <!-- ===== MANAJEMEN AKUN (ADMIN) ===== -->
     <div class="page" id="page-manajemen">
+      <!-- Info Hierarki Akun -->
+      <div style="background:linear-gradient(135deg,#f0fdf4,#fff);border:1.5px solid var(--border);border-radius:12px;padding:18px 22px;margin-bottom:20px">
+        <div style="font-size:15px;font-weight:700;color:var(--hijau);margin-bottom:12px">🔐 Hierarki Akun & Kewenangan</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:12px">
+          <div style="background:#fff;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px">
+            <div style="font-weight:700;color:#1a5c2e;margin-bottom:4px">🛡️ Super Admin</div>
+            <div style="color:var(--text-muted)">Akses penuh semua fitur & manajemen akun</div>
+            <div style="margin-top:6px;font-size:11px;color:#9ca3af">Username: <strong>superadmin</strong></div>
+          </div>
+          <div style="background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px">
+            <div style="font-weight:700;color:#1e40af;margin-bottom:4px">🌏 Admin Wilayah (5 Wilayah)</div>
+            <div style="color:var(--text-muted)">Edit & hapus rekap data. Tanpa akses Sanksi Administratif.</div>
+            <div style="margin-top:6px;font-size:11px;color:#9ca3af">Sumatera · Jabalnusra · Kalimantan · Sulawesi · Papua</div>
+          </div>
+          <div style="background:#fff;border:1px solid #fde68a;border-radius:8px;padding:10px 14px">
+            <div style="font-weight:700;color:#92400e;margin-bottom:4px">📊 Struktural</div>
+            <div style="color:var(--text-muted)">Dashboard, Peta, Rekap Data, Sanksi (lihat), Laporan & Ekspor</div>
+          </div>
+          <div style="background:#fff;border:1px solid #d1e7d9;border-radius:8px;padding:10px 14px">
+            <div style="font-weight:700;color:#374151;margin-bottom:4px">👤 Petugas Pengawas</div>
+            <div style="color:var(--text-muted)">Peta Pengawasan, Input Data, Rekap Data, Panduan Pengawasan</div>
+          </div>
+        </div>
+      </div>
       <div class="pending-card">
         <div class="pending-header">
           <h3>🕐 Permohonan Akun Menunggu Persetujuan</h3>
@@ -1698,9 +1842,11 @@ async function loadDataFromSupabase() {
       id: r.id, tanggal: r.tanggal, kode: r.kode, subjek: r.subjek,
       provinsi: r.provinsi, kabupaten: r.kabupaten, kawasan: r.kawasan,
       jenis: r.jenis, luas: r.luas, status: r.status, tindak: r.tindak,
+      unitkerja: r.unitkerja || '',
       petugas: r.petugas ? (typeof r.petugas==='string' ? JSON.parse(r.petugas) : r.petugas) : [],
       files: r.files ? (typeof r.files==='string' ? JSON.parse(r.files) : r.files) : [],
-      uraian: r.uraian, rekomendasi: r.rekomendasi
+      uraian: r.uraian, rekomendasi: r.rekomendasi,
+      kebakaran: r.kebakaran ? (typeof r.kebakaran==='string' ? JSON.parse(r.kebakaran) : r.kebakaran) : null
     }));
     try { localStorage.setItem('siwashut_data', JSON.stringify(sanitizeForStorage(DATA))); } catch(e){}
     showToast('✅ ' + DATA.length + ' data berhasil dimuat dari server.', 'success');
@@ -1718,11 +1864,20 @@ function sanitizeForStorage(data) {
     id: r.id, tanggal: r.tanggal, kode: r.kode, subjek: r.subjek,
     provinsi: r.provinsi, kabupaten: r.kabupaten, kawasan: r.kawasan,
     jenis: r.jenis, luas: r.luas, status: r.status, tindak: r.tindak,
+    unitkerja: r.unitkerja || '',
     petugas: Array.isArray(r.petugas) ? r.petugas.map(p=>({nama:p.nama||'',unit:p.unit||''})) : [],
     files: Array.isArray(r.files)
       ? r.files.map(f => typeof f === 'string' ? {name:f,url:null,path:null} : {name:f.name||'',url:f.url||null,path:f.path||null})
       : [],
-    uraian: r.uraian || '', rekomendasi: r.rekomendasi || ''
+    uraian: r.uraian || '', rekomendasi: r.rekomendasi || '',
+    kebakaran: r.kebakaran ? {
+      tanggal: r.kebakaran.tanggal || '',
+      luas: r.kebakaran.luas || 0,
+      lat: r.kebakaran.lat || null,
+      lng: r.kebakaran.lng || null,
+      keterangan: r.kebakaran.keterangan || '',
+      fotos: Array.isArray(r.kebakaran.fotos) ? r.kebakaran.fotos : []
+    } : null
   }));
 }
 function saveData() {
@@ -1737,9 +1892,11 @@ async function saveRowToSupabase(row) {
       tanggal:row.tanggal, kode:row.kode, subjek:row.subjek,
       provinsi:row.provinsi, kabupaten:row.kabupaten, kawasan:row.kawasan,
       jenis:row.jenis, luas:row.luas, status:row.status, tindak:row.tindak,
+      unitkerja: row.unitkerja || '',
       petugas:JSON.stringify((row.petugas||[]).map(p=>({nama:p.nama||'',unit:p.unit||''}))),
       files:JSON.stringify((row.files||[]).map(f=> typeof f==='string' ? {name:f,url:null,path:null} : {name:f.name||'',url:f.url||null,path:f.path||null})),
-      uraian:row.uraian, rekomendasi:row.rekomendasi
+      uraian:row.uraian, rekomendasi:row.rekomendasi,
+      kebakaran: row.kebakaran ? JSON.stringify(row.kebakaran) : null
     };
     const { data, error } = await supa.from('patroli').insert(payload).select().single();
     if (error) throw error;
@@ -1884,19 +2041,45 @@ const titles = {
 };
 
 function showPage(id) {
+  // === AKSES KONTROL BERBASIS ROLE ===
+  const restricted = {
+    'dashboard':      () => !isPetugas(),                  // petugas tidak bisa
+    'sanksi':         () => canAccessSanksi(),             // hanya superadmin & struktural
+    'manajemen':      () => isSuperAdmin(),                // hanya superadmin
+    'laporan':        () => !isPetugas(),                  // petugas tidak bisa
+    'petapengawasan': () => true,                          // semua bisa
+    'input':          () => isSuperAdmin() || isAdminWilayah() || isPetugas(), // tidak untuk struktural
+    'data':           () => true,                          // semua bisa (tapi konten bisa dibatasi)
+    'panduan':        () => isSuperAdmin() || isPetugas() || isAdminWilayah(), // tidak untuk struktural murni
+  };
+  const checker = restricted[id];
+  if (checker && !checker()) {
+    showToast('⚠️ Anda tidak memiliki akses ke halaman ini.', 'warn');
+    return;
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
+  const pageEl = document.getElementById('page-'+id);
+  if (!pageEl) return;
+  pageEl.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
   });
-  document.getElementById('page-title').textContent = titles[id];
+  document.getElementById('page-title').textContent = titles[id] || id;
   if (id === 'dashboard') { updateDashboard(); setTimeout(()=>{ if(dashMap) dashMap.invalidateSize(); }, 150); }
   if (id === 'peta') { updateMapCharts(); setTimeout(()=>{ if(leafletMap) leafletMap.invalidateSize(); }, 150); }
-  if (id === 'data') { populateFilters(); renderTable(); renderRekapSanksi(); }
+  if (id === 'data') { populateFilters(); renderTable(); renderRekapSanksi(); setTimeout(renderRekapKebakaran, 150); }
   if (id === 'laporan') { updateLaporan(); populateExportFilter(); }
   if (id === 'manajemen') { renderAdminPage(); }
   if (id === 'petapengawasan') { initPetaPW(); setTimeout(()=>{ if(petaPWMap) petaPWMap.invalidateSize(); }, 200); }
+  if (id === 'input') {
+    // Auto-isi unit kerja berdasarkan role/unit pengguna
+    const unitEl = document.getElementById('f-unitkerja');
+    if (unitEl) {
+      const myUnit = getCurrentUnitKerja();
+      if (myUnit && !isSuperAdmin()) { unitEl.value = myUnit; }
+    }
+  }
   if (id === 'sanksi') { renderSanksiPage(); }
   if (id === 'panduan') { initPanduanPage(); }
 }
@@ -1904,7 +2087,7 @@ function showPage(id) {
 // ============ FORM ============
 function resetForm() {
   ['f-tanggal','f-kode','f-subjek','f-provinsi','f-kabupaten','f-kawasan','f-jenis',
-   'f-luas','f-status','f-tindak','f-uraian','f-rekomendasi']
+   'f-luas','f-status','f-tindak','f-uraian','f-rekomendasi','f-unitkerja']
     .forEach(id => { const el = document.getElementById(id); if(el) el.value = el.type==='date' ? new Date().toISOString().split('T')[0] : ''; });
   // Reset petugas list
   document.getElementById('petugas-list').innerHTML = `
@@ -1926,8 +2109,23 @@ function resetForm() {
   if (document.getElementById('sarpras-luas')) document.getElementById('sarpras-luas').value = '';
   if (document.getElementById('sarpras-regu-result')) document.getElementById('sarpras-regu-result').style.display = 'none';
   if (document.getElementById('sarpras-sdm-info')) document.getElementById('sarpras-sdm-info').style.display = 'none';
-  document.getElementById('sarpras-input-panel').style.display = 'none';
-  document.getElementById('btn-toggle-sarpras').textContent = '🔽 Tampilkan Sarpras';
+  // Reset sarpras panel state
+  if (document.getElementById('sarpras-regu')) document.getElementById('sarpras-regu').value = 1;
+  // Reset kebakaran
+  ['kb-tanggal','kb-luas','kb-lat','kb-lng','kb-keterangan'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  kbFotoList = []; renderKbFotoGrid();
+  stopKbCamera();
+  if(kbMapInstance) { document.getElementById('kb-map-picker').style.display='none'; }
+  if(document.getElementById('kb-koordinat-info')) document.getElementById('kb-koordinat-info').style.display='none';
+  // Reset multi-entry kebakaran
+  kbEntriesList = [];
+  kbEntryIdCounter = 0;
+  const kbEntriesListEl = document.getElementById('kb-entries-list');
+  if (kbEntriesListEl) kbEntriesListEl.innerHTML = '';
+  // Switch back to first tab
+  switchInputTab('pengawasan');
 }
 
 function submitData() {
@@ -1938,7 +2136,8 @@ function submitData() {
     kawasan: document.getElementById('f-kawasan').value,
     jenis: document.getElementById('f-jenis').value,
     status: document.getElementById('f-status').value,
-    tindak: document.getElementById('f-tindak').value
+    tindak: document.getElementById('f-tindak').value,
+    unitkerja: document.getElementById('f-unitkerja').value
   };
   for (const [k,v] of Object.entries(req)) {
     if (!v) { showFormAlert('Harap lengkapi semua field yang wajib diisi (*).', 'danger'); return; }
@@ -1951,6 +2150,43 @@ function submitData() {
     const unit = row.querySelector('.petugas-unit').value.trim();
     if (nama) petugasList.push({ nama, unit });
   });
+
+  // Collect kebakaran data — from multi-entry tab OR legacy single entry
+  let kebakaran = null;
+  // Try multi-entry tab first
+  const kbEntriesData = getKbEntriesData();
+  if (kbEntriesData.length > 0) {
+    // Use first entry as primary kebakaran (backward compatible)
+    const first = kbEntriesData[0];
+    kebakaran = {
+      tanggal: first.tanggal,
+      luas: first.luas,
+      lat: first.lat,
+      lng: first.lng,
+      keterangan: first.keterangan,
+      fotos: first.fotos,
+      // Store all entries
+      entries: kbEntriesData
+    };
+  } else {
+    // Legacy: check old kb-tanggal etc (for backward compat)
+    const kbPanel = document.getElementById('kebakaran-input-panel');
+    if (kbPanel && kbPanel.style.display !== 'none') {
+      const kbTanggal = document.getElementById('kb-tanggal')?.value || '';
+      const kbLuas = document.getElementById('kb-luas')?.value || '';
+      const kbLat = document.getElementById('kb-lat')?.value || '';
+      const kbLng = document.getElementById('kb-lng')?.value || '';
+      const kbKet = document.getElementById('kb-keterangan')?.value || '';
+      if (kbTanggal || kbLuas || kbLat || kbLng || kbKet || kbFotoList.length > 0) {
+        kebakaran = {
+          tanggal: kbTanggal, luas: parseFloat(kbLuas) || 0,
+          lat: parseFloat(kbLat) || null, lng: parseFloat(kbLng) || null,
+          keterangan: kbKet, fotos: kbFotoList.map(f => f.name || f.url || '')
+        };
+      }
+    }
+  }
+
   const row = {
     id: Date.now(),
     tanggal: document.getElementById('f-tanggal').value,
@@ -1963,10 +2199,12 @@ function submitData() {
     luas: document.getElementById('f-luas').value || '0',
     status: document.getElementById('f-status').value,
     tindak: document.getElementById('f-tindak').value,
+    unitkerja: document.getElementById('f-unitkerja').value,
     petugas: petugasList,
     files: uploadedFiles.map(f => f.name),
     uraian: document.getElementById('f-uraian').value,
-    rekomendasi: document.getElementById('f-rekomendasi').value
+    rekomendasi: document.getElementById('f-rekomendasi').value,
+    kebakaran: kebakaran
   };
   DATA.push(row); saveData(); resetForm();
   showFormAlert('Menyimpan data ke server...', 'success');
@@ -1986,16 +2224,27 @@ function showFormAlert(msg, type) {
 
 // ============ DASHBOARD ============
 function updateDashboard() {
-  document.getElementById('st-total').textContent = DATA.length;
+  const viewData = getAccessibleData(DATA);
+  document.getElementById('st-total').textContent = viewData.length;
   // Sanksi stat cards
   document.getElementById('st-teguran').textContent = SANKSI_DATA.filter(s => s.jenis === 'Teguran Tertulis').length;
   document.getElementById('st-denda').textContent = SANKSI_DATA.filter(s => s.jenis === 'Denda Administratif').length;
   document.getElementById('st-pembekuan').textContent = SANKSI_DATA.filter(s => s.jenis === 'Pembekuan').length;
   document.getElementById('st-pencabutan').textContent = SANKSI_DATA.filter(s => s.jenis === 'Pencabutan').length;
 
+  // Kebakaran stats
+  const dataKebakaran = viewData.filter(d => d.kebakaran && (d.kebakaran.tanggal || d.kebakaran.luas > 0));
+  const totalLuasKebakaran = dataKebakaran.reduce((s,d) => s + (parseFloat(d.kebakaran?.luas)||0), 0);
+  const kebakaranPeta = dataKebakaran.filter(d => d.kebakaran?.lat && d.kebakaran?.lng).length;
+  const kebakaranSelesai = dataKebakaran.filter(d => d.tindak === 'Selesai / Ditutup' || d.tindak === 'Sudah Ditindaklanjuti').length;
+  if (document.getElementById('st-kebakaran')) document.getElementById('st-kebakaran').textContent = dataKebakaran.length;
+  if (document.getElementById('st-luas-kebakaran')) document.getElementById('st-luas-kebakaran').textContent = totalLuasKebakaran.toLocaleString('id-ID');
+  if (document.getElementById('st-kebakaran-peta')) document.getElementById('st-kebakaran-peta').textContent = kebakaranPeta;
+  if (document.getElementById('st-kebakaran-selesai')) document.getElementById('st-kebakaran-selesai').textContent = kebakaranSelesai;
+
   // Recent table
   const tbody = document.getElementById('recent-table-body');
-  const recent = [...DATA].reverse().slice(0, 5);
+  const recent = [...viewData].reverse().slice(0, 5);
   if (!recent.length) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>`;
   } else {
@@ -2011,11 +2260,11 @@ function updateDashboard() {
   }
 
   // Dashboard mini rekap
-  const luasTotal = DATA.reduce((s,d)=>s+parseFloat(d.luas||0),0);
-  const rutin = DATA.filter(d=>d.jenis==='Pengawasan Rutin').length;
-  const insidental = DATA.filter(d=>d.jenis==='Pengawasan Insidental').length;
-  const idver = DATA.filter(d=>d.jenis==='Identifikasi dan Verifikasi Lapangan').length;
-  document.getElementById('dash-rekap-content').innerHTML = DATA.length ? `
+  const luasTotal = viewData.reduce((s,d)=>s+parseFloat(d.luas||0),0);
+  const rutin = viewData.filter(d=>d.jenis==='Pengawasan Rutin').length;
+  const insidental = viewData.filter(d=>d.jenis==='Pengawasan Insidental').length;
+  const idver = viewData.filter(d=>d.jenis==='Identifikasi dan Verifikasi Lapangan').length;
+  document.getElementById('dash-rekap-content').innerHTML = viewData.length ? `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div style="background:var(--hijau-light);padding:12px;border-radius:8px">
         <div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Pengawasan Rutin</div>
@@ -2037,12 +2286,15 @@ function updateDashboard() {
 
   // Charts
   buildChartJenis(); buildChartStatus(); buildChartTren(); buildChartSanksi();
+  buildChartKebakaran();
   // Dashboard map
   renderDashboardMap();
   // Mini province chart
   buildChartProvinsiDash();
   // Sanksi
   if (typeof updateDashboardSanksi === 'function') updateDashboardSanksi();
+  // Kebakaran map
+  renderDashboardKebakaranMap();
 }
 
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
@@ -2287,7 +2539,8 @@ function getFiltered() {
   const q = (document.getElementById('search-input')?.value||'').toLowerCase();
   const fp = document.getElementById('filter-provinsi')?.value||'';
   const fs = document.getElementById('filter-status')?.value||'';
-  return DATA.filter(d => {
+  const accessibleData = getAccessibleData(DATA);
+  return accessibleData.filter(d => {
     const match = !q || [d.provinsi,d.jenis,d.status,d.tindak,d.kabupaten,d.kode,d.subjek].some(v=>(v||'').toLowerCase().includes(q));
     const mp = !fp || d.provinsi===fp;
     const ms = !fs || d.status===fs;
@@ -2306,22 +2559,27 @@ function renderTable() {
 
   const tbody = document.getElementById('main-table-body');
   if (!slice.length) {
-    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="emoji">🔍</div><p>Tidak ada data ditemukan.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13"><div class="empty-state"><div class="emoji">🔍</div><p>Tidak ada data ditemukan.</p></div></td></tr>`;
   } else {
     tbody.innerHTML = slice.map((d,i) => {
       const petugasStr = Array.isArray(d.petugas) ? d.petugas.map(p=>`${p.nama}${p.unit?' ('+p.unit+')':''}`).join(', ') : (d.petugas||'-');
+      const kebakaranBadge = d.kebakaran && (d.kebakaran.tanggal || d.kebakaran.luas > 0)
+        ? `<span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:10px">🔥 ${d.kebakaran.luas ? d.kebakaran.luas+' Ha' : 'Ada'}</span>`
+        : '<span style="font-size:11px;color:#9ca3af">—</span>';
       return `<tr>
         <td>${(currentPage-1)*ROWS_PER_PAGE+i+1}</td>
         <td>${d.tanggal||'-'}</td>
         <td style="font-size:11px;color:var(--text-muted)">${d.kode||'-'}</td>
         <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.subjek||''}">${d.subjek||'-'}</td>
+        <td style="font-size:11px;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.unitkerja||''}">${d.unitkerja||'-'}</td>
         <td><strong>${d.provinsi||'-'}</strong></td>
         <td>${d.kabupaten||'-'}</td>
         <td style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${d.jenis}">${d.jenis||'-'}</td>
         <td>${objekBadge(d.status)}</td>
         <td>${parseFloat(d.luas||0).toLocaleString('id-ID')}</td>
+        <td>${kebakaranBadge}</td>
         <td>${tindakBadge(d.tindak)}</td>
-        <td><button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteRow(${d.id})">Hapus</button></td>
+        <td>${canEditDeleteRekap() ? `<button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteRow(${d.id})">Hapus</button>` : '<span style="font-size:11px;color:var(--text-muted)">—</span>'}</td>
       </tr>`;
     }).join('');
   }
@@ -2341,10 +2599,27 @@ function renderTable() {
 }
 
 function deleteRow(id) {
+  if (!canEditDeleteRekap()) {
+    showToast('⚠️ Anda tidak memiliki kewenangan untuk menghapus data.', 'warn');
+    return;
+  }
   if (!confirm('Hapus data ini?')) return;
   const _delId = id;
   DATA = DATA.filter(d=>d.id!==_delId); saveData(); renderTable();
   deleteRowFromSupabase(_delId);
+}
+
+function clearAllRekapData() {
+  if (!isSuperAdmin()) {
+    showToast('⚠️ Hanya Super Admin yang dapat menghapus semua data.', 'warn');
+    return;
+  }
+  if (!confirm('⚠️ PERINGATAN: Hapus SEMUA ' + DATA.length + ' data rekap pengawasan?\n\nTindakan ini tidak dapat dibatalkan!')) return;
+  // Hapus dari Supabase satu per satu (async)
+  const ids = DATA.map(d => d.id);
+  DATA = []; saveData(); renderTable(); updateDashboard();
+  ids.forEach(id => deleteRowFromSupabase(id));
+  showToast('🗑️ Semua data rekap berhasil dihapus.', 'info');
 }
 
 // ============ LAPORAN ============
@@ -2390,6 +2665,10 @@ function updateLaporan() {
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Selesai Ditindaklanjuti</div>
       <div style="font-size:18px;font-weight:700;color:var(--hijau)">${selesai} laporan</div>
     </div>
+    <div style="padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin-bottom:14px">
+      <div style="font-size:12px;color:#991b1b;margin-bottom:4px">🔥 Kejadian Kebakaran Tercatat</div>
+      <div style="font-size:18px;font-weight:700;color:#dc2626">${exportData.filter(d=>d.kebakaran&&(d.kebakaran.tanggal||d.kebakaran.luas>0)).length} laporan</div>
+    </div>
     <div style="font-size:12px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⚖️ Ringkasan Sanksi Administratif</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div style="background:#fff8f0;border:1px solid #fed7aa;padding:12px;border-radius:8px">
@@ -2429,16 +2708,20 @@ function exportExcel() {
   if (objek) exportData = exportData.filter(d=>d.status===objek);
   if (jenis) exportData = exportData.filter(d=>d.jenis===jenis);
 
-  const headers = ['No','No. Surat Tugas','Tanggal','Nama Subjek Hukum','Provinsi','Kab/Kota','Jenis Kawasan',
+  const headers = ['No','No. Surat Tugas','Tanggal','Nama Subjek Hukum','Unit Kerja PJ','Provinsi','Kab/Kota','Jenis Kawasan',
     'Jenis Pengawasan','Objek Pengawasan','Luasan Subjek Hukum (Ha)',
-    'Petugas & Unit Kerja','Status Tindak Lanjut','Uraian Temuan','Rekomendasi','File Lampiran'];
+    'Petugas & Unit Kerja','Status Tindak Lanjut','Uraian Temuan','Rekomendasi','File Lampiran',
+    'Kebakaran (Ya/Tidak)','Tgl Kebakaran','Luas Terbakar (Ha)','Lat Kebakaran','Lng Kebakaran','Ket Kebakaran'];
 
   const rows = exportData.map((d,i) => {
     const petugasStr = Array.isArray(d.petugas) ? d.petugas.map(p=>`${p.nama}${p.unit?' ('+p.unit+')':''}`).join('; ') : (d.petugas||'');
     const filesStr = Array.isArray(d.files) ? d.files.join('; ') : '';
+    const kb = d.kebakaran;
+    const hasKb = kb && (kb.tanggal || parseFloat(kb.luas) > 0);
     return [
-      i+1, d.kode, d.tanggal, d.subjek||'', d.provinsi, d.kabupaten, d.kawasan, d.jenis,
-      d.status, parseFloat(d.luas||0), petugasStr, d.tindak, d.uraian, d.rekomendasi, filesStr
+      i+1, d.kode, d.tanggal, d.subjek||'', d.unitkerja||'', d.provinsi, d.kabupaten, d.kawasan, d.jenis,
+      d.status, parseFloat(d.luas||0), petugasStr, d.tindak, d.uraian, d.rekomendasi, filesStr,
+      hasKb ? 'Ya' : 'Tidak', kb?.tanggal||'', kb?.luas||'', kb?.lat||'', kb?.lng||'', kb?.keterangan||''
     ];
   });
 
@@ -2492,6 +2775,24 @@ function exportExcel() {
   const ws3 = XLSX.utils.aoa_to_sheet([...sanksiSummaryHeader, sanksiHeaders, ...sanksiRows]);
   ws3['!cols'] = [{wch:5},{wch:30},{wch:20},{wch:40},{wch:22},{wch:14},{wch:22},{wch:20},{wch:20}];
   XLSX.utils.book_append_sheet(wb, ws3, 'Sanksi Administratif');
+
+  // Sheet 4: Kebakaran
+  const kbExportData = exportData.filter(d => d.kebakaran && (d.kebakaran.tanggal || parseFloat(d.kebakaran.luas) > 0));
+  const kbHeaders = ['No','Tanggal Pengawasan','No. Surat Tugas','Nama Subjek Hukum','Unit Kerja PJ','Provinsi','Tgl Kejadian Kebakaran','Luasan Terbakar (Ha)','Latitude','Longitude','Status Tindak Lanjut','Keterangan Kebakaran'];
+  const kbRows = kbExportData.map((d,i) => {
+    const kb = d.kebakaran;
+    return [i+1, d.tanggal, d.kode, d.subjek||'', d.unitkerja||'', d.provinsi, kb.tanggal||'', parseFloat(kb.luas||0), kb.lat||'', kb.lng||'', d.tindak, kb.keterangan||''];
+  });
+  const ws4 = XLSX.utils.aoa_to_sheet([
+    ['REKAPITULASI KEJADIAN KEBAKARAN — SIWASHUT'],
+    ['Total Kebakaran Tercatat:', kbExportData.length],
+    ['Total Luasan Terbakar (Ha):', kbExportData.reduce((s,d)=>s+parseFloat(d.kebakaran?.luas||0),0)],
+    [],
+    kbHeaders,
+    ...kbRows
+  ]);
+  ws4['!cols'] = [{wch:5},{wch:14},{wch:22},{wch:28},{wch:32},{wch:18},{wch:16},{wch:16},{wch:14},{wch:14},{wch:22},{wch:40}];
+  XLSX.utils.book_append_sheet(wb, ws4, 'Kejadian Kebakaran');
 
   const fn = `Pengawasan_Kehutanan_${new Date().toISOString().slice(0,10)}.xlsx`;
   XLSX.writeFile(wb, fn);
@@ -2567,6 +2868,7 @@ async function updateNavNotif() {
 }
 
 async function renderAdminPage() {
+  if (!isSuperAdmin()) { showToast('⚠️ Akses ditolak.','warn'); return; }
   updateNavNotif();
   const plist = document.getElementById('pending-list');
   plist.innerHTML = '<div class="empty-pending" style="color:var(--text-muted);padding:12px">Memuat data...</div>';
@@ -2590,17 +2892,27 @@ async function renderAdminPage() {
 
   // -- Pengguna aktif dari Supabase --
   const aktif = await loadActiveUsersFromSupabase();
-  const builtIn = [{username:'admin',nama:'Administrator',unit:'Pusat',role:'admin'},{username:'petugas',nama:'Petugas Demo',unit:'PPSA Demo',role:'petugas'}];
+  const builtIn = [
+    {username:'superadmin',  nama:'Super Administrator', unit:'Pusat',       role:'superadmin'},
+    {username:'admin_sumatera',   nama:'Admin Sumatera',   unit:'Wilayah Sumatera',   role:'admin_wilayah'},
+    {username:'admin_jabalnusra', nama:'Admin Jabalnusra', unit:'Wilayah Jabalnusra', role:'admin_wilayah'},
+    {username:'admin_kalimantan', nama:'Admin Kalimantan', unit:'Wilayah Kalimantan', role:'admin_wilayah'},
+    {username:'admin_sulawesi',   nama:'Admin Sulawesi',   unit:'Wilayah Sulawesi',   role:'admin_wilayah'},
+    {username:'admin_papua',      nama:'Admin Papua',      unit:'Wilayah Papua',      role:'admin_wilayah'},
+    {username:'petugas', nama:'Petugas Demo', unit:'PPSA Demo', role:'petugas'}
+  ];
   const all = [...builtIn, ...aktif];
+  const roleIcon = {superadmin:'🛡️', admin_wilayah:'🌏', struktural:'📊', petugas:'👤'};
+  const roleBadge = {superadmin:'badge-ok', admin_wilayah:'badge-proc', struktural:'badge-warn', petugas:'badge-proc'};
   const alist = document.getElementById('active-users-list');
   alist.innerHTML = all.map(u=>`
     <div class="pending-row">
-      <div style="font-size:28px">${u.role==='admin'?'🛡️':'👤'}</div>
+      <div style="font-size:28px">${roleIcon[u.role]||'👤'}</div>
       <div class="pending-info">
-        <div class="pending-name">${u.nama} <span class="badge ${u.role==='admin'?'badge-ok':'badge-proc'}" style="font-size:10px">${(u.role||'petugas').toUpperCase()}</span></div>
+        <div class="pending-name">${u.nama} <span class="badge ${roleBadge[u.role]||'badge-proc'}" style="font-size:10px">${(u.role||'petugas').toUpperCase()}</span></div>
         <div class="pending-meta">@${u.username} &nbsp;|&nbsp; ${u.unit||'-'}</div>
       </div>
-      ${u.role!=='admin' && aktif.find(d=>d.username===u.username) ? `<button class="btn-reject" onclick="deactivateUser('${u.username}')">🚫 Nonaktifkan</button>` : ''}
+      ${u.role!=='superadmin' && aktif.find(d=>d.username===u.username) ? `<button class="btn-reject" onclick="deactivateUser('${u.username}')">🚫 Nonaktifkan</button>` : ''}
     </div>`).join('');
 }
 
@@ -2688,6 +3000,24 @@ function renderPetaPWDataMarkers() {
     marker.bindPopup(popup, { maxWidth:200 });
     marker.addTo(petaPWMap);
     petaPWMap._dataMakers.push(marker);
+  });
+  // Tambahkan marker kebakaran berdasarkan koordinat yang diinput
+  const fireIcon = L.divIcon({ html: '<div style="font-size:22px;line-height:1;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.5))">🔥</div>', className:'', iconSize:[22,22], iconAnchor:[11,22] });
+  DATA.forEach(d => {
+    if (d.kebakaran && d.kebakaran.lat && d.kebakaran.lng) {
+      const kb = d.kebakaran;
+      const m = L.marker([kb.lat, kb.lng], {icon: fireIcon, title: '🔥 ' + (d.subjek||'Kebakaran')});
+      m.bindPopup(`<div style="font-size:12px;min-width:180px">
+        <div style="font-weight:700;color:#dc2626;margin-bottom:6px">🔥 Area Kebakaran</div>
+        <div style="margin-bottom:3px"><strong>${d.subjek||'-'}</strong></div>
+        <div style="color:#6b7280;font-size:11px">📅 ${kb.tanggal||'-'} &nbsp;|&nbsp; 📏 ${kb.luas ? kb.luas+' Ha' : '-'}</div>
+        <div style="color:#6b7280;font-size:11px">🏢 ${d.unitkerja||'-'}</div>
+        <div style="color:#6b7280;font-size:11px">📍 ${d.provinsi||'-'}</div>
+        ${kb.keterangan ? '<div style="margin-top:4px;font-size:11px;color:#374151">'+kb.keterangan+'</div>' : ''}
+      </div>`, {maxWidth:240});
+      m.addTo(petaPWMap);
+      petaPWMap._dataMakers.push(m);
+    }
   });
 }
 
@@ -2928,7 +3258,122 @@ function clearPetaPWLayers(){
 }
 
 // ============ LOGIN ============
-const USERS = { 'admin': 'kehutanan2026', 'petugas': 'ppsa1234' };
+// Hierarki role:
+// superadmin  → akses penuh
+// admin_[wilayah] → edit/hapus rekap data, NO sanksi administratif
+// struktural  → dashboard, peta, rekap (baca), laporan & ekspor
+// petugas     → peta pengawasan, input data, rekap input sendiri, panduan
+const USERS = {
+  'superadmin':       'kehutanan2026',
+  'admin_sumatera':   'adminsum2026',
+  'admin_jabalnusra': 'adminjab2026',
+  'admin_kalimantan': 'adminkal2026',
+  'admin_sulawesi':   'adminsul2026',
+  'admin_papua':      'adminpap2026',
+  'petugas':          'ppsa1234'
+};
+
+// Mapping role per user bawaan
+const USER_ROLES = {
+  'superadmin':       'superadmin',
+  'admin_sumatera':   'admin_wilayah',
+  'admin_jabalnusra': 'admin_wilayah',
+  'admin_kalimantan': 'admin_wilayah',
+  'admin_sulawesi':   'admin_wilayah',
+  'admin_papua':      'admin_wilayah',
+  'petugas':          'petugas'
+};
+
+// Mapping wilayah untuk admin wilayah (unit kerja)
+const ADMIN_WILAYAH = {
+  'admin_sumatera':   'Gakkum Kehutanan Wilayah Sumatera',
+  'admin_jabalnusra': 'Gakkum Kehutanan Wilayah Jabalnusra',
+  'admin_kalimantan': 'Gakkum Kehutanan Wilayah Kalimantan',
+  'admin_sulawesi':   'Gakkum Kehutanan Wilayah Sulawesi',
+  'admin_papua':      'Gakkum Kehutanan Wilayah Mapua'
+};
+
+// Mapping unit kerja untuk superadmin
+const SUPERADMIN_UNIT = 'Dit. PPSAKK';
+
+function getCurrentUser() {
+  return sessionStorage.getItem('siwashut_user') || '';
+}
+
+function getCurrentUnitKerja() {
+  const u = getCurrentUser();
+  if (isSuperAdmin()) return SUPERADMIN_UNIT;
+  if (ADMIN_WILAYAH[u]) return ADMIN_WILAYAH[u];
+  // Dari Supabase (disimpan saat login)
+  return sessionStorage.getItem('siwashut_unit') || '';
+}
+
+// Filter data berdasarkan unit kerja akses
+function getAccessibleData(data) {
+  if (!data) data = DATA;
+  const u = getCurrentUser();
+  const role = getCurrentRole();
+  // Superadmin dan struktural dari Dit. PPSAKK bisa lihat semua
+  if (role === 'superadmin') return data;
+  if (role === 'struktural') {
+    const unitKerja = sessionStorage.getItem('siwashut_unit') || '';
+    // Struktural Dit. PPSAKK bisa lihat semua
+    if (unitKerja === SUPERADMIN_UNIT || unitKerja === '') return data;
+    // Struktural wilayah hanya lihat data wilayah masing-masing
+    return data.filter(d => d.unitkerja === unitKerja);
+  }
+  if (role === 'admin_wilayah') {
+    const unitKerja = ADMIN_WILAYAH[u] || sessionStorage.getItem('siwashut_unit') || '';
+    return data.filter(d => d.unitkerja === unitKerja);
+  }
+  if (role === 'petugas') {
+    const unitKerja = sessionStorage.getItem('siwashut_unit') || '';
+    if (!unitKerja) return data;
+    return data.filter(d => d.unitkerja === unitKerja);
+  }
+  return data;
+}
+
+function getCurrentRole() {
+  const u = getCurrentUser();
+  // Cek dari USER_ROLES bawaan
+  if (USER_ROLES[u]) return USER_ROLES[u];
+  // Cek dari Supabase role (disimpan saat login)
+  const storedRole = sessionStorage.getItem('siwashut_role') || '';
+  return storedRole || 'petugas';
+}
+
+function isSuperAdmin() {
+  return getCurrentRole() === 'superadmin';
+}
+
+function isAdminWilayah() {
+  return getCurrentRole() === 'admin_wilayah';
+}
+
+function isStruktural() {
+  return getCurrentRole() === 'struktural';
+}
+
+function isPetugas() {
+  return getCurrentRole() === 'petugas';
+}
+
+function canEditDeleteRekap() {
+  // superadmin dan admin_wilayah bisa edit/hapus rekap
+  return isSuperAdmin() || isAdminWilayah();
+}
+
+function canAccessSanksi() {
+  // hanya superadmin dan struktural yang bisa akses sanksi
+  // admin_wilayah TIDAK BISA
+  return isSuperAdmin() || isStruktural();
+}
+
+function getWilayahAdmin() {
+  const u = getCurrentUser();
+  return ADMIN_WILAYAH[u] || null;
+}
 
 (function() {
   const sess = sessionStorage.getItem('siwashut_user');
@@ -2936,8 +3381,7 @@ const USERS = { 'admin': 'kehutanan2026', 'petugas': 'ppsa1234' };
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-wrapper').classList.add('visible');
     document.querySelector('.badge-user').textContent = '\u{1F464} ' + sess.toUpperCase();
-    const navAdmin = document.getElementById('nav-admin');
-    if (navAdmin) navAdmin.style.display = sess === 'admin' ? 'flex' : 'none';
+    applyRoleBasedNavigation();
     updateNavNotif();
     updateDashboard();
     loadDataFromSupabase();
@@ -2963,10 +3407,24 @@ function doLogin() {
   btn.disabled = true;
   btnText.innerHTML = '<span class="spinner"></span> Memverifikasi...';
   setTimeout(async () => {
-    // Cek hardcoded admin dulu, lalu cek Supabase
-  const dbUser = await checkLoginSupabase(u, p);
-  if ((USERS[u] && USERS[u] === p) || dbUser) {
+    const dbUser = await checkLoginSupabase(u, p);
+    if ((USERS[u] && USERS[u] === p) || dbUser) {
       sessionStorage.setItem('siwashut_user', u);
+      // Simpan role
+      let role = 'petugas';
+      let unitKerja = '';
+      if (USER_ROLES[u]) {
+        role = USER_ROLES[u];
+        unitKerja = ADMIN_WILAYAH[u] || (role === 'superadmin' ? SUPERADMIN_UNIT : '');
+      } else if (dbUser && dbUser.role) {
+        // Mapping role dari Supabase
+        if (dbUser.role === 'struktural') role = 'struktural';
+        else if (dbUser.role === 'petugas') role = 'petugas';
+        else role = 'petugas';
+        unitKerja = dbUser.unit || '';
+      }
+      sessionStorage.setItem('siwashut_role', role);
+      sessionStorage.setItem('siwashut_unit', unitKerja);
       btnText.innerHTML = '\u2705 Berhasil! Memuat sistem...';
       setTimeout(() => {
         const ls = document.getElementById('login-screen');
@@ -2977,11 +3435,11 @@ function doLogin() {
           ls.style.opacity = '';
           const aw = document.getElementById('app-wrapper');
           aw.classList.add('visible');
-          const isAdmin = (u === 'admin');
-          const roleLabel = isAdmin ? 'ADMIN' : 'PETUGAS';
+          const roleLabel = isSuperAdmin() ? 'SUPER ADMIN' :
+                            isAdminWilayah() ? 'ADMIN WILAYAH' :
+                            isStruktural() ? 'STRUKTURAL' : 'PETUGAS';
           document.querySelector('.badge-user').textContent = '\u{1F464} ' + u.toUpperCase() + ' (' + roleLabel + ')';
-          const navAdmin = document.getElementById('nav-admin');
-          if (navAdmin) navAdmin.style.display = isAdmin ? 'flex' : 'none';
+          applyRoleBasedNavigation();
           updateNavNotif();
           updateDashboard();
           loadDataFromSupabase();
@@ -3009,6 +3467,8 @@ function togglePw() {
 
 function doLogout() {
   sessionStorage.removeItem('siwashut_user');
+  sessionStorage.removeItem('siwashut_role');
+  sessionStorage.removeItem('siwashut_unit');
   document.getElementById('app-wrapper').classList.remove('visible');
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('inp-username').value = '';
@@ -3016,6 +3476,66 @@ function doLogout() {
   document.getElementById('login-error').classList.add('hidden');
   document.getElementById('login-btn').disabled = false;
   document.getElementById('login-btn-text').innerHTML = '\uD83D\uDD13 Masuk ke Sistem';
+}
+
+// ============ ROLE-BASED NAVIGATION ============
+function applyRoleBasedNavigation() {
+  // Sembunyikan semua nav dulu, lalu tampilkan sesuai role
+  const navItems = {
+    dashboard:        document.querySelector('[onclick="showPage(\'dashboard\')"]'),
+    petapengawasan:   document.querySelector('[onclick="showPage(\'petapengawasan\')"]'),
+    input:            document.querySelector('[onclick="showPage(\'input\')"]'),
+    sanksi:           document.querySelector('[onclick="showPage(\'sanksi\')"]'),
+    data:             document.querySelector('[onclick="showPage(\'data\')"]'),
+    panduan:          document.querySelector('[onclick="showPage(\'panduan\')"]'),
+    laporan:          document.querySelector('[onclick="showPage(\'laporan\')"]'),
+    manajemen:        document.getElementById('nav-admin'),
+  };
+
+  // Sembunyikan semua
+  Object.values(navItems).forEach(el => { if (el) el.style.display = 'none'; });
+
+  if (isSuperAdmin()) {
+    // Super Admin: semua akses
+    Object.values(navItems).forEach(el => { if (el) el.style.display = 'flex'; });
+    if (navItems.manajemen) navItems.manajemen.style.display = 'flex';
+    const btnHapusSemua = document.getElementById('btn-hapus-semua-data');
+    if (btnHapusSemua) btnHapusSemua.style.display = 'inline-flex';
+  } else if (isAdminWilayah()) {
+    // Admin Wilayah: dashboard, peta, input, rekap data, laporan (NO sanksi, NO manajemen)
+    ['dashboard','petapengawasan','input','data','laporan'].forEach(k => {
+      if (navItems[k]) navItems[k].style.display = 'flex';
+    });
+    // Tampilkan panduan juga
+    if (navItems.panduan) navItems.panduan.style.display = 'flex';
+  } else if (isStruktural()) {
+    // Struktural: dashboard, peta, rekap data, laporan & ekspor (+ sanksi tampak di rekap tapi bukan input)
+    ['dashboard','petapengawasan','data','laporan'].forEach(k => {
+      if (navItems[k]) navItems[k].style.display = 'flex';
+    });
+    // Struktural bisa lihat sanksi (view only)
+    if (navItems.sanksi) navItems.sanksi.style.display = 'flex';
+  } else {
+    // Petugas Pengawas: peta pengawasan, input data, rekap data (dari hasil input sendiri), panduan
+    ['petapengawasan','input','data','panduan'].forEach(k => {
+      if (navItems[k]) navItems[k].style.display = 'flex';
+    });
+  }
+
+  // Section label "Laporan" di nav — sembunyikan jika petugas
+  const navSections = document.querySelectorAll('.nav-section');
+  navSections.forEach(sec => {
+    if (sec.textContent.trim() === 'Laporan') {
+      sec.style.display = (isSuperAdmin() || isAdminWilayah() || isStruktural()) ? 'block' : 'none';
+    }
+  });
+
+  // Default page sesuai role
+  if (isPetugas()) {
+    showPage('petapengawasan');
+  } else {
+    showPage('dashboard');
+  }
 }
 
 // ============ PETUGAS MULTI-ENTRY ============
@@ -3101,6 +3621,17 @@ function renderDashboardMap() {
     marker.bindPopup(popupHtml, { maxWidth: 200 });
     marker.addTo(dashMap);
     dashMarkers.push(marker);
+  });
+  // Add kebakaran fire markers from coordinate data
+  const fireIcon = L.divIcon({ html: '<div style="font-size:20px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))">🔥</div>', className:'', iconSize:[20,20], iconAnchor:[10,20] });
+  DATA.forEach(d => {
+    if (d.kebakaran && d.kebakaran.lat && d.kebakaran.lng) {
+      const kb = d.kebakaran;
+      const m = L.marker([kb.lat, kb.lng], {icon: fireIcon});
+      m.bindPopup(`<div style="font-size:12px"><strong>🔥 ${d.subjek||'Kebakaran'}</strong><br>📅 ${kb.tanggal||'-'}<br>📏 ${kb.luas ? kb.luas+' Ha' : '-'}<br>📍 ${d.provinsi||'-'}</div>`);
+      m.addTo(dashMap);
+      dashMarkers.push(m);
+    }
   });
   setTimeout(() => { if (dashMap) dashMap.invalidateSize(); }, 100);
 }
@@ -3887,6 +4418,13 @@ function clearDashLayers() {
 }
 
 // ============ SANKSI ADMINISTRATIF ============
+// === RESET DATA v6 ===
+// Hapus data lama dari rekap dan sanksi sesuai permintaan
+if (!localStorage.getItem('siwashut_v6_reset')) {
+  localStorage.removeItem('siwashut_data');
+  localStorage.removeItem('siwashut_sanksi');
+  localStorage.setItem('siwashut_v6_reset', '1');
+}
 let SANKSI_DATA = JSON.parse(localStorage.getItem('siwashut_sanksi') || '[]');
 let currentSanksiSubjek = null;
 let sanksiBAFile = null;
@@ -4342,10 +4880,8 @@ function savePanduanDocs() {
   try { localStorage.setItem('siwashut_panduan_docs', JSON.stringify(PANDUAN_DOCS)); } catch(e) {}
 }
 
-function isSuperAdmin() {
-  const sess = sessionStorage.getItem('siwashut_user');
-  return sess === 'admin';
-}
+// isSuperAdmin sudah didefinisikan di atas (getCurrentRole() === 'superadmin')
+// Definisi duplikat di sini dihapus agar tidak menimpa yang benar.
 
 let panduanInitialized = false;
 function initPanduanPage() {
@@ -5130,7 +5666,9 @@ function renderPanduanDocs() {
     </div>`;
     return;
   }
-  el.innerHTML = PANDUAN_DOCS.map(doc => `
+  el.innerHTML = PANDUAN_DOCS.map(doc => {
+    const isPreviewable = doc.name.match(/\.(pdf|png|jpg|jpeg|webp|gif)$/i) || (doc.type && (doc.type.includes('pdf') || doc.type.startsWith('image/')));
+    return `
     <div class="panduan-doc-item">
       <div class="panduan-doc-icon">${getFileIcon(doc.name, doc.type || '')}</div>
       <div class="panduan-doc-meta">
@@ -5138,11 +5676,12 @@ function renderPanduanDocs() {
         <div class="panduan-doc-info">Ukuran: ${formatBytes(doc.size)} &nbsp;|&nbsp; Upload: ${doc.uploaded} &nbsp;|&nbsp; Oleh: ${doc.uploader}</div>
       </div>
       <div class="panduan-doc-actions">
+        ${isPreviewable ? `<button class="btn-doc-dl" style="background:#1d4ed8" onclick="previewPanduanDoc('${doc.id}')">👁️ Preview</button>` : ''}
         <button class="btn-doc-dl" onclick="downloadPanduanDoc('${doc.id}')">⬇️ Unduh</button>
         ${isSuperAdmin() ? `<button class="btn-doc-del" style="display:inline-block" onclick="deletePanduanDoc('${doc.id}')">🗑️</button>` : ''}
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 function downloadPanduanDoc(id) {
@@ -5154,6 +5693,43 @@ function downloadPanduanDoc(id) {
   a.click();
 }
 
+function previewPanduanDoc(id) {
+  const doc = PANDUAN_DOCS.find(d => String(d.id) === String(id));
+  if (!doc) return;
+  let overlay = document.getElementById('panduan-preview-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'panduan-preview-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:860px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.4);overflow:hidden">
+        <div style="background:var(--hijau);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+          <div id="panduan-preview-title" style="color:#fff;font-weight:700;font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-right:12px"></div>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <button id="panduan-preview-dl-btn" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">&#x2B07;&#xFE0F; Unduh</button>
+            <button onclick="document.getElementById('panduan-preview-overlay').style.display='none'" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#xD7;</button>
+          </div>
+        </div>
+        <div id="panduan-preview-body" style="flex:1;overflow:auto;background:#f5f5f5;display:flex;align-items:center;justify-content:center;min-height:300px;padding:12px"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.style.display = 'none'; });
+  }
+  document.getElementById('panduan-preview-title').textContent = doc.name;
+  document.getElementById('panduan-preview-dl-btn').onclick = () => downloadPanduanDoc(id);
+  const body = document.getElementById('panduan-preview-body');
+  const isPDF = doc.name.toLowerCase().endsWith('.pdf') || (doc.type && doc.type.includes('pdf'));
+  const isImage = doc.name.match(/\.(png|jpg|jpeg|webp|gif)$/i) || (doc.type && doc.type.startsWith('image/'));
+  if (isPDF) {
+    body.innerHTML = '<iframe src="' + doc.data + '" style="width:100%;height:75vh;border:none;border-radius:8px" title="' + doc.name + '"></iframe>';
+  } else if (isImage) {
+    body.innerHTML = '<img src="' + doc.data + '" style="max-width:100%;max-height:75vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.15);object-fit:contain" alt="' + doc.name + '">';
+  } else {
+    body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)"><div style="font-size:52px;margin-bottom:12px">&#x1F4C1;</div><div style="font-weight:600;margin-bottom:8px">' + doc.name + '</div><div style="font-size:13px">Format ini tidak dapat di-preview.<br>Silakan unduh untuk membukanya.</div><button onclick="downloadPanduanDoc(\'' + id + '\')" style="margin-top:16px;background:var(--hijau);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Unduh File</button></div>';
+  }
+  overlay.style.display = 'flex';
+}
+
 function deletePanduanDoc(id) {
   if (!isSuperAdmin()) return;
   if (!confirm('Hapus dokumen ini?')) return;
@@ -5162,6 +5738,586 @@ function deletePanduanDoc(id) {
   renderPanduanDocs();
   showToast('🗑️ Dokumen dihapus.', 'info');
 }
+
+// ============ INPUT TAB SWITCHING ============
+let kbEntriesList = []; // [{id, tanggal, luas, lat, lng, keterangan, fotos, mapInstance, mapMarker, cameraStream}]
+let kbEntryIdCounter = 0;
+
+function switchInputTab(tab) {
+  ['pengawasan','sarpras','kebakaran'].forEach(t => {
+    const panel = document.getElementById('input-panel-' + t);
+    const btn = document.getElementById('input-tab-' + t);
+    if (!panel || !btn) return;
+    const isActive = t === tab;
+    panel.style.display = isActive ? 'block' : 'none';
+    if (t === 'pengawasan') {
+      btn.style.background = isActive ? 'var(--hijau)' : '#f0fdf4';
+      btn.style.color = isActive ? '#fff' : 'var(--hijau)';
+    } else if (t === 'sarpras') {
+      btn.style.background = isActive ? 'var(--hijau)' : '#f0fdf4';
+      btn.style.color = isActive ? '#fff' : 'var(--hijau)';
+    } else {
+      btn.style.background = isActive ? '#dc2626' : '#fff5f5';
+      btn.style.color = isActive ? '#fff' : '#dc2626';
+    }
+  });
+  if (tab === 'sarpras') {
+    // show sarpras panel (previously inside form, now standalone)
+    const sarprasPanel = document.getElementById('sarpras-input-panel');
+    if (sarprasPanel) sarprasPanel.style.display = 'block';
+    renderSarprasInputForm(currentSarprasInputFilter || 'all');
+  }
+  if (tab === 'kebakaran') {
+    // Init with one entry if empty
+    if (!kbEntriesList.length) addKbEntry();
+    else renderAllKbEntries();
+  }
+}
+
+function addKbEntry() {
+  const id = ++kbEntryIdCounter;
+  kbEntriesList.push({ id, tanggal:'', luas:'', lat:'', lng:'', keterangan:'', fotos:[], mapInstance:null, mapMarker:null, cameraStream:null });
+  renderAllKbEntries();
+  // Scroll to latest
+  setTimeout(() => {
+    const el = document.getElementById('kb-entry-' + id);
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 100);
+}
+
+function removeKbEntry(id) {
+  const idx = kbEntriesList.findIndex(e => e.id === id);
+  if (idx === -1) return;
+  // Stop camera if open
+  const entry = kbEntriesList[idx];
+  if (entry.cameraStream) { entry.cameraStream.getTracks().forEach(t => t.stop()); entry.cameraStream = null; }
+  kbEntriesList.splice(idx, 1);
+  renderAllKbEntries();
+}
+
+function renderAllKbEntries() {
+  const container = document.getElementById('kb-entries-list');
+  if (!container) return;
+  if (!kbEntriesList.length) {
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px">
+      <div style="font-size:40px;margin-bottom:12px">🔥</div>
+      <p>Belum ada entri kebakaran. Klik tombol di bawah untuk menambahkan.</p></div>`;
+    return;
+  }
+  container.innerHTML = kbEntriesList.map((entry, idx) => buildKbEntryHTML(entry, idx)).join('');
+  // Re-init maps if needed
+  kbEntriesList.forEach(entry => {
+    if (entry.lat && entry.lng) showKbEntryCoordInfo(entry.id, entry.lat, entry.lng);
+  });
+}
+
+function buildKbEntryHTML(entry, idx) {
+  const n = idx + 1;
+  const id = entry.id;
+  return `
+  <div id="kb-entry-${id}" style="background:#fff;border:2px solid #fecaca;border-radius:14px;padding:20px;margin-bottom:18px;position:relative">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="background:#dc2626;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${n}</div>
+        <div style="font-size:14px;font-weight:700;color:#dc2626">🔥 Entri Kebakaran #${n}</div>
+      </div>
+      ${kbEntriesList.length > 1 ? `<button onclick="removeKbEntry(${id})" style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:6px 12px;cursor:pointer;color:#dc2626;font-size:12px;font-weight:600;font-family:inherit">✕ Hapus Entri Ini</button>` : ''}
+    </div>
+
+    <!-- Tanggal & Luasan -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Tanggal Kejadian <span style="color:#dc2626">*</span></label>
+        <input type="date" id="kb-tanggal-${id}" class="form-control" style="border-color:#fecaca" value="${entry.tanggal}" onchange="updateKbEntry(${id},'tanggal',this.value)">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Luasan Terbakar (Ha)</label>
+        <input type="number" id="kb-luas-${id}" class="form-control" placeholder="0.00" min="0" step="0.01" style="border-color:#fecaca" value="${entry.luas}" onchange="updateKbEntry(${id},'luas',this.value)">
+      </div>
+    </div>
+
+    <!-- Titik Koordinat -->
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">📍 Titik Koordinat Kebakaran</label>
+      <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:14px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="flex:1;min-width:160px">
+            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Latitude</label>
+            <input type="number" id="kb-lat-${id}" class="form-control" placeholder="-6.200000" step="0.000001" min="-90" max="90" value="${entry.lat}" onchange="updateKbEntry(${id},'lat',this.value)">
+          </div>
+          <div style="flex:1;min-width:160px">
+            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:4px">Longitude</label>
+            <input type="number" id="kb-lng-${id}" class="form-control" placeholder="106.800000" step="0.000001" min="-180" max="180" value="${entry.lng}" onchange="updateKbEntry(${id},'lng',this.value)">
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap">
+            <button type="button" onclick="pickKbEntryMap(${id})" style="padding:9px 14px;font-size:12px;background:#dc2626;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">🗺️ Pilih Peta</button>
+            <button type="button" onclick="getKbEntryLocation(${id})" style="padding:9px 14px;font-size:12px;background:#fff;color:#dc2626;border:1px solid #fecaca;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">📍 Lokasi Saya</button>
+          </div>
+        </div>
+        <!-- Mini Map Picker -->
+        <div id="kb-map-picker-${id}" style="display:none;border-radius:8px;overflow:hidden;border:1px solid #fecaca;margin-top:8px">
+          <div style="background:#dc2626;color:#fff;padding:8px 14px;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:space-between">
+            <span>🗺️ Klik peta untuk pilih koordinat</span>
+            <button onclick="document.getElementById('kb-map-picker-${id}').style.display='none'" style="background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:12px">✕ Tutup</button>
+          </div>
+          <div id="kb-map-${id}" style="height:260px;width:100%"></div>
+        </div>
+        <!-- Koordinat info -->
+        <div id="kb-koordinat-info-${id}" style="display:${entry.lat&&entry.lng?'block':'none'};margin-top:8px;background:#fef2f2;border-radius:6px;padding:8px 12px;font-size:12px;color:#991b1b">
+          📍 Koordinat: <span id="kb-koordinat-text-${id}">${entry.lat && entry.lng ? entry.lat+', '+entry.lng : ''}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Foto Dokumentasi -->
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">📸 Foto Dokumentasi Kebakaran</label>
+      <div style="background:#fff;border:1.5px dashed #fecaca;border-radius:10px;padding:14px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <label class="btn btn-outline" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:#dc2626;border-color:#fecaca;padding:8px 14px">
+            <span style="font-size:16px">🖼️</span> Upload Foto
+            <input type="file" multiple accept="image/*" style="display:none" onchange="handleKbEntryFotoUpload(event,${id})">
+          </label>
+          <button type="button" onclick="startKbEntryCamera(${id})" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:#dc2626;border:1px solid #fecaca;background:#fff;border-radius:8px;padding:8px 14px;font-family:inherit;font-weight:600">
+            <span style="font-size:16px">📷</span> Buka Kamera
+          </button>
+        </div>
+        <!-- Kamera preview -->
+        <div id="kb-cam-container-${id}" style="display:none;margin-bottom:12px">
+          <video id="kb-cam-video-${id}" style="width:100%;max-height:240px;border-radius:8px;background:#000;object-fit:cover" autoplay playsinline></video>
+          <canvas id="kb-cam-canvas-${id}" style="display:none"></canvas>
+          <div style="display:flex;gap:10px;margin-top:8px;justify-content:center">
+            <button type="button" onclick="captureKbEntryPhoto(${id})" style="padding:9px 20px;background:#dc2626;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px">📷 Ambil Foto</button>
+            <button type="button" onclick="stopKbEntryCamera(${id})" style="padding:9px 20px;background:#fff;color:#dc2626;border:1px solid #fecaca;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px">✕ Tutup</button>
+          </div>
+        </div>
+        <!-- Foto grid -->
+        <div id="kb-foto-grid-${id}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px"></div>
+        <div id="kb-foto-empty-${id}" style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;${entry.fotos.length?'display:none':''}">🔥 Belum ada foto.</div>
+      </div>
+    </div>
+
+    <!-- Keterangan -->
+    <div>
+      <label style="font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Keterangan Kebakaran</label>
+      <textarea id="kb-ket-${id}" class="form-control" rows="3" placeholder="Penyebab, dampak, upaya pemadaman, dll..." style="border-color:#fecaca" onchange="updateKbEntry(${id},'keterangan',this.value)">${entry.keterangan}</textarea>
+    </div>
+  </div>`;
+}
+
+function updateKbEntry(id, field, val) {
+  const entry = kbEntriesList.find(e => e.id === id);
+  if (entry) entry[field] = val;
+}
+
+function showKbEntryCoordInfo(id, lat, lng) {
+  const info = document.getElementById('kb-koordinat-info-' + id);
+  const text = document.getElementById('kb-koordinat-text-' + id);
+  if (info) info.style.display = 'block';
+  if (text) text.textContent = lat + ', ' + lng;
+}
+
+function pickKbEntryMap(id) {
+  const picker = document.getElementById('kb-map-picker-' + id);
+  if (!picker) return;
+  picker.style.display = 'block';
+  const entry = kbEntriesList.find(e => e.id === id);
+  if (!entry) return;
+  setTimeout(() => {
+    if (!entry.mapInstance) {
+      entry.mapInstance = L.map('kb-map-' + id, { center:[-2.5,118], zoom:5, zoomControl:true });
+      const l = TILE_LAYERS['satellite'];
+      L.tileLayer(l.url, l.opts).addTo(entry.mapInstance);
+      entry.mapInstance.on('click', function(e) {
+        const lat = e.latlng.lat.toFixed(6);
+        const lng = e.latlng.lng.toFixed(6);
+        const latEl = document.getElementById('kb-lat-' + id);
+        const lngEl = document.getElementById('kb-lng-' + id);
+        if (latEl) latEl.value = lat;
+        if (lngEl) lngEl.value = lng;
+        entry.lat = lat; entry.lng = lng;
+        if (entry.mapMarker) entry.mapInstance.removeLayer(entry.mapMarker);
+        const fireIcon = L.divIcon({ html:'<div style="font-size:26px;line-height:1">🔥</div>', className:'', iconSize:[26,26], iconAnchor:[13,26] });
+        entry.mapMarker = L.marker([lat,lng],{icon:fireIcon}).addTo(entry.mapInstance);
+        entry.mapMarker.bindPopup('🔥 '+lat+', '+lng).openPopup();
+        showKbEntryCoordInfo(id, lat, lng);
+        showToast('✅ Koordinat dipilih: '+lat+', '+lng,'success');
+      });
+    }
+    entry.mapInstance.invalidateSize();
+  }, 200);
+}
+
+function getKbEntryLocation(id) {
+  if (!navigator.geolocation) { showToast('⚠️ Geolokasi tidak didukung.','warn'); return; }
+  showToast('📍 Mendeteksi lokasi...','info');
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    const entry = kbEntriesList.find(e => e.id === id);
+    if (!entry) return;
+    entry.lat = lat; entry.lng = lng;
+    const latEl = document.getElementById('kb-lat-' + id);
+    const lngEl = document.getElementById('kb-lng-' + id);
+    if (latEl) latEl.value = lat;
+    if (lngEl) lngEl.value = lng;
+    showKbEntryCoordInfo(id, lat, lng);
+    showToast('✅ Lokasi terdeteksi: '+lat+', '+lng,'success');
+  }, err => showToast('⚠️ Gagal: '+err.message,'warn'));
+}
+
+function handleKbEntryFotoUpload(event, id) {
+  const entry = kbEntriesList.find(e => e.id === id);
+  if (!entry) return;
+  Array.from(event.target.files).forEach(file => {
+    if (file.size > 10*1024*1024) { showToast('⚠️ File terlalu besar: '+file.name,'warn'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      entry.fotos.push({ name:file.name, url:ev.target.result, type:'upload' });
+      renderKbEntryFotos(id);
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderKbEntryFotos(id) {
+  const entry = kbEntriesList.find(e => e.id === id);
+  if (!entry) return;
+  const grid = document.getElementById('kb-foto-grid-' + id);
+  const empty = document.getElementById('kb-foto-empty-' + id);
+  if (!grid) return;
+  if (!entry.fotos.length) { grid.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if (empty) empty.style.display = 'none';
+  grid.innerHTML = entry.fotos.map((f,i) => `
+    <div style="position:relative;border-radius:8px;overflow:hidden;border:1.5px solid #fecaca">
+      <img src="${f.url}" style="width:100%;height:80px;object-fit:cover;display:block">
+      <button onclick="removeKbEntryFoto(${id},${i})" style="position:absolute;top:3px;right:3px;background:rgba(220,38,38,0.85);border:none;color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>`).join('');
+}
+
+function removeKbEntryFoto(id, i) {
+  const entry = kbEntriesList.find(e => e.id === id);
+  if (entry) { entry.fotos.splice(i,1); renderKbEntryFotos(id); }
+}
+
+function startKbEntryCamera(id) {
+  const entry = kbEntriesList.find(e => e.id === id);
+  if (!entry) return;
+  const container = document.getElementById('kb-cam-container-' + id);
+  const video = document.getElementById('kb-cam-video-' + id);
+  if (!container || !video) return;
+  container.style.display = 'block';
+  navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false })
+    .then(stream => { entry.cameraStream = stream; video.srcObject = stream; })
+    .catch(err => { showToast('⚠️ Kamera: '+err.message,'warn'); container.style.display='none'; });
+}
+
+function stopKbEntryCamera(id) {
+  const entry = kbEntriesList.find(e => e.id === id);
+  if (entry && entry.cameraStream) { entry.cameraStream.getTracks().forEach(t=>t.stop()); entry.cameraStream = null; }
+  const container = document.getElementById('kb-cam-container-' + id);
+  if (container) container.style.display = 'none';
+}
+
+function captureKbEntryPhoto(id) {
+  const entry = kbEntriesList.find(e => e.id === id);
+  const video = document.getElementById('kb-cam-video-' + id);
+  const canvas = document.getElementById('kb-cam-canvas-' + id);
+  if (!video || !canvas || !entry) return;
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  const dataUrl = canvas.toDataURL('image/jpeg',0.8);
+  entry.fotos.push({ name:'kebakaran_'+Date.now()+'.jpg', url:dataUrl, type:'camera' });
+  renderKbEntryFotos(id);
+  showToast('📷 Foto kebakaran berhasil diambil.','success');
+}
+
+function getKbEntriesData() {
+  // Collect latest values from DOM
+  kbEntriesList.forEach(entry => {
+    const tanggalEl = document.getElementById('kb-tanggal-' + entry.id);
+    const luasEl = document.getElementById('kb-luas-' + entry.id);
+    const latEl = document.getElementById('kb-lat-' + entry.id);
+    const lngEl = document.getElementById('kb-lng-' + entry.id);
+    const ketEl = document.getElementById('kb-ket-' + entry.id);
+    if (tanggalEl) entry.tanggal = tanggalEl.value;
+    if (luasEl) entry.luas = luasEl.value;
+    if (latEl) entry.lat = latEl.value;
+    if (lngEl) entry.lng = lngEl.value;
+    if (ketEl) entry.keterangan = ketEl.value;
+  });
+  return kbEntriesList.map(e => ({
+    tanggal: e.tanggal,
+    luas: parseFloat(e.luas) || 0,
+    lat: parseFloat(e.lat) || null,
+    lng: parseFloat(e.lng) || null,
+    keterangan: e.keterangan,
+    fotos: e.fotos.map(f => f.name || '')
+  })).filter(e => e.tanggal || e.luas > 0 || e.lat || e.lng || e.keterangan);
+}
+
+// ============ KEBAKARAN FUNCTIONS ============
+let kbFotoList = [];
+let kbMapInstance = null;
+let kbMapMarker = null;
+let kbCameraStream = null;
+
+function toggleKabakaranSection() {
+  const panel = document.getElementById('kebakaran-input-panel');
+  const btn = document.getElementById('btn-toggle-kebakaran');
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  btn.textContent = isHidden ? '🔼 Sembunyikan Area Kebakaran' : '🔽 Tampilkan Area Kebakaran';
+}
+
+function pickKoordinatFromMap() {
+  const picker = document.getElementById('kb-map-picker');
+  picker.style.display = 'block';
+  setTimeout(() => {
+    if (!kbMapInstance) {
+      kbMapInstance = L.map('kb-map', { center: [-2.5, 118], zoom: 5, zoomControl: true });
+      const l = TILE_LAYERS['satellite'];
+      L.tileLayer(l.url, l.opts).addTo(kbMapInstance);
+      kbMapInstance.on('click', function(e) {
+        const lat = e.latlng.lat.toFixed(6);
+        const lng = e.latlng.lng.toFixed(6);
+        document.getElementById('kb-lat').value = lat;
+        document.getElementById('kb-lng').value = lng;
+        if (kbMapMarker) kbMapInstance.removeLayer(kbMapMarker);
+        const fireIcon = L.divIcon({
+          html: '<div style="font-size:28px;line-height:1">🔥</div>',
+          className: '', iconSize:[28,28], iconAnchor:[14,28]
+        });
+        kbMapMarker = L.marker([lat, lng], {icon: fireIcon}).addTo(kbMapInstance);
+        kbMapMarker.bindPopup(`🔥 Koordinat: ${lat}, ${lng}`).openPopup();
+        document.getElementById('kb-koordinat-info').style.display = 'block';
+        document.getElementById('kb-koordinat-text').textContent = `${lat}, ${lng}`;
+        showToast('✅ Koordinat dipilih: ' + lat + ', ' + lng, 'success');
+      });
+    }
+    kbMapInstance.invalidateSize();
+  }, 200);
+}
+
+function closeKbMapPicker() {
+  document.getElementById('kb-map-picker').style.display = 'none';
+}
+
+function getCurrentLocationKebakaran() {
+  if (!navigator.geolocation) { showToast('⚠️ Geolokasi tidak didukung browser ini.', 'warn'); return; }
+  showToast('📍 Mendeteksi lokasi...', 'info');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      document.getElementById('kb-lat').value = lat;
+      document.getElementById('kb-lng').value = lng;
+      document.getElementById('kb-koordinat-info').style.display = 'block';
+      document.getElementById('kb-koordinat-text').textContent = `${lat}, ${lng}`;
+      showToast('✅ Lokasi terdeteksi: ' + lat + ', ' + lng, 'success');
+      if (kbMapInstance) {
+        if (kbMapMarker) kbMapInstance.removeLayer(kbMapMarker);
+        const fireIcon = L.divIcon({ html: '<div style="font-size:28px;line-height:1">🔥</div>', className:'', iconSize:[28,28], iconAnchor:[14,28] });
+        kbMapMarker = L.marker([lat,lng],{icon:fireIcon}).addTo(kbMapInstance);
+        kbMapInstance.setView([lat,lng],12);
+      }
+    },
+    err => showToast('⚠️ Gagal mendeteksi lokasi: ' + err.message, 'warn')
+  );
+}
+
+function handleKbFotoUpload(event) {
+  const files = Array.from(event.target.files);
+  files.forEach(file => {
+    if (file.size > 10*1024*1024) { showToast('⚠️ Foto terlalu besar: ' + file.name, 'warn'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      kbFotoList.push({ name: file.name, url: e.target.result, type: 'upload' });
+      renderKbFotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderKbFotoGrid() {
+  const grid = document.getElementById('kb-foto-grid');
+  const empty = document.getElementById('kb-foto-empty');
+  if (!grid) return;
+  if (!kbFotoList.length) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  grid.innerHTML = kbFotoList.map((f,i) => `
+    <div style="position:relative;border-radius:8px;overflow:hidden;border:1.5px solid #fecaca">
+      <img src="${f.url}" style="width:100%;height:90px;object-fit:cover;display:block">
+      <button onclick="removeKbFoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(220,38,38,0.85);border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>`).join('');
+}
+
+function removeKbFoto(i) { kbFotoList.splice(i,1); renderKbFotoGrid(); }
+
+function startKbCamera() {
+  const container = document.getElementById('kb-camera-container');
+  container.style.display = 'block';
+  const video = document.getElementById('kb-camera-preview');
+  navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false })
+    .then(stream => { kbCameraStream = stream; video.srcObject = stream; })
+    .catch(err => { showToast('⚠️ Kamera tidak dapat diakses: '+err.message,'warn'); container.style.display='none'; });
+}
+
+function stopKbCamera() {
+  if (kbCameraStream) { kbCameraStream.getTracks().forEach(t=>t.stop()); kbCameraStream = null; }
+  const container = document.getElementById('kb-camera-container');
+  if (container) container.style.display='none';
+}
+
+function captureKbPhoto() {
+  const video = document.getElementById('kb-camera-preview');
+  const canvas = document.getElementById('kb-camera-canvas');
+  if (!video || !canvas) return;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  const dataUrl = canvas.toDataURL('image/jpeg',0.8);
+  const name = 'kebakaran_' + Date.now() + '.jpg';
+  kbFotoList.push({ name, url: dataUrl, type: 'camera' });
+  renderKbFotoGrid();
+  showToast('📷 Foto kebakaran berhasil diambil.','success');
+}
+
+// ============ RENDER REKAP KEBAKARAN ============
+function renderRekapKebakaran() {
+  const q = (document.getElementById('rekap-kebakaran-search')?.value||'').toLowerCase();
+  const filterUnit = document.getElementById('rekap-kebakaran-filter-unit')?.value||'';
+  const accessData = getAccessibleData(DATA);
+  const kebData = accessData.filter(d => d.kebakaran && (d.kebakaran.tanggal || parseFloat(d.kebakaran.luas) > 0 || d.kebakaran.keterangan));
+  const filtered = kebData.filter(d => {
+    const matchQ = !q || [d.subjek,d.provinsi,d.kebakaran?.keterangan].some(v=>(v||'').toLowerCase().includes(q));
+    const matchUnit = !filterUnit || d.unitkerja === filterUnit;
+    return matchQ && matchUnit;
+  });
+  const tbody = document.getElementById('rekap-kebakaran-tbody');
+  if (!tbody) return;
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="emoji">🔥</div><p>Tidak ada data kebakaran.</p></div></td></tr>`;
+  } else {
+    tbody.innerHTML = filtered.map((d,i) => {
+      const kb = d.kebakaran;
+      const koordinat = (kb.lat && kb.lng) ? `<a href="https://maps.google.com/?q=${kb.lat},${kb.lng}" target="_blank" style="color:#dc2626;font-size:11px">📍 ${kb.lat}, ${kb.lng}</a>` : '<span style="color:#9ca3af;font-size:11px">—</span>';
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${kb.tanggal||'-'}</td>
+        <td style="font-size:11px">${d.unitkerja||'-'}</td>
+        <td>${d.subjek||'-'}</td>
+        <td>${d.provinsi||'-'}</td>
+        <td>${kb.luas ? parseFloat(kb.luas).toLocaleString('id-ID') + ' Ha' : '-'}</td>
+        <td>${koordinat}</td>
+        <td>${tindakBadge(d.tindak)}</td>
+        <td style="font-size:12px;max-width:200px">${kb.keterangan||'-'}</td>
+      </tr>`;
+    }).join('');
+  }
+  const info = document.getElementById('rekap-kebakaran-info');
+  if (info) info.textContent = `Menampilkan ${filtered.length} kejadian kebakaran`;
+}
+
+// ============ KEBAKARAN DASHBOARD CHART ============
+function buildChartKebakaran() {
+  destroyChart('kebakaran');
+  const ctx = document.getElementById('chartKebakaran')?.getContext('2d');
+  if (!ctx) return;
+  // Statistik per provinsi
+  const kbData = DATA.filter(d => d.kebakaran && (d.kebakaran.tanggal || parseFloat(d.kebakaran.luas) > 0));
+  // Hitung per provinsi
+  const provinsiCount = {};
+  kbData.forEach(d => {
+    const prov = d.provinsi || 'Tidak Diketahui';
+    provinsiCount[prov] = (provinsiCount[prov] || 0) + 1;
+  });
+  // Sort by count desc, ambil top 10
+  const sorted = Object.entries(provinsiCount).sort((a,b) => b[1]-a[1]).slice(0,10);
+  const labels = sorted.map(e => e[0]);
+  const vals = sorted.map(e => e[1]);
+  const colors = ['#fca5a5','#f87171','#ef4444','#dc2626','#b91c1c','#991b1b','#f97316','#fb923c','#fdba74','#fde68a'];
+  if (!labels.length) {
+    ctx.canvas.parentElement.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px">🔥 Belum ada data kebakaran</div>';
+    return;
+  }
+  charts['kebakaran'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Kejadian Kebakaran',
+        data: vals,
+        backgroundColor: colors.slice(0, labels.length),
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} kejadian` } } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { font: { size: 10 } } } }
+    }
+  });
+}
+
+// ============ KEBAKARAN DASHBOARD MAP ============
+let dashKbMap = null;
+let dashKbMarkers = [];
+
+function renderDashboardKebakaranMap() {
+  const container = document.getElementById('dash-kebakaran-map');
+  if (!container) return;
+  const kbData = DATA.filter(d => d.kebakaran && d.kebakaran.lat && d.kebakaran.lng);
+  if (!kbData.length) {
+    if (dashKbMap) {
+      dashKbMarkers.forEach(m => dashKbMap.removeLayer(m));
+      dashKbMarkers = [];
+    }
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:13px">🔥 Belum ada data koordinat kebakaran</div>';
+    return;
+  }
+  // Init map if needed
+  if (!dashKbMap) {
+    container.innerHTML = '';
+    dashKbMap = L.map('dash-kebakaran-map', { center:[-2.5,118], zoom:4, zoomControl:false, attributionControl:false });
+    const l = TILE_LAYERS['satellite'];
+    L.tileLayer(l.url, l.opts).addTo(dashKbMap);
+  }
+  dashKbMarkers.forEach(m => dashKbMap.removeLayer(m));
+  dashKbMarkers = [];
+  const fireIcon = L.divIcon({ html: '<div style="font-size:22px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))">🔥</div>', className:'', iconSize:[22,22], iconAnchor:[11,22] });
+  kbData.forEach(d => {
+    const kb = d.kebakaran;
+    const m = L.marker([kb.lat, kb.lng], {icon: fireIcon});
+    m.bindPopup(`<div style="font-size:12px;min-width:160px"><strong>🔥 ${d.subjek||'Kebakaran'}</strong><br>
+      📅 ${kb.tanggal||'-'}<br>
+      📏 ${kb.luas ? kb.luas + ' Ha' : '-'}<br>
+      🏢 ${d.unitkerja||'-'}<br>
+      📍 ${d.provinsi||'-'}
+    </div>`);
+    m.addTo(dashKbMap);
+    dashKbMarkers.push(m);
+  });
+  // Fit bounds
+  if (dashKbMarkers.length) {
+    try {
+      const group = L.featureGroup(dashKbMarkers);
+      dashKbMap.fitBounds(group.getBounds().pad(0.3));
+    } catch(e) {}
+  }
+  setTimeout(() => { if(dashKbMap) dashKbMap.invalidateSize(); }, 200);
+}
+
+// Update rekap if page-data is loaded
+// (renderRekapKebakaran is called from showPage when id==='data')
 
 
 </script>
