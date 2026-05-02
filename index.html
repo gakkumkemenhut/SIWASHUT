@@ -706,8 +706,8 @@
   <div class="topbar">
     <div class="topbar-title" id="page-title">Dashboard Pengawasan Kehutanan</div>
     <div class="topbar-right">
-      <span class="badge-date" id="current-date">Memuat...</span>
-      <span class="badge-user" id="topbar-user-badge">👤 —</span>
+      <span class="badge-date" id="current-date"></span>
+      <span class="badge-user">👤 Admin PPSA</span>
       <button class="btn btn-outline" style="font-size:12px;padding:6px 14px;color:#dc2626;border-color:#dc2626" onclick="doLogout()">🚪 Keluar</button>
     </div>
   </div>
@@ -1998,21 +1998,8 @@ let layerColorIdx = 0;
 function today() {
   return new Date().toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
 }
-// Inisialisasi tanggal — pastikan elemen sudah tersedia
-function updateTopbarDate() {
-  const el = document.getElementById('current-date');
-  if (el) el.textContent = today();
-}
-// Jalankan segera dan juga saat DOM siap (untuk keamanan)
-updateTopbarDate();
-document.addEventListener('DOMContentLoaded', function() {
-  updateTopbarDate();
-  const tanggalEl = document.getElementById('f-tanggal');
-  if (tanggalEl && !tanggalEl.value) tanggalEl.value = new Date().toISOString().split('T')[0];
-});
-// Fallback: update setiap menit agar tanggal selalu fresh
-setInterval(updateTopbarDate, 60000);
-try { document.getElementById('f-tanggal').value = new Date().toISOString().split('T')[0]; } catch(e) {}
+document.getElementById('current-date').textContent = today();
+document.getElementById('f-tanggal').value = new Date().toISOString().split('T')[0];
 
 function saveData() { try { localStorage.setItem('siwashut_data', JSON.stringify(sanitizeForStorage(DATA))); } catch(e){} }
 
@@ -3549,15 +3536,7 @@ function getWilayahAdmin() {
   if (sess) {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-wrapper').classList.add('visible');
-    // Perbarui badge user dengan nama + role
-    const role = sessionStorage.getItem('siwashut_role') || 'petugas';
-    const roleLabel = role === 'superadmin' ? 'SUPER ADMIN' :
-                      role === 'admin_wilayah' ? 'ADMIN WILAYAH' :
-                      role === 'struktural' ? 'STRUKTURAL' : 'PETUGAS';
-    const badgeUser = document.getElementById('topbar-user-badge') || document.querySelector('.badge-user');
-    if (badgeUser) badgeUser.textContent = '\u{1F464} ' + sess.toUpperCase() + ' (' + roleLabel + ')';
-    // Pastikan tanggal juga ter-update
-    updateTopbarDate();
+    document.querySelector('.badge-user').textContent = '\u{1F464} ' + sess.toUpperCase();
     applyRoleBasedNavigation();
     updateNavNotif();
     updateDashboard();
@@ -3615,9 +3594,7 @@ function doLogin() {
           const roleLabel = isSuperAdmin() ? 'SUPER ADMIN' :
                             isAdminWilayah() ? 'ADMIN WILAYAH' :
                             isStruktural() ? 'STRUKTURAL' : 'PETUGAS';
-          const badgeUser = document.getElementById('topbar-user-badge') || document.querySelector('.badge-user');
-          if (badgeUser) badgeUser.textContent = '\u{1F464} ' + u.toUpperCase() + ' (' + roleLabel + ')';
-          updateTopbarDate();
+          document.querySelector('.badge-user').textContent = '\u{1F464} ' + u.toUpperCase() + ' (' + roleLabel + ')';
           applyRoleBasedNavigation();
           updateNavNotif();
           updateDashboard();
@@ -5055,65 +5032,6 @@ const SARPRAS_DATA = {
 // Panduan documents stored in localStorage
 let PANDUAN_DOCS = JSON.parse(localStorage.getItem('siwashut_panduan_docs') || '[]');
 
-// Dokumen panduan default (referensi URL resmi pemerintah)
-const PANDUAN_DOCS_DEFAULT = [
-  {
-    id: 'default_uu41_1999',
-    name: 'UU Nomor 41 Tahun 1999 tentang Kehutanan',
-    size: 251904,
-    type: 'application/pdf',
-    uploaded: '01/01/2024',
-    uploader: 'Sistem',
-    isDefault: true,
-    url: 'https://jdih.menlhk.go.id/uploads/files/UU_Nomor_41_Tahun_1999.pdf',
-    data: null
-  },
-  {
-    id: 'default_pp23_2021',
-    name: 'PP Nomor 23 Tahun 2021 tentang Penyelenggaraan Kehutanan',
-    size: 10223616,
-    type: 'application/pdf',
-    uploaded: '01/01/2024',
-    uploader: 'Sistem',
-    isDefault: true,
-    url: 'https://jdih.menlhk.go.id/uploads/files/PP_Nomor_23_Tahun_2021.pdf',
-    data: null
-  },
-  {
-    id: 'default_permen7_2021',
-    name: 'PermenLHK Nomor 7 Tahun 2021 tentang Perencanaan Kehutanan',
-    size: 5976064,
-    type: 'application/pdf',
-    uploaded: '01/01/2024',
-    uploader: 'Sistem',
-    isDefault: true,
-    url: 'https://jdih.menlhk.go.id/uploads/files/Permen_LHK_Nomor_7_Tahun_2021.pdf',
-    data: null
-  },
-  {
-    id: 'default_permen8_2021',
-    name: 'PermenLHK Nomor 8 Tahun 2021 tentang Pengelolaan Kawasan Hutan',
-    size: 16777216,
-    type: 'application/pdf',
-    uploaded: '01/01/2024',
-    uploader: 'Sistem',
-    isDefault: true,
-    url: 'https://jdih.menlhk.go.id/uploads/files/Permen_LHK_Nomor_8_Tahun_2021.pdf',
-    data: null
-  },
-  {
-    id: 'default_permen9_2021',
-    name: 'PermenLHK Nomor 9 Tahun 2021 tentang Pengelolaan Perhutanan Sosial',
-    size: 7864320,
-    type: 'application/pdf',
-    uploaded: '01/01/2024',
-    uploader: 'Sistem',
-    isDefault: true,
-    url: 'https://jdih.menlhk.go.id/uploads/files/Permen_LHK_Nomor_9_Tahun_2021.pdf',
-    data: null
-  }
-];
-
 function savePanduanDocs() {
   try { localStorage.setItem('siwashut_panduan_docs', JSON.stringify(PANDUAN_DOCS)); } catch(e) {}
 }
@@ -5896,14 +5814,7 @@ function renderPanduanDocs() {
   const adminUpload = document.getElementById('panduan-upload-section-admin');
   if (adminUpload) adminUpload.style.display = isSuperAdmin() ? 'block' : 'none';
   if (!el) return;
-
-  // Gabungkan dokumen default + dokumen yang diupload user
-  // Filter: jangan tampilkan default jika sudah dihapus user (tracking via localStorage)
-  const hiddenDefaults = JSON.parse(localStorage.getItem('siwashut_hidden_default_docs') || '[]');
-  const defaults = PANDUAN_DOCS_DEFAULT.filter(d => !hiddenDefaults.includes(d.id));
-  const allDocs = [...defaults, ...PANDUAN_DOCS];
-
-  if (!allDocs.length) {
+  if (!PANDUAN_DOCS.length) {
     el.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted)">
       <div style="font-size:48px;margin-bottom:12px">📂</div>
       <div style="font-weight:600;margin-bottom:6px">Belum ada dokumen</div>
@@ -5911,70 +5822,22 @@ function renderPanduanDocs() {
     </div>`;
     return;
   }
-
-  // Header untuk dokumen default
-  let html = '';
-  if (defaults.length) {
-    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--hijau);padding:10px 16px 6px;background:var(--hijau-light);border-radius:8px;margin-bottom:10px">
-      📚 Dokumen Peraturan Perundangan (Referensi Resmi)
-    </div>`;
-    html += defaults.map(doc => `
-    <div class="panduan-doc-item" style="border-left:3px solid var(--hijau-mid)">
-      <div class="panduan-doc-icon">📄</div>
+  el.innerHTML = PANDUAN_DOCS.map(doc => {
+    const isPreviewable = doc.name.match(/\.(pdf|png|jpg|jpeg|webp|gif)$/i) || (doc.type && (doc.type.includes('pdf') || doc.type.startsWith('image/')));
+    return `
+    <div class="panduan-doc-item">
+      <div class="panduan-doc-icon">${getFileIcon(doc.name, doc.type || '')}</div>
       <div class="panduan-doc-meta">
         <div class="panduan-doc-name">${doc.name}</div>
-        <div class="panduan-doc-info">Ukuran: ${formatBytes(doc.size)} &nbsp;|&nbsp; Referensi Resmi Sistem</div>
+        <div class="panduan-doc-info">Ukuran: ${formatBytes(doc.size)} &nbsp;|&nbsp; Upload: ${doc.uploaded} &nbsp;|&nbsp; Oleh: ${doc.uploader}</div>
       </div>
       <div class="panduan-doc-actions">
-        <button class="btn-doc-dl" style="background:#1d4ed8" onclick="openPanduanDocUrl('${doc.id}')">🔗 Buka</button>
-        ${isSuperAdmin() ? `<button class="btn-doc-del" style="display:inline-block" onclick="hideDefaultDoc('${doc.id}')">🗑️</button>` : ''}
+        ${isPreviewable ? `<button class="btn-doc-dl" style="background:#1d4ed8" onclick="previewPanduanDoc('${doc.id}')">👁️ Preview</button>` : ''}
+        <button class="btn-doc-dl" onclick="downloadPanduanDoc('${doc.id}')">⬇️ Unduh</button>
+        ${isSuperAdmin() ? `<button class="btn-doc-del" style="display:inline-block" onclick="deletePanduanDoc('${doc.id}')">🗑️</button>` : ''}
       </div>
-    </div>`).join('');
-  }
-
-  if (PANDUAN_DOCS.length) {
-    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);padding:10px 16px 6px;background:#f9fafb;border-radius:8px;margin:14px 0 10px">
-      📁 Dokumen Yang Diupload Admin
-    </div>`;
-    html += PANDUAN_DOCS.map(doc => {
-      const isPreviewable = doc.name.match(/\.(pdf|png|jpg|jpeg|webp|gif)$/i) || (doc.type && (doc.type.includes('pdf') || doc.type.startsWith('image/')));
-      return `
-      <div class="panduan-doc-item">
-        <div class="panduan-doc-icon">${getFileIcon(doc.name, doc.type || '')}</div>
-        <div class="panduan-doc-meta">
-          <div class="panduan-doc-name">${doc.name}</div>
-          <div class="panduan-doc-info">Ukuran: ${formatBytes(doc.size)} &nbsp;|&nbsp; Upload: ${doc.uploaded} &nbsp;|&nbsp; Oleh: ${doc.uploader}</div>
-        </div>
-        <div class="panduan-doc-actions">
-          ${isPreviewable ? `<button class="btn-doc-dl" style="background:#1d4ed8" onclick="previewPanduanDoc('${doc.id}')">👁️ Preview</button>` : ''}
-          <button class="btn-doc-dl" onclick="downloadPanduanDoc('${doc.id}')">⬇️ Unduh</button>
-          ${isSuperAdmin() ? `<button class="btn-doc-del" style="display:inline-block" onclick="deletePanduanDoc('${doc.id}')">🗑️</button>` : ''}
-        </div>
-      </div>`;
-    }).join('');
-  }
-  el.innerHTML = html;
-}
-
-function openPanduanDocUrl(id) {
-  const doc = PANDUAN_DOCS_DEFAULT.find(d => d.id === id);
-  if (doc && doc.url) {
-    window.open(doc.url, '_blank');
-  } else {
-    showToast('⚠️ URL dokumen tidak tersedia.', 'warn');
-  }
-}
-
-function hideDefaultDoc(id) {
-  if (!isSuperAdmin()) return;
-  if (!confirm('Sembunyikan dokumen referensi ini dari daftar?')) return;
-  try {
-    const hidden = JSON.parse(localStorage.getItem('siwashut_hidden_default_docs') || '[]');
-    if (!hidden.includes(id)) hidden.push(id);
-    localStorage.setItem('siwashut_hidden_default_docs', JSON.stringify(hidden));
-  } catch(e) {}
-  renderPanduanDocs();
-  showToast('🗑️ Dokumen referensi disembunyikan.', 'info');
+    </div>
+  `}).join('');
 }
 
 function downloadPanduanDoc(id) {
