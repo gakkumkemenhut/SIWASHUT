@@ -2245,7 +2245,28 @@
 // ============ SUPABASE CONFIG ============
 const SUPA_URL = 'https://uirbvucdtvnpquxmrycp.supabase.co';
 const SUPA_KEY = 'sb_publishable_sA3C__ltQp4dWjw5awOy7A_RXEs-inz';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// Guard: jika Supabase CDN belum/gagal load, buat dummy client agar script tidak crash
+let supa;
+try {
+  if (typeof supabase !== 'undefined' && supabase.createClient) {
+    supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+  } else {
+    throw new Error('Supabase CDN belum dimuat');
+  }
+} catch(e) {
+  console.warn('Supabase tidak tersedia, mode offline:', e.message);
+  // Dummy client — semua operasi fallback ke localStorage
+  supa = {
+    from: () => ({
+      select: () => ({ order: () => Promise.reject(new Error('offline')) }),
+      insert: () => ({ select: () => ({ single: () => Promise.reject(new Error('offline')) }) }),
+      upsert: () => ({ select: () => ({ single: () => Promise.reject(new Error('offline')) }) }),
+      delete: () => ({ eq: () => Promise.reject(new Error('offline')) }),
+      update: () => ({ eq: () => Promise.reject(new Error('offline')) }),
+    })
+  };
+}
 
 // ============ DATA STORE ============
 let DATA = [];
@@ -2255,7 +2276,6 @@ let charts = {};
 
 // ── Load data patroli dari Supabase ──────────────────────────────────────────
 async function loadDataFromSupabase() {
-  showToast('Memuat data dari server...', 'info');
   try {
     const { data, error } = await supa.from('patroli').select('*').order('created_at', { ascending: false });
     if (error) throw error;
@@ -2275,7 +2295,8 @@ async function loadDataFromSupabase() {
   } catch(e) {
     console.warn('Supabase load error, fallback localStorage:', e.message);
     DATA = JSON.parse(localStorage.getItem('siwashut_data') || '[]');
-    showToast('⚠️ Gagal load server, data lokal digunakan.', 'warn');
+    // Tetap render meskipun dari lokal
+    updateDashboard(); renderTable();
   }
 }
 
@@ -2655,6 +2676,8 @@ function showPage(id) {
     showToast('⚠️ Anda tidak memiliki akses ke halaman ini.', 'warn');
     return;
   }
+  // Simpan halaman terakhir agar bisa di-restore saat refresh
+  try { localStorage.setItem('siwashut_last_page', id); } catch(e) {}
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.nav-subitem').forEach(n => n.classList.remove('active'));
@@ -2690,6 +2713,10 @@ function showPage(id) {
   if (id === 'petapengawasan') { initPetaPW(); setTimeout(()=>{ if(petaPWMap) petaPWMap.invalidateSize(); }, 200); }
   if (id === 'perencanaan') { initPerencanaanPage(); }
   if (id === 'input') {
+    // Auto-render sarpras form agar item tidak kosong
+    setTimeout(() => {
+      try { renderSarprasInputForm(currentSarprasInputFilter || 'all'); } catch(e) {}
+    }, 50);
     // Auto-isi dan kunci unit kerja berdasarkan role/unit pengguna
     const unitEl = document.getElementById('f-unitkerja');
     if (unitEl) {
@@ -2713,7 +2740,12 @@ function showPage(id) {
     setTimeout(checkAdminSubmissionInbox, 200);
   }
   if (id === 'sanksi') { renderSanksiPage(); }
-  if (id === 'panduan') { setTimeout(() => initPanduanPage(), 50); }
+  if (id === 'panduan') {
+    // Render langsung tanpa setTimeout untuk mencegah flash kosong
+    initPanduanPage();
+    // Retry jika ada elemen yang belum siap
+    setTimeout(() => initPanduanPage(), 100);
+  }
 }
 
 // ============ FORM ============
@@ -4163,7 +4195,7 @@ function populateProvinsiByWilayah() {
 }
 
 function getCurrentUser() {
-  return sessionStorage.getItem('siwashut_user') || '';
+  return localStorage.getItem('siwashut_user') || '';
 }
 
 function getCurrentUnitKerja() {
@@ -4171,7 +4203,7 @@ function getCurrentUnitKerja() {
   if (isSuperAdmin()) return SUPERADMIN_UNIT;
   if (ADMIN_WILAYAH[u]) return ADMIN_WILAYAH[u];
   // Dari Supabase (disimpan saat login)
-  return sessionStorage.getItem('siwashut_unit') || '';
+  return localStorage.getItem('siwashut_unit') || '';
 }
 
 // Filter data berdasarkan unit kerja akses
@@ -4182,18 +4214,18 @@ function getAccessibleData(data) {
   // Superadmin dan struktural dari Dit. PPSAKK bisa lihat semua
   if (role === 'superadmin') return data;
   if (role === 'struktural') {
-    const unitKerja = sessionStorage.getItem('siwashut_unit') || '';
+    const unitKerja = localStorage.getItem('siwashut_unit') || '';
     // Struktural Dit. PPSAKK bisa lihat semua
     if (unitKerja === SUPERADMIN_UNIT || unitKerja === '') return data;
     // Struktural wilayah hanya lihat data wilayah masing-masing
     return data.filter(d => d.unitkerja === unitKerja);
   }
   if (role === 'admin_wilayah') {
-    const unitKerja = ADMIN_WILAYAH[u] || sessionStorage.getItem('siwashut_unit') || '';
+    const unitKerja = ADMIN_WILAYAH[u] || localStorage.getItem('siwashut_unit') || '';
     return data.filter(d => d.unitkerja === unitKerja);
   }
   if (role === 'petugas') {
-    const unitKerja = sessionStorage.getItem('siwashut_unit') || '';
+    const unitKerja = localStorage.getItem('siwashut_unit') || '';
     if (!unitKerja) return data;
     return data.filter(d => d.unitkerja === unitKerja);
   }
@@ -4205,7 +4237,7 @@ function getCurrentRole() {
   // Cek dari USER_ROLES bawaan
   if (USER_ROLES[u]) return USER_ROLES[u];
   // Cek dari Supabase role (disimpan saat login)
-  const storedRole = sessionStorage.getItem('siwashut_role') || '';
+  const storedRole = localStorage.getItem('siwashut_role') || '';
   return storedRole || 'petugas';
 }
 
@@ -4243,16 +4275,30 @@ function getWilayahAdmin() {
 }
 
 (function() {
-  const sess = sessionStorage.getItem('siwashut_user');
+  const sess = localStorage.getItem('siwashut_user');
   if (sess) {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-wrapper').classList.add('visible');
-    document.querySelector('.badge-user').textContent = '\u{1F464} ' + sess.toUpperCase();
+    // Tampilkan badge role dengan benar
+    const role = localStorage.getItem('siwashut_role') || 'petugas';
+    const roleLabel = role === 'superadmin' ? 'SUPER ADMIN' :
+                      role === 'admin_wilayah' ? 'ADMIN WILAYAH' :
+                      role === 'struktural' ? 'STRUKTURAL' : 'PETUGAS';
+    document.querySelector('.badge-user').textContent = '\u{1F464} ' + sess.toUpperCase() + ' (' + roleLabel + ')';
     applyRoleBasedNavigation();
     populateProvinsiByWilayah();
     updateNavNotif();
     updateDashboard();
     loadDataFromSupabase();
+    // Restore halaman terakhir — termasuk panduan, sarpras, dll.
+    const lastPage = localStorage.getItem('siwashut_last_page') || 'dashboard';
+    setTimeout(function() {
+      showPage(lastPage);
+      // Jika halaman panduan, pastikan konten dirender ulang
+      if (lastPage === 'panduan') {
+        setTimeout(function() { initPanduanPage(); }, 100);
+      }
+    }, 400);
   }
 })();
 
@@ -4277,7 +4323,7 @@ function doLogin() {
   setTimeout(async () => {
     const dbUser = await checkLoginSupabase(u, p);
     if ((USERS[u] && USERS[u] === p) || dbUser) {
-      sessionStorage.setItem('siwashut_user', u);
+      localStorage.setItem('siwashut_user', u);
       // Simpan role
       let role = 'petugas';
       let unitKerja = '';
@@ -4291,8 +4337,8 @@ function doLogin() {
         else role = 'petugas';
         unitKerja = dbUser.unit || '';
       }
-      sessionStorage.setItem('siwashut_role', role);
-      sessionStorage.setItem('siwashut_unit', unitKerja);
+      localStorage.setItem('siwashut_role', role);
+      localStorage.setItem('siwashut_unit', unitKerja);
       btnText.innerHTML = '\u2705 Berhasil! Memuat sistem...';
       setTimeout(() => {
         const ls = document.getElementById('login-screen');
@@ -4335,9 +4381,10 @@ function togglePw() {
 }
 
 function doLogout() {
-  sessionStorage.removeItem('siwashut_user');
-  sessionStorage.removeItem('siwashut_role');
-  sessionStorage.removeItem('siwashut_unit');
+  localStorage.removeItem('siwashut_user');
+  localStorage.removeItem('siwashut_role');
+  localStorage.removeItem('siwashut_unit');
+  localStorage.removeItem('siwashut_last_page');
   document.getElementById('app-wrapper').classList.remove('visible');
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('inp-username').value = '';
@@ -4396,7 +4443,7 @@ function openNavParent(key) {
 }
 
 // ============ PERENCANAAN PAGE ============
-let perencanaanData = JSON.parse(localStorage.getItem('siwashut_perencanaan') || '[]');
+let perencanaanData = []; try { perencanaanData = JSON.parse(localStorage.getItem('siwashut_perencanaan') || '[]'); } catch(e) { perencanaanData = []; }
 
 function savePerencanaanStorage() {
   localStorage.setItem('siwashut_perencanaan', JSON.stringify(perencanaanData));
@@ -5640,7 +5687,7 @@ if (!localStorage.getItem('siwashut_v6_reset')) {
   localStorage.removeItem('siwashut_sanksi');
   localStorage.setItem('siwashut_v6_reset', '1');
 }
-let SANKSI_DATA = JSON.parse(localStorage.getItem('siwashut_sanksi') || '[]');
+let SANKSI_DATA = []; try { SANKSI_DATA = JSON.parse(localStorage.getItem('siwashut_sanksi') || '[]'); } catch(e) { SANKSI_DATA = []; }
 let currentSanksiSubjek = null;
 let sanksiBAFile = null;
 let sanksiSKFile = null;
@@ -6089,7 +6136,8 @@ const SARPRAS_DATA = {
 };
 
 // Panduan documents stored in localStorage
-let PANDUAN_DOCS = JSON.parse(localStorage.getItem('siwashut_panduan_docs') || '[]');
+let PANDUAN_DOCS = [];
+try { PANDUAN_DOCS = JSON.parse(localStorage.getItem('siwashut_panduan_docs') || '[]'); } catch(e) { PANDUAN_DOCS = []; }
 
 function savePanduanDocs() {
   try { localStorage.setItem('siwashut_panduan_docs', JSON.stringify(PANDUAN_DOCS)); } catch(e) {}
@@ -6100,13 +6148,20 @@ function savePanduanDocs() {
 
 let panduanInitialized = false;
 function initPanduanPage() {
-  // Selalu render ulang agar konten tidak kosong saat navigasi bolak-balik
-  renderKlasifikasi();
-  renderSanksiAdm();
-  renderSarpras('all');
-  panduanInitialized = true;
-  renderPanduanDocs();
+  // Pastikan elemen utama sudah ada sebelum render
+  const tbody = document.getElementById('klas-tbody');
+  if (!tbody) {
+    // Elemen belum siap, coba lagi setelah delay
+    setTimeout(() => initPanduanPage(), 150);
+    return;
+  }
 
+  // Selalu render ulang agar konten tidak kosong saat navigasi bolak-balik
+  try { renderKlasifikasi(); } catch(e) { console.warn('renderKlasifikasi error:', e); }
+  try { renderSanksiAdm(); } catch(e) { console.warn('renderSanksiAdm error:', e); }
+  try { renderSarpras('all'); } catch(e) { console.warn('renderSarpras error:', e); }
+  panduanInitialized = true;
+  try { renderPanduanDocs(); } catch(e) { console.warn('renderPanduanDocs error:', e); }
   // Pastikan tab pertama (klasifikasi) selalu aktif saat halaman dibuka
   const page = document.getElementById('page-panduan');
   if (page) {
@@ -6151,9 +6206,10 @@ function renderKlasifikasi() {
   const tbody = document.getElementById('klas-tbody');
   const empty = document.getElementById('klas-empty');
   if (!tbody) return;
-  if (!list.length) { tbody.innerHTML = ''; empty.style.display = 'block'; document.getElementById('klas-count').textContent = ''; return; }
-  empty.style.display = 'none';
-  document.getElementById('klas-count').textContent = list.length + ' data';
+  if (!list.length) { tbody.innerHTML = ''; if(empty) empty.style.display = 'block'; const cnt = document.getElementById('klas-count'); if(cnt) cnt.textContent = ''; return; }
+  if(empty) empty.style.display = 'none';
+  const klasCount = document.getElementById('klas-count');
+  if(klasCount) klasCount.textContent = list.length + ' data';
   tbody.innerHTML = list.map((r, i) => {
     const isPB = r.tipe.includes('Perizinan');
     const tipeClass = isPB ? 'klas-tipe-pb' : 'klas-tipe-pp';
@@ -6205,9 +6261,10 @@ function renderSanksiAdm() {
   const tbody = document.getElementById('sanksi-adm-tbody');
   const empty = document.getElementById('sanksi-adm-empty');
   if (!tbody) return;
-  if (!list.length) { tbody.innerHTML = ''; empty.style.display = 'block'; document.getElementById('sanksi-adm-count').textContent = ''; return; }
-  empty.style.display = 'none';
-  document.getElementById('sanksi-adm-count').textContent = list.length + ' data';
+  if (!list.length) { tbody.innerHTML = ''; if(empty) empty.style.display = 'block'; const cnt = document.getElementById('sanksi-adm-count'); if(cnt) cnt.textContent = ''; return; }
+  if(empty) empty.style.display = 'none';
+  const sanksiCount = document.getElementById('sanksi-adm-count');
+  if(sanksiCount) sanksiCount.textContent = list.length + ' data';
   tbody.innerHTML = list.map(r => {
     const sanksiKey = r.sanksi.toLowerCase();
     let badgeClass = 'teguran';
@@ -6856,7 +6913,7 @@ function handlePanduanDocUpload(event) {
         size: file.size,
         type: file.type,
         uploaded: new Date().toLocaleDateString('id-ID'),
-        uploader: sessionStorage.getItem('siwashut_user') || 'admin',
+        uploader: localStorage.getItem('siwashut_user') || 'admin',
         data: e.target.result
       });
       savePanduanDocs();
@@ -7000,12 +7057,17 @@ function switchInputTab(tab) {
     // show sarpras panel (previously inside form, now standalone)
     const sarprasPanel = document.getElementById('sarpras-input-panel');
     if (sarprasPanel) sarprasPanel.style.display = 'block';
-    renderSarprasInputForm(currentSarprasInputFilter || 'all');
+    // Selalu render ulang agar item tidak kosong
+    setTimeout(() => renderSarprasInputForm(currentSarprasInputFilter || 'all'), 50);
   }
   if (tab === 'kebakaran') {
     // Init with one entry if empty
     if (!kbEntriesList.length) addKbEntry();
     else renderAllKbEntries();
+  }
+  // After switching, ensure sarpras is rendered if currently on sarpras
+  if (tab !== 'sarpras') {
+    // nothing extra
   }
 }
 
@@ -7692,6 +7754,8 @@ function resetTabDraft(tab) {
     kbEntriesList = []; kbEntryIdCounter = 0;
     const kbEl = document.getElementById('kb-entries-list');
     if(kbEl) kbEl.innerHTML = '';
+    // Tambahkan satu entry kosong agar form tidak kosong setelah reset
+    addKbEntry();
   }
   showToast('🔄 Data ' + {pengawasan:'Pengawasan',sarpras:'Sarpras',kebakaran:'Kebakaran'}[tab] + ' direset.', 'warn');
 }
@@ -8156,7 +8220,6 @@ function updateSyncPanelVisibility() {
       updateInputSubmissionNotif();
     }
   }, 800);
-});
 </script>
 </div><!-- /app-wrapper -->
 </body>
