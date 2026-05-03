@@ -1314,20 +1314,6 @@
             <label class="form-label">Provinsi <span class="required">*</span></label>
             <select id="f-provinsi" class="form-control">
               <option value="">-- Pilih Provinsi --</option>
-              <option>Aceh</option><option>Sumatera Utara</option><option>Sumatera Barat</option>
-              <option>Riau</option><option>Kepulauan Riau</option><option>Jambi</option>
-              <option>Sumatera Selatan</option><option>Bangka Belitung</option><option>Bengkulu</option>
-              <option>Lampung</option><option>DKI Jakarta</option><option>Jawa Barat</option>
-              <option>Banten</option><option>Jawa Tengah</option><option>DI Yogyakarta</option>
-              <option>Jawa Timur</option><option>Bali</option><option>Nusa Tenggara Barat</option>
-              <option>Nusa Tenggara Timur</option><option>Kalimantan Barat</option>
-              <option>Kalimantan Tengah</option><option>Kalimantan Selatan</option>
-              <option>Kalimantan Timur</option><option>Kalimantan Utara</option>
-              <option>Sulawesi Utara</option><option>Gorontalo</option><option>Sulawesi Tengah</option>
-              <option>Sulawesi Barat</option><option>Sulawesi Selatan</option><option>Sulawesi Tenggara</option>
-              <option>Maluku</option><option>Maluku Utara</option><option>Papua</option>
-              <option>Papua Barat</option><option>Papua Selatan</option><option>Papua Tengah</option>
-              <option>Papua Pegunungan</option>
             </select>
           </div>
           <div class="form-group">
@@ -2078,7 +2064,7 @@
           <div style="background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px">
             <div style="font-weight:700;color:#1e40af;margin-bottom:4px">🌏 Admin Wilayah (5 Wilayah)</div>
             <div style="color:var(--text-muted)">Edit & hapus rekap data. Tanpa akses Sanksi Administratif.</div>
-            <div style="margin-top:6px;font-size:11px;color:#9ca3af">Sumatera · Jabalnusra · Kalimantan · Sulawesi · Papua</div>
+            <div style="margin-top:6px;font-size:11px;color:#9ca3af">Sumatera · Jabalnusra · Kalimantan · Sulawesi · Mapua</div>
           </div>
           <div style="background:#fff;border:1px solid #fde68a;border-radius:8px;padding:10px 14px">
             <div style="font-weight:700;color:#92400e;margin-bottom:4px">📊 Struktural</div>
@@ -2656,7 +2642,7 @@ function showPage(id) {
     'rekapsanksi':    () => canAccessSanksi(),             // sama dengan sanksi
     'manajemen':      () => isSuperAdmin(),                // hanya superadmin
     'laporan':        () => !isPetugas(),                  // petugas tidak bisa
-    'sinkronisasi':   () => isSuperAdmin(),                // hanya superadmin
+    'sinkronisasi':   () => true,                          // semua akun bisa sinkronisasi
     'petapengawasan': () => true,                          // semua bisa
     'input':          () => isSuperAdmin() || isAdminWilayah() || isPetugas(), // tidak untuk struktural
     'perencanaan':    () => isSuperAdmin() || isAdminWilayah() || isPetugas(), // sama dengan input
@@ -3714,15 +3700,18 @@ async function renderAdminPage() {
   // -- Pengguna aktif dari Supabase --
   const aktif = await loadActiveUsersFromSupabase();
   const builtIn = [
-    {username:'superadmin',  nama:'Super Administrator', unit:'Pusat',       role:'superadmin'},
+    {username:'superadmin',  nama:'Super Administrator', unit:'Dit. PPSAKK', role:'superadmin'},
     {username:'admin_sumatera',   nama:'Admin Sumatera',   unit:'Wilayah Sumatera',   role:'admin_wilayah'},
     {username:'admin_jabalnusra', nama:'Admin Jabalnusra', unit:'Wilayah Jabalnusra', role:'admin_wilayah'},
     {username:'admin_kalimantan', nama:'Admin Kalimantan', unit:'Wilayah Kalimantan', role:'admin_wilayah'},
     {username:'admin_sulawesi',   nama:'Admin Sulawesi',   unit:'Wilayah Sulawesi',   role:'admin_wilayah'},
-    {username:'admin_papua',      nama:'Admin Papua',      unit:'Wilayah Papua',      role:'admin_wilayah'},
+    {username:'admin_mapua',      nama:'Admin Mapua',      unit:'Wilayah Mapua',      role:'admin_wilayah'},
     {username:'petugas', nama:'Petugas Demo', unit:'PPSA Demo', role:'petugas'}
   ];
-  const all = [...builtIn, ...aktif];
+  // Deduplicate: hapus dari aktif jika username sudah ada di builtIn
+  const builtInUsernames = new Set(builtIn.map(u => u.username));
+  const aktifFiltered = aktif.filter(u => !builtInUsernames.has(u.username));
+  const all = [...builtIn, ...aktifFiltered];
   const roleIcon = {superadmin:'🛡️', admin_wilayah:'🌏', struktural:'📊', petugas:'👤'};
   const roleBadge = {superadmin:'badge-ok', admin_wilayah:'badge-proc', struktural:'badge-warn', petugas:'badge-proc'};
   const alist = document.getElementById('active-users-list');
@@ -3734,6 +3723,7 @@ async function renderAdminPage() {
         <div class="pending-meta">@${u.username} &nbsp;|&nbsp; ${u.unit||'-'}</div>
       </div>
       ${u.role!=='superadmin' && aktif.find(d=>d.username===u.username) ? `<button class="btn-reject" onclick="deactivateUser('${u.username}')">🚫 Nonaktifkan</button>` : ''}
+      <button class="btn-approve" style="background:#1d4ed8;margin-left:4px" onclick="syncUserData('${u.username}')">🔄 Sinkron</button>
     </div>`).join('');
 }
 
@@ -4090,7 +4080,7 @@ const USERS = {
   'admin_jabalnusra': 'adminjab2026',
   'admin_kalimantan': 'adminkal2026',
   'admin_sulawesi':   'adminsul2026',
-  'admin_papua':      'adminpap2026',
+  'admin_mapua':      'adminmap2026',
   'petugas':          'ppsa1234'
 };
 
@@ -4101,7 +4091,7 @@ const USER_ROLES = {
   'admin_jabalnusra': 'admin_wilayah',
   'admin_kalimantan': 'admin_wilayah',
   'admin_sulawesi':   'admin_wilayah',
-  'admin_papua':      'admin_wilayah',
+  'admin_mapua':      'admin_wilayah',
   'petugas':          'petugas'
 };
 
@@ -4111,11 +4101,66 @@ const ADMIN_WILAYAH = {
   'admin_jabalnusra': 'Gakkum Kehutanan Wilayah Jabalnusra',
   'admin_kalimantan': 'Gakkum Kehutanan Wilayah Kalimantan',
   'admin_sulawesi':   'Gakkum Kehutanan Wilayah Sulawesi',
-  'admin_papua':      'Gakkum Kehutanan Wilayah Mapua'
+  'admin_mapua':      'Gakkum Kehutanan Wilayah Mapua'
 };
 
 // Mapping unit kerja untuk superadmin
 const SUPERADMIN_UNIT = 'Dit. PPSAKK';
+
+// Mapping wilayah kerja → daftar provinsi yang boleh dipilih
+const PROVINSI_PER_WILAYAH = {
+  'Gakkum Kehutanan Wilayah Sumatera': [
+    'Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Kepulauan Riau',
+    'Jambi', 'Sumatera Selatan', 'Bangka Belitung', 'Bengkulu', 'Lampung'
+  ],
+  'Gakkum Kehutanan Wilayah Jabalnusra': [
+    'DKI Jakarta', 'Jawa Barat', 'Banten', 'Jawa Tengah', 'DI Yogyakarta',
+    'Jawa Timur', 'Bali', 'Nusa Tenggara Barat', 'Nusa Tenggara Timur'
+  ],
+  'Gakkum Kehutanan Wilayah Kalimantan': [
+    'Kalimantan Barat', 'Kalimantan Tengah', 'Kalimantan Selatan',
+    'Kalimantan Timur', 'Kalimantan Utara'
+  ],
+  'Gakkum Kehutanan Wilayah Sulawesi': [
+    'Sulawesi Utara', 'Gorontalo', 'Sulawesi Tengah', 'Sulawesi Barat',
+    'Sulawesi Selatan', 'Sulawesi Tenggara'
+  ],
+  'Gakkum Kehutanan Wilayah Mapua': [
+    'Maluku', 'Maluku Utara', 'Papua', 'Papua Barat', 'Papua Selatan',
+    'Papua Tengah', 'Papua Pegunungan'
+  ]
+};
+
+// Semua provinsi (untuk superadmin / dit. PPSAKK)
+const ALL_PROVINSI = [
+  'Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Kepulauan Riau',
+  'Jambi', 'Sumatera Selatan', 'Bangka Belitung', 'Bengkulu', 'Lampung',
+  'DKI Jakarta', 'Jawa Barat', 'Banten', 'Jawa Tengah', 'DI Yogyakarta',
+  'Jawa Timur', 'Bali', 'Nusa Tenggara Barat', 'Nusa Tenggara Timur',
+  'Kalimantan Barat', 'Kalimantan Tengah', 'Kalimantan Selatan',
+  'Kalimantan Timur', 'Kalimantan Utara',
+  'Sulawesi Utara', 'Gorontalo', 'Sulawesi Tengah', 'Sulawesi Barat',
+  'Sulawesi Selatan', 'Sulawesi Tenggara',
+  'Maluku', 'Maluku Utara', 'Papua', 'Papua Barat', 'Papua Selatan',
+  'Papua Tengah', 'Papua Pegunungan'
+];
+
+// Fungsi mengisi dropdown provinsi berdasarkan wilayah kerja pengguna login
+function populateProvinsiByWilayah() {
+  const sel = document.getElementById('f-provinsi');
+  if (!sel) return;
+  const unitKerja = getCurrentUnitKerja();
+  const listProvinsi = PROVINSI_PER_WILAYAH[unitKerja] || ALL_PROVINSI;
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">-- Pilih Provinsi --</option>';
+  listProvinsi.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    if (p === currentVal) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
 
 function getCurrentUser() {
   return sessionStorage.getItem('siwashut_user') || '';
@@ -4204,6 +4249,7 @@ function getWilayahAdmin() {
     document.getElementById('app-wrapper').classList.add('visible');
     document.querySelector('.badge-user').textContent = '\u{1F464} ' + sess.toUpperCase();
     applyRoleBasedNavigation();
+    populateProvinsiByWilayah();
     updateNavNotif();
     updateDashboard();
     loadDataFromSupabase();
@@ -4262,6 +4308,7 @@ function doLogin() {
                             isStruktural() ? 'STRUKTURAL' : 'PETUGAS';
           document.querySelector('.badge-user').textContent = '\u{1F464} ' + u.toUpperCase() + ' (' + roleLabel + ')';
           applyRoleBasedNavigation();
+          populateProvinsiByWilayah();
           updateNavNotif();
           updateDashboard();
           loadDataFromSupabase();
@@ -4664,26 +4711,27 @@ function applyRoleBasedNavigation() {
     // Super Admin: semua akses
     Object.values(navItems).forEach(el => { if (el) el.style.display = 'flex'; });
     if (navItems.manajemen) navItems.manajemen.style.display = 'flex';
+    if (navItems.sinkronisasi) navItems.sinkronisasi.style.display = 'flex';
     showParentPengawasan(['perencanaan','input','rekapinput']);
     showParentSanksi(['sanksi','rekapsanksi']);
     const btnHapusSemua = document.getElementById('btn-hapus-semua-data');
     if (btnHapusSemua) btnHapusSemua.style.display = 'inline-flex';
   } else if (isAdminWilayah()) {
-    // Admin Wilayah: dashboard, peta, pengawasan kehutanan (sub: perencanaan, input, rekapinput), panduan, laporan
-    ['dashboard','petapengawasan','panduan','laporan'].forEach(k => {
+    // Admin Wilayah: dashboard, peta, pengawasan kehutanan (sub: perencanaan, input, rekapinput), panduan, laporan, sinkronisasi
+    ['dashboard','petapengawasan','panduan','laporan','sinkronisasi'].forEach(k => {
       if (navItems[k]) navItems[k].style.display = 'flex';
     });
     showParentPengawasan(['perencanaan','input','rekapinput']);
   } else if (isStruktural()) {
-    // Struktural: dashboard, peta, laporan + rekapinput (view) + sanksi parent
-    ['dashboard','petapengawasan','laporan'].forEach(k => {
+    // Struktural: dashboard, peta, laporan + rekapinput (view) + sanksi parent + sinkronisasi
+    ['dashboard','petapengawasan','laporan','sinkronisasi'].forEach(k => {
       if (navItems[k]) navItems[k].style.display = 'flex';
     });
     showParentPengawasan(['rekapinput']);
     showParentSanksi(['sanksi','rekapsanksi']);
   } else {
-    // Petugas Pengawas: peta, pengawasan kehutanan (sub: input, rekapinput — TANPA perencanaan), panduan
-    ['petapengawasan','panduan'].forEach(k => {
+    // Petugas Pengawas: peta, pengawasan kehutanan (sub: input, rekapinput — TANPA perencanaan), panduan, sinkronisasi
+    ['petapengawasan','panduan','sinkronisasi'].forEach(k => {
       if (navItems[k]) navItems[k].style.display = 'flex';
     });
     showParentPengawasan(['input','rekapinput']);
@@ -6946,6 +6994,8 @@ function switchInputTab(tab) {
     const actionEl = document.getElementById('tab-actions-' + t);
     if (actionEl) actionEl.style.display = (t === tab) ? 'flex' : 'none';
   });
+  // Pastikan dropdown provinsi selalu sesuai wilayah kerja user
+  if (tab === 'pengawasan') populateProvinsiByWilayah();
   if (tab === 'sarpras') {
     // show sarpras panel (previously inside form, now standalone)
     const sarprasPanel = document.getElementById('sarpras-input-panel');
@@ -8043,9 +8093,30 @@ async function checkSyncStatusMini() {
 // Tampilkan shortcut sync di halaman Manajemen hanya untuk Super Admin
 function initSyncShortcut() {
   const el = document.getElementById('manajemen-sync-shortcut');
-  if (el && isSuperAdmin()) {
+  if (el) {
     el.style.display = 'block';
     checkSyncStatusMini();
+  }
+}
+
+// Fungsi sinkronisasi data per-akun
+async function syncUserData(username) {
+  showToast('🔄 Menyinkronkan data untuk @' + username + '...', 'info');
+  try {
+    const localData = JSON.parse(localStorage.getItem('siwashut_data') || '[]');
+    const userUnit = ADMIN_WILAYAH[username] || (username === 'superadmin' ? SUPERADMIN_UNIT : '');
+    const toSync = userUnit
+      ? localData.filter(d => d.unitkerja === userUnit || d.unit === userUnit)
+      : localData;
+    let syncCount = 0;
+    for (const row of toSync) {
+      const ok = await saveRowToSupabase(row);
+      if (ok) syncCount++;
+    }
+    showToast('✅ Sinkronisasi @' + username + ' selesai: ' + syncCount + ' data berhasil disinkron.', 'success');
+    if (typeof checkSyncStatusMini === 'function') checkSyncStatusMini();
+  } catch(e) {
+    showToast('⚠️ Gagal sinkronisasi: ' + e.message, 'warn');
   }
 }
 
@@ -8053,12 +8124,9 @@ function initSyncShortcut() {
 function updateSyncPanelVisibility() {
   const panel = document.getElementById('sync-panel');
   if (!panel) return;
-  if (!isSuperAdmin()) {
-    panel.style.display = 'none';
-  } else {
-    panel.style.display = 'block';
-    checkSyncStatus();
-  }
+  // Semua akun bisa akses sinkronisasi
+  panel.style.display = 'block';
+  checkSyncStatus();
 }
 
   setTimeout(() => {
