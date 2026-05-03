@@ -30,7 +30,7 @@
     --text: #1a2e1a;
     --text-muted: #4b5563;
     --border: #d1e7d9;
-    --sidebar-w: 240px;
+    --sidebar-w: 220px;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
@@ -241,50 +241,138 @@
   .sidebar {
     width: var(--sidebar-w);
     background: var(--hijau);
-    min-height: 100vh;
+    height: 100vh;
     position: fixed;
     left: 0; top: 0;
     display: flex; flex-direction: column;
     z-index: 100;
     box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+  .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
+  .sidebar.open {
+    transform: translateX(0);
   }
   .sidebar-logo {
-    padding: 24px 20px 20px;
+    padding: 14px 16px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
   }
-  .sidebar-logo .brand { font-family: 'Playfair Display', serif; font-size: 22px; color: #fff; letter-spacing: 1px; }
-  .sidebar-logo .sub { font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
-  .sidebar-icon { font-size: 28px; margin-bottom: 4px; }
-  .nav-section { padding: 16px 12px 8px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .sidebar-logo .brand { font-family: 'Playfair Display', serif; font-size: 18px; color: #fff; letter-spacing: 1px; }
+  .sidebar-logo .sub { font-size: 9px; color: rgba(255,255,255,0.6); letter-spacing: 2px; text-transform: uppercase; margin-top: 1px; }
+  .sidebar-icon { font-size: 22px; margin-bottom: 3px; }
+  .nav-section { padding: 10px 12px 5px; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); }
   .nav-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 20px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px;
     color: rgba(255,255,255,0.75);
     cursor: pointer;
-    font-size: 13.5px;
-    border-radius: 0;
+    font-size: 11.5px;
     transition: all 0.2s;
-    margin: 2px 8px;
-    border-radius: 8px;
+    margin: 1px 6px;
+    border-radius: 7px;
   }
   .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
   .nav-item.active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 600; }
-  .nav-item .nav-icon { width: 20px; text-align: center; font-size: 16px; }
-  .sidebar-footer { margin-top: auto; padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
-  .sidebar-footer p { font-size: 11px; color: rgba(255,255,255,0.4); }
+  .nav-item .nav-icon { width: 18px; text-align: center; font-size: 13px; }
+
+  /* Sub-menu styles */
+  .nav-parent {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    font-size: 11.5px;
+    margin: 1px 6px;
+    border-radius: 7px;
+    transition: all 0.2s;
+    font-weight: 600;
+    justify-content: space-between;
+    user-select: none;
+  }
+  .nav-parent:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .nav-parent.open { background: rgba(255,255,255,0.06); }
+  .nav-parent-left { display: flex; align-items: center; gap: 8px; }
+  .nav-parent-arrow { font-size: 9px; opacity: 0.6; transition: transform 0.2s; }
+  .nav-parent.open .nav-parent-arrow { transform: rotate(180deg); }
+  .nav-submenu {
+    display: none; overflow: hidden;
+    margin: 0 6px 2px 6px;
+    background: rgba(0,0,0,0.15);
+    border-radius: 7px;
+    padding: 3px 0;
+  }
+  .nav-submenu.open { display: block; }
+  .nav-subitem {
+    display: flex; align-items: flex-start; gap: 7px;
+    padding: 6px 10px 6px 14px;
+    color: rgba(255,255,255,0.65);
+    cursor: pointer;
+    font-size: 10.5px;
+    transition: all 0.2s;
+    line-height: 1.35;
+  }
+  .nav-subitem:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-subitem.active { background: rgba(255,255,255,0.15); color: #fff; font-weight: 600; }
+  .nav-subitem .nav-icon { width: 16px; text-align: center; font-size: 12px; flex-shrink: 0; margin-top: 1px; }
+  .sidebar-footer { margin-top: auto; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-footer p { font-size: 10px; color: rgba(255,255,255,0.4); }
 
   /* MAIN */
-  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .main { margin-left: 0; flex: 1; display: flex; flex-direction: column; min-height: 100vh; transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .main.sidebar-open { margin-left: var(--sidebar-w); }
+
+  /* Sidebar toggle button */
+  .sidebar-toggle-btn {
+    position: fixed;
+    left: 0;
+    top: 16px;
+    width: 36px;
+    height: 36px;
+    background: var(--hijau);
+    border-radius: 0 8px 8px 0;
+    z-index: 101;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    user-select: none;
+  }
+  .sidebar-toggle-btn.sidebar-open {
+    left: var(--sidebar-w);
+    border-radius: 0 8px 8px 0;
+  }
+  /* Overlay when sidebar open on narrow screens */
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 99;
+  }
+  .sidebar-overlay.open { display: block; }
+
 
   /* TOPBAR */
   .topbar {
     background: #fff;
     border-bottom: 1px solid var(--border);
-    padding: 0 32px;
+    padding: 0 32px 0 52px;
     height: 64px;
     display: flex; align-items: center; justify-content: space-between;
     position: sticky; top: 0; z-index: 50;
@@ -660,10 +748,16 @@
 <!-- ===== APP WRAPPER ===== -->
 <div id="app-wrapper">
 
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar toggle button -->
+<button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Buka/Tutup Menu">☰</button>
+
 <!-- SIDEBAR -->
-<aside class="sidebar">
+<aside class="sidebar" id="main-sidebar">
   <div class="sidebar-logo">
-    <img src="data:image/png;base64,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" style="width:36px;height:36px;object-fit:contain;mix-blend-mode:screen;display:block;margin:0 auto 4px auto;" alt="GAKKUM"/>
+    <img src="data:image/png;base64,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" style="width:28px;height:28px;object-fit:contain;mix-blend-mode:screen;display:block;margin:0 auto 3px auto;" alt="GAKKUM"/>
     <div class="brand">SIWASHUT</div>
     <div class="sub">Kehutanan Indonesia</div>
   </div>
@@ -674,16 +768,43 @@
   <div class="nav-item" onclick="showPage('petapengawasan')">
     <span class="nav-icon">🗺️</span> Peta Pengawasan
   </div>
-  <div class="nav-item" onclick="showPage('input')" style="position:relative">
-    <span class="nav-icon">✏️</span> Input Data
-    <span id="nav-input-notif" style="background:#dc2626;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:4px;display:none">0</span>
+
+  <!-- PENGAWASAN KEHUTANAN (parent with sub-menus) -->
+  <div class="nav-parent" id="nav-parent-pengawasan" onclick="toggleNavParent('pengawasan')">
+    <div class="nav-parent-left">
+      <span class="nav-icon">🌿</span> Pengawasan Kehutanan
+    </div>
+    <span class="nav-parent-arrow">▼</span>
   </div>
-  <div class="nav-item" onclick="showPage('sanksi')">
-    <span class="nav-icon">⚖️</span> Sanksi Administratif
+  <div class="nav-submenu" id="nav-submenu-pengawasan">
+    <div class="nav-subitem" id="nav-sub-perencanaan" onclick="event.stopPropagation();showPage('perencanaan')">
+      <span class="nav-icon">📅</span> Perencanaan Pengawasan
+    </div>
+    <div class="nav-subitem" id="nav-sub-input" onclick="event.stopPropagation();showPage('input')" style="position:relative">
+      <span class="nav-icon">✏️</span> Input Data Hasil Pengawasan
+      <span id="nav-input-notif" style="background:#dc2626;color:#fff;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;margin-left:4px;display:none;position:absolute;right:10px;top:9px;">0</span>
+    </div>
+    <div class="nav-subitem" id="nav-sub-rekapinput" onclick="event.stopPropagation();showPage('rekapinput')">
+      <span class="nav-icon">📋</span> Rekap Data Hasil Input Pengawasan & Kejadian Kebakaran
+    </div>
   </div>
-  <div class="nav-item" onclick="showPage('data')">
-    <span class="nav-icon">📋</span> Rekap Data
+
+  <!-- SANKSI ADMINISTRATIF (parent with sub-menus) -->
+  <div class="nav-parent" id="nav-parent-sanksi" onclick="toggleNavParent('sanksi')">
+    <div class="nav-parent-left">
+      <span class="nav-icon">⚖️</span> Sanksi Administratif
+    </div>
+    <span class="nav-parent-arrow">▼</span>
   </div>
+  <div class="nav-submenu" id="nav-submenu-sanksi">
+    <div class="nav-subitem" id="nav-sub-sanksi" onclick="event.stopPropagation();showPage('sanksi')">
+      <span class="nav-icon">📝</span> Daftar Subjek Hukum — Sanksi Administratif
+    </div>
+    <div class="nav-subitem" id="nav-sub-rekapsanksi" onclick="event.stopPropagation();showPage('rekapsanksi')">
+      <span class="nav-icon">📊</span> Rekap Data Sanksi Administratif
+    </div>
+  </div>
+
   <div class="nav-item" onclick="showPage('panduan')">
     <span class="nav-icon">📚</span> Panduan Pengawasan
   </div>
@@ -697,12 +818,12 @@
   <div class="sidebar-footer">
     <p>© 2026 Kementerian Kehutanan</p>
     <p style="margin-top:4px;">SIWASHUT By. Yoga Rananda</p>
-    <button onclick="doLogout()" style="margin-top:12px;width:100%;padding:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:rgba(255,255,255,0.7);font-size:12px;font-family:inherit;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(220,38,38,0.3)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)'">🚪 Keluar / Logout</button>
+    <button onclick="doLogout()" style="margin-top:8px;width:100%;padding:6px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:7px;color:rgba(255,255,255,0.7);font-size:11px;font-family:inherit;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(220,38,38,0.3)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.color='rgba(255,255,255,0.7)'">🚪 Keluar / Logout</button>
   </div>
 </aside>
 
 <!-- MAIN -->
-<div class="main">
+<div class="main" id="main-content">
   <div class="topbar">
     <div class="topbar-title" id="page-title">Dashboard Pengawasan Kehutanan</div>
     <div class="topbar-right">
@@ -843,7 +964,7 @@
 
       <div class="section-header">
         <div class="section-title">Data Pengawasan Terkini</div>
-        <button class="btn btn-outline" onclick="showPage('data')">Lihat Semua →</button>
+        <button class="btn btn-outline" onclick="showPage('rekapinput')">Lihat Semua →</button>
       </div>
       <div class="table-card">
         <table>
@@ -1086,7 +1207,7 @@
       <div class="form-card" style="border-radius:0 0 16px 16px;border-top:none">
         <div id="form-alert" class="alert alert-success hidden"></div>
         <div class="form-grid">
-          <div class="form-group full">
+          <div class="form-group">
             <label class="form-label">Unit Kerja Penanggung Jawab <span class="required">*</span></label>
             <select id="f-unitkerja" class="form-control">
               <option value="">-- Pilih Unit Kerja Penanggung Jawab --</option>
@@ -1165,9 +1286,9 @@
               <option>Legalitas Kegiatan Lain</option>
             </select>
           </div>
-          <div class="form-group full">
+          <div class="form-group">
             <label class="form-label">Luasan Subjek Hukum (Ha)</label>
-            <input type="number" id="f-luas" class="form-control" placeholder="0" min="0" step="0.01" style="max-width:300px">
+            <input type="number" id="f-luas" class="form-control" placeholder="0" min="0" step="0.01">
           </div>
           <select id="f-tindak" style="display:none"></select>
 
@@ -1357,14 +1478,165 @@
     <div id="kb-map-picker" style="display:none"><div id="kb-map" style="display:none"></div></div>
     <div id="kb-koordinat-info" style="display:none"><span id="kb-koordinat-text"></span></div>
 
-    <!-- ===== REKAP DATA ===== -->
-    <div class="page" id="page-data">
+    <!-- ===== REKAP DATA (legacy - kept for JS compatibility) ===== -->
+    <div class="page" id="page-data" style="display:none!important">
+    </div><!-- /page-data -->
 
-      <!-- Section 1: Rekap Input Data -->
+    <!-- ===== PERENCANAAN PENGAWASAN ===== -->
+    <div class="page" id="page-perencanaan">
+      <div style="background:linear-gradient(135deg,#e8f5ed,#f0fdf4);border:1.5px solid #bbf7d0;border-radius:14px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:flex-start;gap:14px">
+        <span style="font-size:32px">📅</span>
+        <div>
+          <div style="font-size:17px;font-weight:700;color:var(--hijau)">Perencanaan Pengawasan Kehutanan</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Daftar rencana pengawasan subjek hukum beserta status realisasi dan ketaatan.</div>
+        </div>
+      </div>
+
+      <!-- Upload & Action Bar -->
+      <div class="table-card" style="margin-bottom:24px">
+        <div class="table-toolbar" style="flex-wrap:wrap;gap:10px">
+          <div class="search-box" style="min-width:220px">
+            <span>🔍</span>
+            <input type="text" id="perencanaan-search" placeholder="Cari nama subjek hukum, lokasi..." oninput="filterPerencanaanTable()">
+          </div>
+          <select class="form-control" style="width:180px" id="perencanaan-filter-status" onchange="filterPerencanaanTable()">
+            <option value="">Semua Status</option>
+            <option>Terealisasi</option>
+            <option>Belum Terealisasi</option>
+            <option>Dalam Proses</option>
+          </select>
+          <label for="perencanaan-upload" class="btn btn-outline" style="cursor:pointer;margin:0">
+            📤 Upload Excel
+          </label>
+          <input type="file" id="perencanaan-upload" accept=".xlsx,.xls" style="display:none" onchange="handlePerencanaanUpload(event)">
+          <button class="btn btn-excel" onclick="exportPerencanaanExcel()">⬇️ Ekspor Excel</button>
+          <button class="btn" style="background:#fee2e2;color:#dc2626;font-size:12px" onclick="clearPerencanaanData()" id="btn-clear-perencanaan" style="display:none">🗑️ Hapus Semua</button>
+        </div>
+
+        <!-- Upload format info -->
+        <div id="perencanaan-upload-info" style="padding:10px 20px;background:#eff6ff;border-bottom:1px solid #bfdbfe;font-size:12px;color:#1e40af;display:flex;align-items:center;gap:8px">
+          <span>ℹ️</span>
+          <span>Format Excel: <strong>No | Nama Subjek Hukum | Luasan | Lokasi | Objek Pengawasan | Nomor SK | Riwayat Ketaatan | Jenis Pengawasan | Rencana Pengawasan | Realisasi Pengawasan | Status | Keterangan</strong></span>
+          <button onclick="downloadTemplatePerencanaan()" style="margin-left:auto;padding:4px 12px;background:#1d4ed8;color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">⬇️ Unduh Template</button>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table id="perencanaan-table">
+            <thead><tr>
+              <th style="width:40px">#</th>
+              <th>Nama Subjek Hukum</th>
+              <th>Luasan (Ha)</th>
+              <th>Lokasi</th>
+              <th>Objek Pengawasan</th>
+              <th>Nomor SK</th>
+              <th>Riwayat Ketaatan</th>
+              <th>Jenis Pengawasan</th>
+              <th>Rencana Pengawasan</th>
+              <th>Realisasi Pengawasan</th>
+              <th>Status</th>
+              <th>Keterangan</th>
+              <th>Aksi</th>
+            </tr></thead>
+            <tbody id="perencanaan-tbody">
+              <tr id="perencanaan-empty-row">
+                <td colspan="13" style="text-align:center;padding:40px;color:var(--text-muted)">
+                  <div style="font-size:32px;margin-bottom:8px">📂</div>
+                  <div style="font-size:14px;font-weight:600;margin-bottom:4px">Belum ada data perencanaan</div>
+                  <div style="font-size:12px">Upload file Excel untuk menambahkan data, atau tambah manual</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--border)">
+          <span id="perencanaan-info" style="font-size:12px;color:var(--text-muted)">Menampilkan 0 data</span>
+          <button class="btn btn-primary" style="font-size:12px;padding:7px 16px" onclick="openAddPerencanaanModal()">+ Tambah Manual</button>
+        </div>
+      </div>
+    </div><!-- /page-perencanaan -->
+
+    <!-- Modal Tambah Perencanaan -->
+    <div id="modal-perencanaan" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+      <div style="background:#fff;border-radius:16px;padding:28px;width:680px;max-width:95vw;max-height:90vh;overflow-y:auto">
+        <div style="font-size:16px;font-weight:700;color:var(--hijau);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+          <span>📅 Tambah Data Perencanaan</span>
+          <button onclick="closePerencanaanModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted)">✕</button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label class="form-label">Nama Subjek Hukum <span class="required">*</span></label>
+            <input type="text" id="mp-subjek" class="form-control" placeholder="Nama subjek hukum / perusahaan">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Luasan (Ha)</label>
+            <input type="number" id="mp-luasan" class="form-control" placeholder="0" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lokasi</label>
+            <input type="text" id="mp-lokasi" class="form-control" placeholder="Provinsi / Kabupaten">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Objek Pengawasan</label>
+            <select id="mp-objek" class="form-control">
+              <option value="">-- Pilih --</option>
+              <option>Perizinan Berusaha Bidang Kehutanan</option>
+              <option>Persetujuan Pemerintah Bidang Kehutanan</option>
+              <option>Legalitas Kegiatan Lain</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nomor SK</label>
+            <input type="text" id="mp-nomor-sk" class="form-control" placeholder="No. SK">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Riwayat Ketaatan</label>
+            <input type="text" id="mp-riwayat" class="form-control" placeholder="Taat / Tidak Taat / ...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jenis Pengawasan</label>
+            <select id="mp-jenis" class="form-control">
+              <option value="">-- Pilih --</option>
+              <option>Pengawasan Rutin</option>
+              <option>Pengawasan Insidental</option>
+              <option>Identifikasi dan Verifikasi Lapangan</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rencana Pengawasan</label>
+            <input type="text" id="mp-rencana" class="form-control" placeholder="Bulan/Triwulan/Tahun">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Realisasi Pengawasan</label>
+            <input type="text" id="mp-realisasi" class="form-control" placeholder="Tanggal realisasi">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="mp-status" class="form-control">
+              <option value="">-- Pilih --</option>
+              <option>Terealisasi</option>
+              <option>Belum Terealisasi</option>
+              <option>Dalam Proses</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Keterangan</label>
+            <input type="text" id="mp-keterangan" class="form-control" placeholder="Keterangan tambahan">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:24px;justify-content:flex-end">
+          <button class="btn btn-outline" onclick="closePerencanaanModal()">Batal</button>
+          <button class="btn btn-primary" onclick="savePerencanaanRow()">💾 Simpan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== REKAP INPUT PENGAWASAN & KEBAKARAN ===== -->
+    <div class="page" id="page-rekapinput">
       <div style="margin-bottom:8px">
         <div style="font-size:16px;font-weight:700;color:var(--hijau);margin-bottom:12px;display:flex;align-items:center;gap:8px">
           📋 Rekap Data Hasil Input Pengawasan & Kejadian Kebakaran
           <span style="font-size:11px;font-weight:400;color:var(--text-muted);background:#fef2f2;border:1px solid #fecaca;padding:2px 10px;border-radius:12px">🔥 Data kebakaran terintegrasi</span>
+          <span id="rekap-viewonly-badge" style="display:none;font-size:11px;font-weight:600;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;padding:2px 10px;border-radius:12px">👁️ Lihat Saja</span>
         </div>
       </div>
       <div class="table-card" style="margin-bottom:32px">
@@ -1407,8 +1679,10 @@
           <div id="pagination" style="display:flex;gap:6px"></div>
         </div>
       </div>
+    </div><!-- /page-rekapinput -->
 
-      <!-- Section 2: Rekap Sanksi Administratif -->
+    <!-- ===== REKAP SANKSI ADMINISTRATIF ===== -->
+    <div class="page" id="page-rekapsanksi">
       <div style="margin-bottom:8px">
         <div style="font-size:16px;font-weight:700;color:var(--merah);margin-bottom:12px;display:flex;align-items:center;gap:8px">⚖️ Rekap Data Sanksi Administratif</div>
       </div>
@@ -1446,8 +1720,7 @@
           <span class="page-info" id="rekap-sanksi-info">Menampilkan 0 sanksi</span>
         </div>
       </div>
-
-    </div><!-- /page-data -->
+    </div><!-- /page-rekapsanksi -->
 
     <!-- ===== LAPORAN ===== -->
     <div class="page" id="page-laporan">
@@ -2038,8 +2311,11 @@ const titles = {
   laporan: 'Laporan & Ekspor Data',
   manajemen: 'Manajemen Akun Pengguna',
   petapengawasan: 'Peta Pengawasan Kehutanan',
-  sanksi: 'Sanksi Administratif',
-  panduan: 'Panduan Pengawasan Kehutanan'
+  sanksi: 'Daftar Subjek Hukum — Sanksi Administratif',
+  panduan: 'Panduan Pengawasan Kehutanan',
+  perencanaan: 'Perencanaan Pengawasan',
+  rekapinput: 'Rekap Data Hasil Input Pengawasan & Kejadian Kebakaran',
+  rekapsanksi: 'Rekap Data Sanksi Administratif'
 };
 
 function showPage(id) {
@@ -2047,10 +2323,13 @@ function showPage(id) {
   const restricted = {
     'dashboard':      () => !isPetugas(),                  // petugas tidak bisa
     'sanksi':         () => canAccessSanksi(),             // hanya superadmin & struktural
+    'rekapsanksi':    () => canAccessSanksi(),             // sama dengan sanksi
     'manajemen':      () => isSuperAdmin(),                // hanya superadmin
     'laporan':        () => !isPetugas(),                  // petugas tidak bisa
     'petapengawasan': () => true,                          // semua bisa
     'input':          () => isSuperAdmin() || isAdminWilayah() || isPetugas(), // tidak untuk struktural
+    'perencanaan':    () => isSuperAdmin() || isAdminWilayah() || isPetugas(), // sama dengan input
+    'rekapinput':     () => true,                          // semua bisa
     'data':           () => true,                          // semua bisa (tapi konten bisa dibatasi)
     'panduan':        () => isSuperAdmin() || isPetugas() || isAdminWilayah(), // tidak untuk struktural murni
   };
@@ -2061,19 +2340,37 @@ function showPage(id) {
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-subitem').forEach(n => n.classList.remove('active'));
   const pageEl = document.getElementById('page-'+id);
   if (!pageEl) return;
   pageEl.classList.add('active');
+  // Mark the correct subitem active
+  const subEl = document.getElementById('nav-sub-' + id);
+  if (subEl) subEl.classList.add('active');
+  // Also mark old-style nav-items active
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
   });
+  // Auto-open parent submenu (only if not already open)
+  if (['input','perencanaan','rekapinput'].includes(id)) {
+    openNavParent('pengawasan');
+  } else if (['sanksi','rekapsanksi'].includes(id)) {
+    openNavParent('sanksi');
+  }
   document.getElementById('page-title').textContent = titles[id] || id;
   if (id === 'dashboard') { updateDashboard(); setTimeout(()=>{ if(dashMap) dashMap.invalidateSize(); }, 150); }
   if (id === 'peta') { updateMapCharts(); setTimeout(()=>{ if(leafletMap) leafletMap.invalidateSize(); }, 150); }
-  if (id === 'data') { populateFilters(); renderTable(); renderRekapSanksi(); setTimeout(renderRekapKebakaran, 150); }
+  if (id === 'data' || id === 'rekapinput') {
+    populateFilters(); renderTable(); setTimeout(renderRekapKebakaran, 150);
+    // Tampilkan badge Lihat Saja untuk petugas dan admin wilayah
+    var vobadge = document.getElementById('rekap-viewonly-badge');
+    if (vobadge) vobadge.style.display = (!canEditDeleteRekap()) ? 'inline' : 'none';
+  }
+  if (id === 'data' || id === 'rekapsanksi') { renderRekapSanksi(); }
   if (id === 'laporan') { updateLaporan(); populateExportFilter(); }
   if (id === 'manajemen') { renderAdminPage(); }
   if (id === 'petapengawasan') { initPetaPW(); setTimeout(()=>{ if(petaPWMap) petaPWMap.invalidateSize(); }, 200); }
+  if (id === 'perencanaan') { initPerencanaanPage(); }
   if (id === 'input') {
     // Auto-isi dan kunci unit kerja berdasarkan role/unit pengguna
     const unitEl = document.getElementById('f-unitkerja');
@@ -2533,7 +2830,7 @@ function renderMap() {
 }
 
 function filterByProvince(name) {
-  showPage('data');
+  showPage('rekapinput');
   document.getElementById('filter-provinsi').value = name;
   renderTable();
 }
@@ -3516,8 +3813,9 @@ function isPetugas() {
 }
 
 function canEditDeleteRekap() {
-  // superadmin dan admin_wilayah bisa edit/hapus rekap
-  return isSuperAdmin() || isAdminWilayah();
+  // Hanya superadmin yang bisa edit/hapus rekap
+  // admin_wilayah dan petugas hanya bisa melihat (view-only)
+  return isSuperAdmin();
 }
 
 function canAccessSanksi() {
@@ -3634,48 +3932,316 @@ function doLogout() {
   document.getElementById('login-btn-text').innerHTML = '\uD83D\uDD13 Masuk ke Sistem';
 }
 
+// ============ SUB-MENU TOGGLE ============
+// ============ SIDEBAR TOGGLE ============
+function toggleSidebar() {
+  const sidebar = document.getElementById('main-sidebar');
+  const mainContent = document.getElementById('main-content');
+  const toggleBtn = document.getElementById('sidebar-toggle-btn');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isOpen = sidebar.classList.contains('open');
+  if (isOpen) {
+    sidebar.classList.remove('open');
+    mainContent.classList.remove('sidebar-open');
+    toggleBtn.classList.remove('sidebar-open');
+    toggleBtn.textContent = '☰';
+    overlay.classList.remove('open');
+  } else {
+    sidebar.classList.add('open');
+    mainContent.classList.add('sidebar-open');
+    toggleBtn.classList.add('sidebar-open');
+    toggleBtn.textContent = '✕';
+    overlay.classList.add('open');
+    // Auto-buka semua sub-menu saat sidebar dibuka
+    document.querySelectorAll('.nav-submenu').forEach(s => s.classList.add('open'));
+    document.querySelectorAll('.nav-parent').forEach(p => p.classList.add('open'));
+  }
+}
+
+function toggleNavParent(key) {
+  const parent = document.getElementById('nav-parent-' + key);
+  const submenu = document.getElementById('nav-submenu-' + key);
+  if (!parent || !submenu) return;
+  const isOpen = submenu.classList.contains('open');
+  // Close all submenus first
+  document.querySelectorAll('.nav-submenu').forEach(s => s.classList.remove('open'));
+  document.querySelectorAll('.nav-parent').forEach(p => p.classList.remove('open'));
+  // If it was closed, open it now; if it was open, leave it closed (toggle)
+  if (!isOpen) {
+    submenu.classList.add('open');
+    parent.classList.add('open');
+  }
+}
+function openNavParent(key) {
+  const parent = document.getElementById('nav-parent-' + key);
+  const submenu = document.getElementById('nav-submenu-' + key);
+  if (!parent || !submenu) return;
+  submenu.classList.add('open');
+  parent.classList.add('open');
+}
+
+// ============ PERENCANAAN PAGE ============
+let perencanaanData = JSON.parse(localStorage.getItem('siwashut_perencanaan') || '[]');
+
+function savePerencanaanStorage() {
+  localStorage.setItem('siwashut_perencanaan', JSON.stringify(perencanaanData));
+}
+
+function initPerencanaanPage() {
+  renderPerencanaanTable();
+}
+
+function renderPerencanaanTable() {
+  const search = (document.getElementById('perencanaan-search')?.value || '').toLowerCase();
+  const filterStatus = document.getElementById('perencanaan-filter-status')?.value || '';
+  let filtered = perencanaanData.filter(r => {
+    const matchSearch = !search || JSON.stringify(r).toLowerCase().includes(search);
+    const matchStatus = !filterStatus || (r.status || '') === filterStatus;
+    return matchSearch && matchStatus;
+  });
+  const tbody = document.getElementById('perencanaan-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;padding:40px;color:var(--text-muted)">
+      <div style="font-size:32px;margin-bottom:8px">📂</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px">Belum ada data perencanaan</div>
+      <div style="font-size:12px">Upload file Excel untuk menambahkan data, atau tambah manual</div>
+    </td></tr>`;
+  } else {
+    filtered.forEach((r, i) => {
+      const statusBadge = r.status === 'Terealisasi' ? 'badge-ok' : r.status === 'Belum Terealisasi' ? 'badge-danger' : 'badge-proc';
+      tbody.innerHTML += `<tr>
+        <td>${i+1}</td>
+        <td style="font-weight:600">${r.nama || '-'}</td>
+        <td>${r.luasan ? Number(r.luasan).toLocaleString('id-ID') : '-'}</td>
+        <td>${r.lokasi || '-'}</td>
+        <td>${r.objek || '-'}</td>
+        <td>${r.nomorSk || '-'}</td>
+        <td>${r.riwayat || '-'}</td>
+        <td>${r.jenis || '-'}</td>
+        <td>${r.rencana || '-'}</td>
+        <td>${r.realisasi || '-'}</td>
+        <td><span class="badge ${statusBadge}">${r.status || '-'}</span></td>
+        <td>${r.keterangan || '-'}</td>
+        <td><button onclick="deletePerencanaanRow(${r._id})" style="background:#fee2e2;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;color:#dc2626;font-size:12px">🗑️</button></td>
+      </tr>`;
+    });
+  }
+  const info = document.getElementById('perencanaan-info');
+  if (info) info.textContent = `Menampilkan ${filtered.length} dari ${perencanaanData.length} data`;
+}
+
+function filterPerencanaanTable() { renderPerencanaanTable(); }
+
+function handlePerencanaanUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      let headerRow = -1;
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i].map(c => String(c).trim().toLowerCase());
+        if (r.includes('no') && r.some(c => c.includes('nama'))) { headerRow = i; break; }
+      }
+      if (headerRow < 0) { showToast('Format Excel tidak sesuai. Pastikan ada header No, Nama Subjek Hukum, dll.', 'warn'); return; }
+      const headers = rows[headerRow].map(c => String(c).trim().toLowerCase());
+      const getIdx = (...keys) => { for (const k of keys) { const i = headers.findIndex(h => h.includes(k)); if (i>=0) return i; } return -1; };
+      const iNama = getIdx('nama subjek', 'nama');
+      const iLuasan = getIdx('luasan');
+      const iLokasi = getIdx('lokasi');
+      const iObjek = getIdx('objek');
+      const iNomorSk = getIdx('nomor sk', 'sk');
+      const iRiwayat = getIdx('riwayat');
+      const iJenis = getIdx('jenis pengawasan', 'jenis');
+      const iRencana = getIdx('rencana pengawasan', 'rencana');
+      const iRealisasi = getIdx('realisasi');
+      const iStatus = getIdx('status');
+      const iKeterangan = getIdx('keterangan');
+      let added = 0;
+      for (let i = headerRow + 1; i < rows.length; i++) {
+        const row = rows[i];
+        const nama = iNama >= 0 ? String(row[iNama] || '').trim() : '';
+        if (!nama) continue;
+        const newId = Date.now() + i;
+        perencanaanData.push({
+          _id: newId,
+          nama, 
+          luasan: iLuasan >= 0 ? row[iLuasan] : '',
+          lokasi: iLokasi >= 0 ? String(row[iLokasi] || '').trim() : '',
+          objek: iObjek >= 0 ? String(row[iObjek] || '').trim() : '',
+          nomorSk: iNomorSk >= 0 ? String(row[iNomorSk] || '').trim() : '',
+          riwayat: iRiwayat >= 0 ? String(row[iRiwayat] || '').trim() : '',
+          jenis: iJenis >= 0 ? String(row[iJenis] || '').trim() : '',
+          rencana: iRencana >= 0 ? String(row[iRencana] || '').trim() : '',
+          realisasi: iRealisasi >= 0 ? String(row[iRealisasi] || '').trim() : '',
+          status: iStatus >= 0 ? String(row[iStatus] || '').trim() : '',
+          keterangan: iKeterangan >= 0 ? String(row[iKeterangan] || '').trim() : '',
+        });
+        added++;
+      }
+      savePerencanaanStorage();
+      renderPerencanaanTable();
+      showToast(`✅ Berhasil mengimpor ${added} data perencanaan`, 'success');
+      event.target.value = '';
+    } catch(err) {
+      showToast('Gagal membaca file Excel: ' + err.message, 'warn');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function deletePerencanaanRow(id) {
+  if (!confirm('Hapus data ini?')) return;
+  perencanaanData = perencanaanData.filter(r => r._id !== id);
+  savePerencanaanStorage();
+  renderPerencanaanTable();
+}
+
+function clearPerencanaanData() {
+  if (!confirm('Hapus semua data perencanaan?')) return;
+  perencanaanData = [];
+  savePerencanaanStorage();
+  renderPerencanaanTable();
+}
+
+function exportPerencanaanExcel() {
+  const headers = ['No','Nama Subjek Hukum','Luasan (Ha)','Lokasi','Objek Pengawasan','Nomor SK','Riwayat Ketaatan','Jenis Pengawasan','Rencana Pengawasan','Realisasi Pengawasan','Status','Keterangan'];
+  const rows = perencanaanData.map((r, i) => [i+1, r.nama, r.luasan, r.lokasi, r.objek, r.nomorSk, r.riwayat, r.jenis, r.rencana, r.realisasi, r.status, r.keterangan]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Perencanaan Pengawasan');
+  XLSX.writeFile(wb, 'Rencana_Pengawasan.xlsx');
+}
+
+function downloadTemplatePerencanaan() {
+  const headers = ['No','Nama Subjek Hukum','Luasan (Ha)','Lokasi','Objek Pengawasan','Nomor SK','Riwayat Ketaatan','Jenis Pengawasan','Rencana Pengawasan','Realisasi Pengawasan','Status','Keterangan'];
+  const sample = [1,'PT. Contoh Kehutanan','1000','Kalimantan Timur','Perizinan Berusaha Bidang Kehutanan','SK.001/2024','Taat','Pengawasan Rutin','Triwulan I 2025','15/02/2025','Terealisasi',''];
+  const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
+  ws['!cols'] = headers.map(() => ({ wch: 22 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Perencanaan Pengawasan');
+  XLSX.writeFile(wb, 'Template_Rencana_Pengawasan.xlsx');
+}
+
+function openAddPerencanaanModal() {
+  document.getElementById('modal-perencanaan').style.display = 'flex';
+  ['mp-subjek','mp-luasan','mp-lokasi','mp-nomor-sk','mp-riwayat','mp-rencana','mp-realisasi','mp-keterangan'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['mp-objek','mp-jenis','mp-status'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+}
+
+function closePerencanaanModal() {
+  document.getElementById('modal-perencanaan').style.display = 'none';
+}
+
+function savePerencanaanRow() {
+  const nama = document.getElementById('mp-subjek')?.value?.trim();
+  if (!nama) { showToast('Nama Subjek Hukum wajib diisi.', 'warn'); return; }
+  perencanaanData.push({
+    _id: Date.now(),
+    nama,
+    luasan: document.getElementById('mp-luasan')?.value || '',
+    lokasi: document.getElementById('mp-lokasi')?.value?.trim() || '',
+    objek: document.getElementById('mp-objek')?.value || '',
+    nomorSk: document.getElementById('mp-nomor-sk')?.value?.trim() || '',
+    riwayat: document.getElementById('mp-riwayat')?.value?.trim() || '',
+    jenis: document.getElementById('mp-jenis')?.value || '',
+    rencana: document.getElementById('mp-rencana')?.value?.trim() || '',
+    realisasi: document.getElementById('mp-realisasi')?.value?.trim() || '',
+    status: document.getElementById('mp-status')?.value || '',
+    keterangan: document.getElementById('mp-keterangan')?.value?.trim() || '',
+  });
+  savePerencanaanStorage();
+  renderPerencanaanTable();
+  closePerencanaanModal();
+  showToast('✅ Data perencanaan berhasil ditambahkan', 'success');
+}
+
+function switchPerencanaanTab(tab, btn) {
+  document.querySelectorAll('#perencanaan-tab-bar .panduan-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#page-perencanaan .panduan-content').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const el = document.getElementById('perencanaan-content-' + tab);
+  if (el) el.classList.add('active');
+}
+
 // ============ ROLE-BASED NAVIGATION ============
 function applyRoleBasedNavigation() {
-  // Sembunyikan semua nav dulu, lalu tampilkan sesuai role
+  // Elemen nav utama (non-parent)
   const navItems = {
     dashboard:        document.querySelector('[onclick="showPage(\'dashboard\')"]'),
     petapengawasan:   document.querySelector('[onclick="showPage(\'petapengawasan\')"]'),
-    input:            document.querySelector('[onclick="showPage(\'input\')"]'),
-    sanksi:           document.querySelector('[onclick="showPage(\'sanksi\')"]'),
-    data:             document.querySelector('[onclick="showPage(\'data\')"]'),
     panduan:          document.querySelector('[onclick="showPage(\'panduan\')"]'),
     laporan:          document.querySelector('[onclick="showPage(\'laporan\')"]'),
     manajemen:        document.getElementById('nav-admin'),
   };
+  // Parent groups
+  const parentPengawasan = document.getElementById('nav-parent-pengawasan');
+  const submenuPengawasan = document.getElementById('nav-submenu-pengawasan');
+  const parentSanksi = document.getElementById('nav-parent-sanksi');
+  const submenuSanksi = document.getElementById('nav-submenu-sanksi');
+  // Subitems
+  const subItems = {
+    perencanaan:  document.getElementById('nav-sub-perencanaan'),
+    input:        document.getElementById('nav-sub-input'),
+    rekapinput:   document.getElementById('nav-sub-rekapinput'),
+    sanksi:       document.getElementById('nav-sub-sanksi'),
+    rekapsanksi:  document.getElementById('nav-sub-rekapsanksi'),
+  };
 
   // Sembunyikan semua
   Object.values(navItems).forEach(el => { if (el) el.style.display = 'none'; });
+  if (parentPengawasan) parentPengawasan.style.display = 'none';
+  if (submenuPengawasan) submenuPengawasan.style.display = 'none';
+  if (parentSanksi) parentSanksi.style.display = 'none';
+  if (submenuSanksi) submenuSanksi.style.display = 'none';
+  Object.values(subItems).forEach(el => { if (el) el.style.display = 'none'; });
+
+  function showParentPengawasan(keys) {
+    if (parentPengawasan) parentPengawasan.style.display = 'flex';
+    // Submenu ditampilkan hanya lewat class 'open' saat diklik, bukan otomatis
+    if (submenuPengawasan) { submenuPengawasan.style.display = ''; }
+    keys.forEach(k => { if (subItems[k]) subItems[k].style.display = 'flex'; });
+  }
+  function showParentSanksi(keys) {
+    if (parentSanksi) parentSanksi.style.display = 'flex';
+    // Submenu ditampilkan hanya lewat class 'open' saat diklik, bukan otomatis
+    if (submenuSanksi) { submenuSanksi.style.display = ''; }
+    keys.forEach(k => { if (subItems[k]) subItems[k].style.display = 'flex'; });
+  }
 
   if (isSuperAdmin()) {
     // Super Admin: semua akses
     Object.values(navItems).forEach(el => { if (el) el.style.display = 'flex'; });
     if (navItems.manajemen) navItems.manajemen.style.display = 'flex';
+    showParentPengawasan(['perencanaan','input','rekapinput']);
+    showParentSanksi(['sanksi','rekapsanksi']);
     const btnHapusSemua = document.getElementById('btn-hapus-semua-data');
     if (btnHapusSemua) btnHapusSemua.style.display = 'inline-flex';
   } else if (isAdminWilayah()) {
-    // Admin Wilayah: dashboard, peta, input, rekap data, laporan (NO sanksi, NO manajemen)
-    ['dashboard','petapengawasan','input','data','laporan'].forEach(k => {
+    // Admin Wilayah: dashboard, peta, pengawasan kehutanan (sub: perencanaan, input, rekapinput), panduan, laporan
+    ['dashboard','petapengawasan','panduan','laporan'].forEach(k => {
       if (navItems[k]) navItems[k].style.display = 'flex';
     });
-    // Tampilkan panduan juga
-    if (navItems.panduan) navItems.panduan.style.display = 'flex';
+    showParentPengawasan(['perencanaan','input','rekapinput']);
   } else if (isStruktural()) {
-    // Struktural: dashboard, peta, rekap data, laporan & ekspor (+ sanksi tampak di rekap tapi bukan input)
-    ['dashboard','petapengawasan','data','laporan'].forEach(k => {
+    // Struktural: dashboard, peta, laporan + rekapinput (view) + sanksi parent
+    ['dashboard','petapengawasan','laporan'].forEach(k => {
       if (navItems[k]) navItems[k].style.display = 'flex';
     });
-    // Struktural bisa lihat sanksi (view only)
-    if (navItems.sanksi) navItems.sanksi.style.display = 'flex';
+    showParentPengawasan(['rekapinput']);
+    showParentSanksi(['sanksi','rekapsanksi']);
   } else {
-    // Petugas Pengawas: peta pengawasan, input data, rekap data (dari hasil input sendiri), panduan
-    ['petapengawasan','input','data','panduan'].forEach(k => {
+    // Petugas Pengawas: peta, pengawasan kehutanan (sub: input, rekapinput — TANPA perencanaan), panduan
+    ['petapengawasan','panduan'].forEach(k => {
       if (navItems[k]) navItems[k].style.display = 'flex';
     });
+    showParentPengawasan(['input','rekapinput']);
   }
 
   // Section label "Laporan" di nav — sembunyikan jika petugas
