@@ -9,6 +9,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- Leaflet-Geoman: drawing tools (polygon, polyline, circle, marker, dll) -->
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.16.0/dist/leaflet-geoman.css"/>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.16.0/dist/leaflet-geoman.min.js"></script>
+<!-- Turf.js: kalkulasi luasan, jarak, analisis spasial -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
 <!-- Spatial file support -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://unpkg.com/shpjs@4.0.4/dist/shp.js"></script>
@@ -389,6 +394,16 @@
   .page { display: none; }
   .page.active { display: block; }
 
+  /* GIS PAGE: full-height, no padding override */
+  #page-petapengawasan.active {
+    display: flex !important;
+    flex-direction: column;
+    padding: 0 !important;
+    margin: -28px -32px !important;
+    height: calc(100vh - 64px) !important;
+    overflow: hidden;
+  }
+
   /* STAT CARDS */
   .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
   .stat-card {
@@ -431,7 +446,19 @@
   .map-ctrl-btn { background:rgba(255,255,255,0.95); border:1px solid rgba(0,0,0,0.15); border-radius:6px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; box-shadow:0 2px 8px rgba(0,0,0,0.12); transition:all 0.2s; color:#374151; }
   .map-ctrl-btn:hover { background:#fff; box-shadow:0 3px 12px rgba(0,0,0,0.2); }
   .map-ctrl-btn.active { background:#1a5c2e; color:#fff; border-color:#1a5c2e; }
-  .leaflet-popup-content-wrapper { border-radius: 10px !important; padding: 4px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important; }
+  .gis-draw-btn {
+  font-size: 11px; padding: 5px 10px; background: #f9fafb; color: var(--text);
+  border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+  font-family: inherit; font-weight: 600; transition: all .15s; white-space: nowrap;
+}
+.gis-draw-btn:hover { background: var(--hijau-light); border-color: var(--hijau-mid); color: var(--hijau); }
+.gis-draw-btn.active { background: var(--hijau) !important; color: #fff !important; border-color: var(--hijau) !important; }
+.gis-draw-btn:disabled { opacity: .45; cursor: not-allowed; }
+.leaflet-pm-toolbar { display: none !important; } /* hide default Geoman toolbar, kita pakai custom */
+.kb-sub-row td { border-bottom: 1px solid #fecaca !important; }
+.kb-sub-row.kb-hidden { display: none; }
+.data-row.has-kebakaran { border-left: 3px solid #dc2626; }
+.leaflet-popup-content-wrapper { border-radius: 10px !important; padding: 4px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important; }
   .leaflet-popup-content { margin: 12px 16px !important; font-family: "Plus Jakarta Sans", sans-serif !important; font-size: 13px !important; }
   .map-popup-title { font-size: 14px; font-weight: 700; color: #1a5c2e; margin-bottom: 6px; }
   .map-popup-row { display: flex; justify-content: space-between; gap: 16px; margin: 3px 0; font-size: 12px; }
@@ -1183,74 +1210,181 @@
 
 
     <!-- ===== PETA PENGAWASAN ===== -->
-    <div class="page" id="page-petapengawasan">
-      <!-- Toolbar -->
-      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;flex-wrap:wrap;gap:10px">
-        <!-- Basemap -->
-        <div style="display:flex;gap:5px;flex-wrap:wrap">
-          <button onclick="setPetaLayer('street')"    id="pl-street"    class="map-ctrl-btn active" style="font-size:11px;padding:5px 10px">🗺️ Street</button>
-          <button onclick="setPetaLayer('satellite')" id="pl-satellite" class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">🛰️ Satelit</button>
-          <button onclick="setPetaLayer('terrain')"   id="pl-terrain"   class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">🏔️ Terrain</button>
-          <button onclick="setPetaLayer('topo')"      id="pl-topo"      class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">📐 Topo</button>
-          <button onclick="setPetaLayer('hybrid')"    id="pl-hybrid"    class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">🌍 Hybrid</button>
-          <button onclick="setPetaLayer('osm')"       id="pl-osm"       class="map-ctrl-btn" style="font-size:11px;padding:5px 10px">🔵 OSM</button>
+    <div class="page" id="page-petapengawasan" style="padding:0!important">
+
+      <!-- GIS LAYOUT: Left Toolbar + Map -->
+      <div style="display:flex;height:calc(100vh - 56px);overflow:hidden">
+
+        <!-- ── LEFT TOOLBAR PANEL ── -->
+        <div id="gis-left-panel" style="width:240px;min-width:240px;background:#fff;border-right:1.5px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;z-index:10;box-shadow:2px 0 8px rgba(0,0,0,.06)">
+
+          <!-- Panel Header -->
+          <div style="background:var(--hijau);padding:11px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0">
+            <span style="font-size:16px">🗺️</span>
+            <span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.3px">GIS Tools</span>
+          </div>
+
+          <!-- BASEMAP SECTION -->
+          <div style="padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+            <div style="font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px">Basemap</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+              <button onclick="setPetaLayer('street')"    id="pl-street"    class="map-ctrl-btn active" style="font-size:10px;padding:5px 4px;text-align:center">🗺️ Street</button>
+              <button onclick="setPetaLayer('satellite')" id="pl-satellite" class="map-ctrl-btn" style="font-size:10px;padding:5px 4px;text-align:center">🛰️ Satelit</button>
+              <button onclick="setPetaLayer('terrain')"   id="pl-terrain"   class="map-ctrl-btn" style="font-size:10px;padding:5px 4px;text-align:center">🏔️ Terrain</button>
+              <button onclick="setPetaLayer('topo')"      id="pl-topo"      class="map-ctrl-btn" style="font-size:10px;padding:5px 4px;text-align:center">📐 Topo</button>
+              <button onclick="setPetaLayer('hybrid')"    id="pl-hybrid"    class="map-ctrl-btn" style="font-size:10px;padding:5px 4px;text-align:center">🌍 Hybrid</button>
+              <button onclick="setPetaLayer('osm')"       id="pl-osm"       class="map-ctrl-btn" style="font-size:10px;padding:5px 4px;text-align:center">🔵 OSM</button>
+            </div>
+          </div>
+
+          <!-- DATA SECTION -->
+          <div style="padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+            <div style="font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px">Data</div>
+            <button onclick="locateMePeta()" id="btn-locate-peta" style="width:100%;margin-bottom:5px;font-size:11px;padding:6px 10px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;text-align:left">📍 Lokasi Saya</button>
+            <button onclick="document.getElementById('peta-pw-input').click()" style="width:100%;font-size:11px;padding:6px 10px;background:var(--hijau);color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;text-align:left">📂 Upload GIS</button>
+            <input type="file" id="peta-pw-input" accept=".zip,.shp,.kml,.kmz,.geojson,.json,.gpx" multiple style="display:none" onchange="handlePetaPWUpload(event)">
+            <!-- Format badges -->
+            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:3px">
+              <span style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;color:#166534">📦 SHP</span>
+              <span style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;color:#1e40af">🗺️ KMZ</span>
+              <span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;color:#854d0e">📌 KML</span>
+              <span style="background:#f3e8ff;border:1px solid #ddd6fe;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;color:#7c3aed">{ } GeoJSON</span>
+              <span style="background:#ffe4e6;border:1px solid #fecdd3;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;color:#9f1239">🧭 GPX</span>
+            </div>
+          </div>
+
+          <!-- DRAWING SECTION -->
+          <div style="padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+            <div style="font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px">Drawing</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+              <button onclick="gisDrawMode('Marker')"    class="gis-draw-btn" id="gdb-Marker"    title="Tambah Marker"            style="font-size:10px;padding:5px 4px;text-align:center;width:100%">📌 Marker</button>
+              <button onclick="gisDrawMode('Polygon')"   class="gis-draw-btn" id="gdb-Polygon"   title="Buat Polygon"             style="font-size:10px;padding:5px 4px;text-align:center;width:100%">⬡ Polygon</button>
+              <button onclick="gisDrawMode('Rectangle')" class="gis-draw-btn" id="gdb-Rectangle" title="Buat Persegi"             style="font-size:10px;padding:5px 4px;text-align:center;width:100%">▭ Persegi</button>
+              <button onclick="gisDrawMode('Circle')"    class="gis-draw-btn" id="gdb-Circle"    title="Buat Lingkaran"           style="font-size:10px;padding:5px 4px;text-align:center;width:100%">⬤ Lingkaran</button>
+              <button onclick="gisDrawMode('Line')"      class="gis-draw-btn" id="gdb-Line"      title="Buat Garis / Ukur Jarak"  style="font-size:10px;padding:5px 4px;text-align:center;width:100%;grid-column:span 2">📏 Garis / Jarak</button>
+            </div>
+            <div style="height:1px;background:var(--border);margin:7px 0"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+              <button onclick="gisDrawMode('Edit')"      class="gis-draw-btn" id="gdb-Edit"   title="Edit objek"    style="font-size:10px;padding:5px 4px;text-align:center;width:100%">✏️ Edit</button>
+              <button onclick="gisDrawMode('Drag')"      class="gis-draw-btn" id="gdb-Drag"   title="Geser objek"   style="font-size:10px;padding:5px 4px;text-align:center;width:100%">✋ Geser</button>
+              <button onclick="gisDrawMode('Cut')"       class="gis-draw-btn" id="gdb-Cut"    title="Potong polygon" style="font-size:10px;padding:5px 4px;text-align:center;width:100%">✂️ Potong</button>
+              <button onclick="gisDrawMode('Rotate')"    class="gis-draw-btn" id="gdb-Rotate" title="Putar objek"   style="font-size:10px;padding:5px 4px;text-align:center;width:100%">🔄 Putar</button>
+              <button onclick="gisDrawMode('Scale')"     class="gis-draw-btn" id="gdb-Scale"  title="Skala objek"   style="font-size:10px;padding:5px 4px;text-align:center;width:100%">⤢ Skala</button>
+              <button onclick="gisSnapToggle()"          class="gis-draw-btn" id="gdb-snap"   title="Toggle Snap"   style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe">🧲 Snap</button>
+            </div>
+            <div style="height:1px;background:var(--border);margin:7px 0"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+              <button onclick="gisDrawMode('off')"  class="gis-draw-btn" id="gdb-off" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#fee2e2;color:#dc2626;border-color:#fecaca">✕ Stop</button>
+              <button onclick="gisDeleteSelected()" class="gis-draw-btn"              style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#fee2e2;color:#dc2626;border-color:#fecaca">🗑️ Hapus</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+              <button onclick="gisExportGeoJSON()" class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#f0fdf4;color:#1a5c2e;border-color:#bbf7d0">⬇️ GeoJSON</button>
+              <button onclick="gisExportKML()"     class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#fef9c3;color:#854d0e;border-color:#fde68a">⬇️ KML</button>
+            </div>
+            <button onclick="gisClearAll()" class="gis-draw-btn" style="width:100%;margin-top:4px;font-size:10px;padding:5px;text-align:center;background:#fff3f3;color:#dc2626;border-color:#fecaca">🧹 Hapus Semua Drawing</button>
+          </div>
+
+          <!-- ANALISIS SECTION -->
+          <div style="padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+            <div style="font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px">Analisis Spasial</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+              <button onclick="gisCalcArea()"   class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#f3e8ff;color:#7c3aed;border-color:#ddd6fe">📐 Hitung Luas</button>
+              <button onclick="gisCalcLength()" class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#ffe4e6;color:#9f1239;border-color:#fecdd3">📏 Hitung Jarak</button>
+              <button onclick="gisBuffer()"     class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#fff7ed;color:#c2410c;border-color:#fed7aa">⭕ Buffer</button>
+              <button onclick="gisCentroid()"   class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#ecfdf5;color:#065f46;border-color:#a7f3d0">⊕ Centroid</button>
+              <button onclick="gisBbox()"       class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#eff6ff;color:#1e40af;border-color:#bfdbfe">▢ Bbox</button>
+              <button onclick="gisUnion()"      class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#fdf4ff;color:#7e22ce;border-color:#e9d5ff">⊎ Union</button>
+              <button onclick="gisIntersect()"  class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#f0f9ff;color:#0369a1;border-color:#bae6fd">∩ Intersect</button>
+              <button onclick="gisDifference()" class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#fff1f2;color:#be123c;border-color:#fecdd3">∖ Difference</button>
+              <button onclick="gisConvexHull()" class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#f8fafc;color:#334155;border-color:#cbd5e1">△ Convex Hull</button>
+              <button onclick="gisVoronoi()"    class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#fafaf9;color:#44403c;border-color:#d6d3d1">⬡ Voronoi</button>
+              <button onclick="gisTIN()"        class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#f0fdf4;color:#166534;border-color:#bbf7d0">△ TIN</button>
+              <button onclick="gisKinks()"      class="gis-draw-btn" style="font-size:10px;padding:5px 4px;text-align:center;width:100%;background:#fef2f2;color:#991b1b;border-color:#fecaca">⚠️ Kinks</button>
+            </div>
+          </div>
+
+          <!-- LAYER MANAGER (collapsible) -->
+          <div style="padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div style="font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px">Layer Aktif</div>
+              <span id="peta-pw-layer-badge" style="display:none;background:#f59e0b;color:#fff;border-radius:20px;padding:2px 10px;font-weight:700;cursor:pointer;font-size:10px" onclick="togglePetaPWLayerPanel()">0 Layer</span>
+            </div>
+            <div id="peta-pw-layer-panel" style="background:#f8fdf9;border:1px solid var(--border);border-radius:8px;padding:8px;min-height:32px;font-size:11px;color:var(--text-muted)">
+              <div id="peta-pw-layer-list" style="color:var(--text-muted);font-size:11px">Belum ada layer</div>
+            </div>
+          </div>
+
+          <!-- HAPUS ALL + STATUS -->
+          <div style="padding:10px 12px;flex-shrink:0">
+            <button onclick="clearPetaPWLayers()" style="width:100%;font-size:11px;padding:7px 10px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:600">🗑️ Hapus Semua Layer</button>
+          </div>
+
+          <!-- PROGRESS BAR (hidden by default) -->
+          <div id="peta-pw-progress" style="display:none;margin:0 12px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;font-size:11px;color:#c2410c;align-items:center;gap:8px;flex-shrink:0">
+            <div class="spinner" style="border-color:#fed7aa;border-top-color:#f59e0b;width:12px;height:12px;flex-shrink:0"></div>
+            <span id="peta-pw-progress-msg">Memproses file GIS...</span>
+          </div>
+
         </div>
-        <div style="width:1px;height:28px;background:var(--border)"></div>
-        <!-- Upload GIS -->
-        <button onclick="document.getElementById('peta-pw-input').click()"
-          style="font-size:11px;padding:6px 14px;background:#1a5c2e;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;gap:6px">
-          📂 Upload GIS
-        </button>
-        <input type="file" id="peta-pw-input" accept=".zip,.shp,.kml,.kmz,.geojson,.json,.gpx" multiple style="display:none" onchange="handlePetaPWUpload(event)">
-        <!-- Lokasi Real-time -->
-        <button onclick="locateMePeta()" id="btn-locate-peta"
-          style="font-size:11px;padding:6px 14px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;display:flex;align-items:center;gap:6px">
-          📍 Lokasi Saya
-        </button>
-        <!-- Hapus layer -->
-        <button onclick="clearPetaPWLayers()"
-          style="font-size:11px;padding:6px 14px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:600;margin-left:auto">
-          🗑️ Hapus Semua Layer
-        </button>
-      </div>
+        <!-- ── END LEFT TOOLBAR PANEL ── -->
 
-      <!-- Format support bar -->
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:11px;color:#166534;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-weight:700">Format didukung:</span>
-        <span style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:4px;padding:1px 8px;font-weight:700">📦 SHP (ZIP)</span>
-        <span style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:4px;padding:1px 8px;font-weight:700;color:#1e40af">🗺️ KMZ</span>
-        <span style="background:#fef9c3;border:1px solid #fde68a;border-radius:4px;padding:1px 8px;font-weight:700;color:#854d0e">📌 KML</span>
-        <span style="background:#f3e8ff;border:1px solid #ddd6fe;border-radius:4px;padding:1px 8px;font-weight:700;color:#7c3aed">{ } GeoJSON</span>
-        <span style="background:#ffe4e6;border:1px solid #fecdd3;border-radius:4px;padding:1px 8px;font-weight:700;color:#9f1239">🧭 GPX</span>
-        <span id="peta-pw-layer-badge" style="display:none;background:#f59e0b;color:#fff;border-radius:20px;padding:2px 10px;font-weight:700;margin-left:auto;cursor:pointer" onclick="togglePetaPWLayerPanel()">0 Layer</span>
-      </div>
+        <!-- ── MAP AREA ── -->
+        <div style="flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden">
 
-      <!-- Progress -->
-      <div id="peta-pw-progress" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#c2410c;align-items:center;gap:8px">
-        <div class="spinner" style="border-color:#fed7aa;border-top-color:#f59e0b;width:14px;height:14px;flex-shrink:0"></div>
-        <span id="peta-pw-progress-msg">Memproses file GIS...</span>
-      </div>
+          <!-- Top status bar (status & coord) -->
+          <div style="display:flex;gap:6px;padding:6px 10px;background:#fff;border-bottom:1px solid var(--border);align-items:center;flex-shrink:0;flex-wrap:wrap">
+            <div id="gis-draw-status" style="display:none;background:#1a5c2e;color:#fff;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:700;align-items:center;gap:6px">
+              <span id="gis-draw-status-txt">Mode aktif</span>
+              <button onclick="gisDrawMode('off')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:1px 7px;cursor:pointer;font-size:10px">✕ Stop</button>
+            </div>
+            <div id="gis-result-panel" style="display:none;background:#fff;border:1.5px solid var(--hijau);border-radius:6px;padding:4px 12px;font-size:11px;color:var(--hijau);font-weight:700;flex:1">
+              <span id="gis-result-txt"></span>
+            </div>
+            <div id="peta-pw-loc-info" style="display:none;background:#dbeafe;border:1px solid #bfdbfe;border-radius:6px;padding:4px 12px;font-size:11px;color:#1e40af;align-items:center;gap:6px">
+              📍 <span id="peta-pw-loc-text">Mendeteksi lokasi...</span>
+              <button onclick="clearLocatePeta()" style="margin-left:4px;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:13px">✕</button>
+            </div>
+            <div id="gis-coord-bar" style="background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:10px;color:var(--text-muted);font-family:monospace;margin-left:auto;white-space:nowrap">
+              Kursor: <span id="gis-cursor-coord">—</span>
+            </div>
+          </div>
 
-      <!-- Layer Manager -->
-      <div id="peta-pw-layer-panel" style="display:none;background:#fff;border:1.5px solid #d1e7d9;border-radius:10px;padding:12px 16px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:13px;font-weight:700;color:var(--hijau)">🗂️ Layer Aktif</span>
-          <button onclick="togglePetaPWLayerPanel()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px">✕</button>
+          <!-- PETA UTAMA fills remaining height -->
+          <div style="flex:1;position:relative;overflow:hidden">
+            <div id="peta-pw-map" style="height:100%;width:100%"></div>
+            <!-- Mini legend -->
+            <div style="position:absolute;bottom:12px;left:12px;z-index:1000;background:rgba(255,255,255,.93);border:1px solid #e5e7eb;border-radius:8px;padding:8px 12px;font-size:11px;backdrop-filter:blur(4px)">
+              <div style="font-weight:700;color:var(--hijau);margin-bottom:4px">📐 Drawing aktif</div>
+              <div id="gis-live-measure" style="color:var(--text-muted)">Belum ada objek</div>
+            </div>
+          </div>
+
         </div>
-        <div id="peta-pw-layer-list"></div>
-      </div>
-
-      <!-- Info lokasi -->
-      <div id="peta-pw-loc-info" style="display:none;background:#dbeafe;border:1px solid #bfdbfe;border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:12px;color:#1e40af;display:none;align-items:center;gap:8px">
-        📍 <span id="peta-pw-loc-text">Mendeteksi lokasi...</span>
-        <button onclick="clearLocatePeta()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px">✕</button>
-      </div>
-
-      <!-- Peta -->
-      <div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border)">
-        <div id="peta-pw-map" style="height:620px;width:100%"></div>
+        <!-- ── END MAP AREA ── -->
 
       </div>
+      <!-- End GIS Layout -->
+
+      <!-- Buffer dialog (hidden) -->
+      <div id="gis-buffer-dialog" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.4);align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+        <div style="background:#fff;border-radius:14px;padding:28px 32px;min-width:320px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+          <div style="font-size:16px;font-weight:700;color:var(--hijau);margin-bottom:16px">⭕ Buat Buffer</div>
+          <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px">Jarak Buffer</label>
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <input type="number" id="gis-buffer-radius" class="form-control" value="1" min="0.001" step="0.1" style="width:100px">
+            <select id="gis-buffer-unit" class="form-control">
+              <option value="kilometers">km</option>
+              <option value="meters">m</option>
+              <option value="miles">miles</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button onclick="document.getElementById('gis-buffer-dialog').style.display='none'" style="padding:8px 18px;background:#f3f4f6;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:600">Batal</button>
+            <button onclick="gisBufferExec()" style="padding:8px 18px;background:var(--hijau);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700">Buat Buffer</button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- ===== INPUT DATA ===== -->
@@ -1423,12 +1557,12 @@
                 <canvas id="camera-canvas" style="display:none"></canvas>
                 <div style="display:flex;gap:10px;margin-top:10px;justify-content:center">
                   <button type="button" onclick="capturePhoto()" class="btn btn-primary" style="padding:10px 24px">📷 Ambil Foto</button>
-                  <button type="button" onclick="stopCamera()" class="btn btn-outline" style="padding:10px 24px;color:#dc2626;border-color:#fecaca">✕ Tutup Kamera</button>
+                  <button type="button" onclick="stopFotoCamera()" class="btn btn-outline" style="padding:10px 24px;color:#dc2626;border-color:#fecaca">✕ Tutup Kamera</button>
                 </div>
               </div>
               <!-- Tombol aksi -->
               <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-                <button type="button" onclick="startCamera()" class="btn btn-outline" style="display:flex;align-items:center;gap:6px;font-size:13px">
+                <button type="button" onclick="startFotoCamera()" class="btn btn-outline" style="display:flex;align-items:center;gap:6px;font-size:13px">
                   <span style="font-size:18px">📷</span> Buka Kamera
                 </button>
                 <label class="btn btn-outline" style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
@@ -2978,6 +3112,14 @@
           </select>
           <button class="btn btn-excel" onclick="exportExcel()">⬇️ Ekspor Excel</button>
           <button id="btn-hapus-semua-data" class="btn btn-danger" style="display:none;font-size:12px;padding:7px 14px" onclick="clearAllRekapData()">🗑️ Hapus Semua Data</button>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#dc2626;cursor:pointer;margin-left:4px">
+            <input type="checkbox" id="filter-kebakaran-only" onchange="renderTable()" style="accent-color:#dc2626">
+            🔥 Hanya Kebakaran
+          </label>
+        </div>
+        <!-- Info kebakaran terintegrasi -->
+        <div id="rekap-kebakaran-info-bar" style="display:none;background:#fef2f2;border-bottom:1px solid #fecaca;padding:8px 20px;font-size:12px;color:#991b1b;font-weight:600">
+          🔥 <span id="rekap-kebakaran-count-inline">0</span> data memiliki kejadian kebakaran
         </div>
         <div style="overflow-x:auto">
           <table>
@@ -2993,37 +3135,6 @@
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--border)">
           <span class="page-info" id="table-info">Menampilkan 0 data</span>
           <div id="pagination" style="display:flex;gap:6px"></div>
-        </div>
-      </div>
-      <!-- REKAP KEBAKARAN: section yang dicari oleh renderRekapKebakaran() -->
-      <div class="table-card" style="margin-top:24px">
-        <div class="table-toolbar" style="flex-wrap:wrap;gap:8px">
-          <span style="font-size:14px;font-weight:700;color:#dc2626">🔥 Rekap Kejadian Kebakaran</span>
-          <div class="search-box">
-            <span>🔍</span>
-            <input type="text" id="rekap-kebakaran-search" placeholder="Cari subjek, provinsi, keterangan..." oninput="renderRekapKebakaran()">
-          </div>
-          <select class="form-control" style="width:200px" id="rekap-kebakaran-filter-unit" onchange="renderRekapKebakaran()">
-            <option value="">Semua Unit Kerja</option>
-            <option>Dit. PPSAKK</option>
-            <option>Gakkum Kehutanan Wilayah Sumatera</option>
-            <option>Gakkum Kehutanan Wilayah Jabalnusra</option>
-            <option>Gakkum Kehutanan Wilayah Kalimantan</option>
-            <option>Gakkum Kehutanan Wilayah Sulawesi</option>
-            <option>Gakkum Kehutanan Wilayah Mapua</option>
-          </select>
-        </div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead><tr>
-              <th>#</th><th>Tanggal Kebakaran</th><th>Unit Kerja</th><th>Nama Subjek Hukum</th>
-              <th>Provinsi</th><th>Luasan Terbakar</th><th>Koordinat</th><th>Tindak Lanjut</th><th>Keterangan</th>
-            </tr></thead>
-            <tbody id="rekap-kebakaran-tbody"></tbody>
-          </table>
-        </div>
-        <div style="padding:10px 20px;border-top:1px solid var(--border)">
-          <span id="rekap-kebakaran-info" style="font-size:12px;color:var(--text-muted)">Menampilkan 0 kejadian kebakaran</span>
         </div>
       </div>
     </div><!-- /page-rekapinput -->
@@ -5576,26 +5687,43 @@ permen lhk nomor 8 tahun 2021">
 const SUPA_URL = 'https://uirbvucdtvnpquxmrycp.supabase.co';
 const SUPA_KEY = 'sb_publishable_sA3C__ltQp4dWjw5awOy7A_RXEs-inz';
 
-// Guard: jika Supabase CDN belum/gagal load, buat dummy client agar script tidak crash
+// Dummy client — semua operasi fallback ke localStorage (aman di semua environment)
+const _supaOffline = {
+  from: () => ({
+    select: () => ({ order: () => Promise.reject(new Error('offline')) }),
+    insert: () => ({ select: () => ({ single: () => Promise.reject(new Error('offline')) }) }),
+    upsert: () => ({ select: () => ({ single: () => Promise.reject(new Error('offline')) }) }),
+    delete: () => ({ eq: () => Promise.reject(new Error('offline')) }),
+    update: () => ({ eq: () => ({ select: () => ({ single: () => Promise.reject(new Error('offline')) }) }) }),
+  })
+};
+
+// Deteksi environment iframe/srcdoc — di dalam Claude preview, skip Supabase sama sekali
+// karena browser memblokir fetch ke domain eksternal dari srcdoc, menyebabkan DataCloneError
+const _isIframeEnv = (function() {
+  try {
+    return window.self !== window.top || window.location.href === 'about:srcdoc' ||
+           document.location.href === 'about:srcdoc' ||
+           (window.location.href || '').includes('claudeusercontent');
+  } catch(e) { return true; } // cross-origin error = definitely iframe
+})();
+
 let supa;
-try {
-  if (typeof supabase !== 'undefined' && supabase.createClient) {
-    supa = supabase.createClient(SUPA_URL, SUPA_KEY);
-  } else {
-    throw new Error('Supabase CDN belum dimuat');
+if (_isIframeEnv) {
+  // Mode preview (Claude) — langsung offline, tidak perlu coba koneksi
+  supa = _supaOffline;
+} else {
+  // Mode normal (browser) — coba koneksi Supabase
+  try {
+    if (typeof supabase !== 'undefined' && supabase.createClient) {
+      supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+    } else {
+      throw new Error('Supabase CDN belum dimuat');
+    }
+  } catch(e) {
+    console.warn('Supabase tidak tersedia, mode offline:', e.message);
+    supa = _supaOffline;
   }
-} catch(e) {
-  console.warn('Supabase tidak tersedia, mode offline:', e.message);
-  // Dummy client — semua operasi fallback ke localStorage
-  supa = {
-    from: () => ({
-      select: () => ({ order: () => Promise.reject(new Error('offline')) }),
-      insert: () => ({ select: () => ({ single: () => Promise.reject(new Error('offline')) }) }),
-      upsert: () => ({ select: () => ({ single: () => Promise.reject(new Error('offline')) }) }),
-      delete: () => ({ eq: () => Promise.reject(new Error('offline')) }),
-      update: () => ({ eq: () => Promise.reject(new Error('offline')) }),
-    })
-  };
 }
 
 // ============ DATA STORE ============
@@ -5634,7 +5762,7 @@ async function loadDataFromSupabase() {
     showToast('✅ ' + DATA.length + ' data berhasil dimuat dari server.', 'success');
     updateDashboard(); renderTable();
   } catch(e) {
-    console.warn('Supabase load error, fallback localStorage:', e.message);
+    if (!_isIframeEnv) console.warn('Supabase load error, fallback localStorage:', e.message);
     DATA = JSON.parse(localStorage.getItem('siwashut_data') || '[]');
     // Tetap render meskipun dari lokal
     updateDashboard(); renderTable();
@@ -5934,7 +6062,7 @@ async function registerUserSupabase(user) {
   } catch(e) { console.warn('register error:', e.message); return false; }
 }
 
-// ============ MAP STATE (deklarasi di atas agar tidak TDZ) ============
+// ============ MAP STATE + ALL STATE VARS (deklarasi di atas agar tidak TDZ) ============
 let leafletMap = null;
 let leafletMarkers = [];
 let currentTileLayer = null;
@@ -5944,6 +6072,38 @@ let dashTileLayer = null;
 let spatialLayers = [];
 let layerColorIdx = 0;
 
+// Peta Pengawasan
+let petaPWMap        = null;
+let petaPWTileLayer  = null;
+let petaPWLayers     = [];
+let petaPWLocMarker  = null;
+let petaPWLocCircle  = null;
+let petaPWLocWatch   = null;
+
+// Dashboard GIS
+let dashGISLayers = [];
+let dashMapRef    = null;
+let dashKbMap     = null;
+let dashKbMarkers = [];
+
+// File & Foto
+let uploadedFiles    = [];
+let fotoList      = [];
+let cameraStream  = null;
+
+// Kebakaran multi-entry
+let kbEntriesList    = [];
+let kbEntryIdCounter = 0;
+let kbFotoList       = [];
+let kbMapInstance    = null;
+let kbMapMarker      = null;
+let kbCameraStream   = null;
+
+// Sanksi
+let currentSanksiSubjek = null;
+let sanksiBAFile        = null;
+let sanksiSKFile        = null;
+
 // ============ UTILS ============
 function today() {
   return new Date().toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
@@ -5951,7 +6111,6 @@ function today() {
 document.getElementById('current-date').textContent = today();
 document.getElementById('f-tanggal').value = new Date().toISOString().split('T')[0];
 
-function saveData() { try { localStorage.setItem('siwashut_data', JSON.stringify(sanitizeForStorage(DATA))); } catch(e){} }
 
 function objekBadge(s) {
   const m = {
@@ -6615,11 +6774,21 @@ function getFiltered() {
 }
 
 function renderTable() {
-  const filtered = getFiltered();
+  const onlyKb = document.getElementById('filter-kebakaran-only')?.checked || false;
+  let filtered = getFiltered();
+  if (onlyKb) filtered = filtered.filter(d => d.kebakaran && (d.kebakaran.tanggal || parseFloat(d.kebakaran.luas) > 0 || d.kebakaran.keterangan));
+
   const total = filtered.length;
   const pages = Math.max(1, Math.ceil(total/ROWS_PER_PAGE));
   if (currentPage > pages) currentPage = 1;
   const slice = filtered.slice((currentPage-1)*ROWS_PER_PAGE, currentPage*ROWS_PER_PAGE);
+
+  // Update info bar kebakaran
+  const kbCount = filtered.filter(d => d.kebakaran && (d.kebakaran.tanggal || parseFloat(d.kebakaran.luas) > 0 || d.kebakaran.keterangan)).length;
+  const kbBar = document.getElementById('rekap-kebakaran-info-bar');
+  const kbCountEl = document.getElementById('rekap-kebakaran-count-inline');
+  if (kbBar) kbBar.style.display = kbCount > 0 ? 'block' : 'none';
+  if (kbCountEl) kbCountEl.textContent = kbCount;
 
   const tbody = document.getElementById('main-table-body');
   if (!slice.length) {
@@ -6627,9 +6796,21 @@ function renderTable() {
   } else {
     tbody.innerHTML = slice.map((d,i) => {
       const petugasStr = Array.isArray(d.petugas) ? d.petugas.map(p=>`${p.nama}${p.unit?' ('+p.unit+')':''}`).join(', ') : (d.petugas||'-');
-      const kebakaranBadge = d.kebakaran && (d.kebakaran.tanggal || d.kebakaran.luas > 0)
-        ? `<span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:10px">🔥 ${d.kebakaran.luas ? d.kebakaran.luas+' Ha' : 'Ada'}</span>`
+      const hasKb = d.kebakaran && (d.kebakaran.tanggal || parseFloat(d.kebakaran.luas) > 0 || d.kebakaran.keterangan);
+      const kb = d.kebakaran || {};
+      const kebakaranBadge = hasKb
+        ? `<span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:10px;cursor:pointer" onclick="this.closest('tr').nextElementSibling?.classList.toggle('kb-hidden')">🔥 ${kb.luas ? parseFloat(kb.luas).toLocaleString('id-ID')+' Ha' : 'Ada'}</span>`
         : '<span style="font-size:11px;color:#9ca3af">—</span>';
+      const koordinat = (kb.lat && kb.lng)
+        ? `<a href="https://maps.google.com/?q=${kb.lat},${kb.lng}" target="_blank" style="color:#dc2626;font-size:11px;font-weight:600">📍 ${parseFloat(kb.lat).toFixed(5)}, ${parseFloat(kb.lng).toFixed(5)}</a>`
+        : '—';
+      const kbSubRow = hasKb ? `<tr class="kb-sub-row" style="background:#fff8f8;border-left:3px solid #dc2626">
+        <td style="padding:6px 10px;font-size:11px;color:#991b1b;font-weight:700;text-align:center">🔥</td>
+        <td style="padding:6px 8px;font-size:11px"><span style="color:#6b7280;font-weight:600">Tgl:</span> ${kb.tanggal||'—'}</td>
+        <td colspan="2" style="padding:6px 8px;font-size:11px"><span style="color:#6b7280;font-weight:600">Luas terbakar:</span> ${kb.luas ? parseFloat(kb.luas).toLocaleString('id-ID')+' Ha' : '—'}</td>
+        <td colspan="2" style="padding:6px 8px;font-size:11px"><span style="color:#6b7280;font-weight:600">Koordinat:</span> ${koordinat}</td>
+        <td colspan="7" style="padding:6px 8px;font-size:11px;color:var(--text-muted)">${kb.keterangan||'—'}</td>
+      </tr>` : '';
       return `<tr>
         <td>${(currentPage-1)*ROWS_PER_PAGE+i+1}</td>
         <td>${d.tanggal||'-'}</td>
@@ -6644,7 +6825,7 @@ function renderTable() {
         <td>${kebakaranBadge}</td>
         <td>${tindakBadge(d.tindak)}</td>
         <td>${canEditDeleteRekap() ? `<button class="btn btn-danger" style="padding:4px 10px;font-size:11px" onclick="deleteRow(${d.id})">Hapus</button>` : '<span style="font-size:11px;color:var(--text-muted)">—</span>'}</td>
-      </tr>`;
+      </tr>${kbSubRow}`;
     }).join('');
   }
 
@@ -7143,12 +7324,6 @@ function showToast(msg, type) {
 
 
 // ============ PETA PENGAWASAN ============
-let petaPWMap        = null;
-let petaPWTileLayer  = null;
-let petaPWLayers     = [];
-let petaPWLocMarker  = null;
-let petaPWLocCircle  = null;
-let petaPWLocWatch   = null;
 const PETA_PW_COLORS = ['#1a5c2e','#1d4ed8','#dc2626','#f59e0b','#7c3aed','#0891b2','#059669','#db2777','#d97706'];
 
 function initPetaPW() {
@@ -7337,36 +7512,110 @@ async function processPetaPWFile(file) {
     if (Array.isArray(geojson)) geojson = { type:'FeatureCollection', features: geojson.flatMap(g=>g.features||[]) };
     if (geojson.type !== 'FeatureCollection') geojson = { type:'FeatureCollection', features:[{type:'Feature',geometry:geojson,properties:{}}] };
 
-    const color   = PETA_PW_COLORS[petaPWLayers.length % PETA_PW_COLORS.length];
-    const opacity = 0.55;
+    // Palet: fill & stroke berbeda agar polygon terlihat jelas
+    const FILL_COLORS   = ['#1a5c2e','#1d4ed8','#dc2626','#f59e0b','#7c3aed','#0891b2','#059669','#db2777','#d97706','#0f766e'];
+    const STROKE_COLORS = ['#4ade80','#60a5fa','#fca5a5','#fcd34d','#c4b5fd','#67e8f9','#6ee7b7','#f9a8d4','#fbbf24','#5eead4'];
+    const colorIdx  = petaPWLayers.length % FILL_COLORS.length;
+    const fillColor = FILL_COLORS[colorIdx];
+    const strokeColor = STROKE_COLORS[colorIdx];
+    const color   = fillColor;
+    const opacity = 0.50;
     const id      = 'pwlayer_' + Date.now();
     const name    = file.name;
 
+    // Hitung luas & panjang seluruh layer
+    let totalAreaHa = 0, totalLenKm = 0, hasArea = false, hasLine = false;
+    (geojson.features || []).forEach(f => {
+      try {
+        const t = f.geometry?.type || '';
+        if (t.includes('Polygon')) {
+          totalAreaHa += turf.area(f) / 1e4;
+          hasArea = true;
+        } else if (t.includes('Line')) {
+          totalLenKm += turf.length(f, { units: 'kilometers' });
+          hasLine = true;
+        }
+      } catch(_) {}
+    });
+
+    // Fitur unik dalam layer — warna per feature berbeda (hue rotation)
+    let featIdx = 0;
     const glayer = L.geoJSON(geojson, {
       style: feat => {
         const t = feat?.geometry?.type || '';
-        if (t.includes('Line')) return { color, weight:2, opacity };
-        return { color, fillColor:color, fillOpacity:opacity, weight:1.5, opacity:Math.min(1,opacity+0.3) };
-      },
-      pointToLayer: (feat,latlng) => L.circleMarker(latlng,{radius:6,fillColor:color,color:'#fff',weight:1.5,fillOpacity:opacity}),
-      onEachFeature: (feat,layer) => {
-        if (feat.properties && Object.keys(feat.properties).length) {
-          const rows = Object.entries(feat.properties).slice(0,8)
-            .map(([k,v])=>`<tr><td style="color:#6b7280;padding:2px 6px;font-size:11px">${k}</td><td style="font-weight:600;padding:2px 6px;font-size:11px">${v||''}</td></tr>`).join('');
-          layer.bindPopup(`<b style="color:#1a5c2e;font-size:13px">${name}</b><table style="margin-top:6px">${rows}</table>`);
+        // Tiap feature mendapat variasi warna HSL agar kontras satu sama lain
+        const hueShift = (featIdx++ * 37) % 360;
+        const featureFill   = `hsl(${hueShift}, 60%, 45%)`;
+        const featureStroke = `hsl(${(hueShift + 150) % 360}, 80%, 35%)`; // kontras dengan fill
+        if (t.includes('Line')) {
+          return { color: featureStroke, weight: 2.5, opacity: 0.9 };
         }
+        return {
+          color: featureStroke,         // garis tepi
+          fillColor: featureFill,       // isi polygon
+          fillOpacity: 0.35,
+          weight: 2,
+          opacity: 1
+        };
+      },
+      pointToLayer: (feat, latlng) => {
+        const hueShift = (featIdx++ * 37) % 360;
+        return L.circleMarker(latlng, {
+          radius: 7,
+          fillColor: `hsl(${hueShift}, 65%, 45%)`,
+          color: `hsl(${(hueShift+150)%360}, 80%, 25%)`,
+          weight: 2,
+          fillOpacity: 0.8
+        });
+      },
+      onEachFeature: (feat, layer) => {
+        const t = feat?.geometry?.type || '';
+        let areaInfo = '';
+        try {
+          if (t.includes('Polygon')) {
+            const a = turf.area(feat) / 1e4;
+            const perimeter = turf.length(turf.polygonToLine(feat), { units: 'kilometers' });
+            areaInfo = `<tr><td style="color:#6b7280;padding:2px 6px;font-size:11px">📐 Luas</td><td style="font-weight:700;color:#1a5c2e;padding:2px 6px;font-size:11px">${a.toFixed(2)} Ha</td></tr>
+              <tr><td style="color:#6b7280;padding:2px 6px;font-size:11px">📏 Keliling</td><td style="font-weight:600;padding:2px 6px;font-size:11px">${perimeter.toFixed(3)} km</td></tr>`;
+          } else if (t.includes('Line')) {
+            const len = turf.length(feat, { units: 'kilometers' });
+            areaInfo = `<tr><td style="color:#6b7280;padding:2px 6px;font-size:11px">📏 Panjang</td><td style="font-weight:700;color:#1a5c2e;padding:2px 6px;font-size:11px">${len < 1 ? (len*1000).toFixed(1)+' m' : len.toFixed(3)+' km'}</td></tr>`;
+          }
+        } catch(_) {}
+        const props = feat.properties || {};
+        const propRows = Object.entries(props).slice(0, 10)
+          .map(([k,v]) => `<tr><td style="color:#6b7280;padding:2px 6px;font-size:11px">${k}</td><td style="font-weight:600;padding:2px 6px;font-size:11px">${v ?? ''}</td></tr>`).join('');
+        layer.bindPopup(`
+          <div style="font-size:13px;font-weight:700;color:#1a5c2e;margin-bottom:6px">📂 ${name}</div>
+          <table style="border-collapse:collapse;min-width:200px">${areaInfo}${propRows}</table>
+        `, { maxWidth: 320 });
       }
     }).addTo(petaPWMap);
 
     const fCount = geojson.features?.length || 0;
     const geomTypes = [...new Set((geojson.features||[]).map(f=>f.geometry?.type).filter(Boolean))];
-    petaPWLayers.push({ id, name, color, opacity, visible:true, geojsonLayer:glayer, fCount, geomTypes });
+
+    // Summary kalkulasi
+    const summaryParts = [];
+    if (hasArea) summaryParts.push(`📐 ${totalAreaHa.toFixed(2)} Ha`);
+    if (hasLine)  summaryParts.push(`📏 ${totalLenKm.toFixed(3)} km`);
+    const summary = summaryParts.length ? summaryParts.join(' · ') : null;
+
+    petaPWLayers.push({ id, name, color: fillColor, strokeColor, opacity, visible:true, geojsonLayer:glayer, fCount, geomTypes, totalAreaHa, totalLenKm });
 
     try { const b = glayer.getBounds(); if (b.isValid()) petaPWMap.fitBounds(b,{padding:[20,20],maxZoom:13}); } catch(e){}
 
     renderPetaPWLayerList();
     updatePetaPWLayerBadge();
-    showToast(`✅ ${name} — ${fCount.toLocaleString('id-ID')} fitur dimuat`, 'success');
+    showToast(`✅ ${name} · ${fCount.toLocaleString('id-ID')} fitur${summary ? ' · '+summary : ''}`, 'success');
+
+    // Tampilkan hasil kalkulasi di result panel
+    if (summary) {
+      const el = document.getElementById('gis-result-txt');
+      const panel = document.getElementById('gis-result-panel');
+      if (el) el.innerHTML = `📂 <b>${name}</b><br>${fCount} fitur · ${summary}`;
+      if (panel) panel.style.display = 'block';
+    }
   } catch(err) {
     showToast(`❌ Gagal: ${err.message}`, 'error');
   } finally {
@@ -7389,35 +7638,87 @@ function togglePetaPWLayerPanel() {
 function renderPetaPWLayerList() {
   const list = document.getElementById('peta-pw-layer-list');
   if (!list) return;
-  if (!petaPWLayers.length) { list.innerHTML='<p style="font-size:12px;color:var(--text-muted)">Belum ada layer.</p>'; return; }
-  document.getElementById('peta-pw-layer-panel').style.display = 'block';
+  if (!petaPWLayers.length) {
+    list.innerHTML = '<p style="font-size:11px;color:var(--text-muted);padding:4px 0">Belum ada layer.</p>';
+    return;
+  }
   list.innerHTML = petaPWLayers.map(l => {
-    const pct = Math.round(l.opacity*100);
-    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:#fafafa">
-      <input type="color" value="${l.color}" style="width:24px;height:24px;border-radius:4px;border:none;cursor:pointer;padding:0"
-        oninput="changePetaPWColor('${l.id}',this.value)">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.name}</div>
-        <div style="font-size:10px;color:var(--text-muted)">${l.fCount} fitur · ${l.geomTypes.join(', ')}</div>
-        <input type="range" min="0" max="100" value="${pct}" style="width:100%;margin-top:4px"
-          oninput="changePetaPWOpacity('${l.id}',this.value/100)">
+    const pct = Math.round(l.opacity * 100);
+    const areaBadge = l.totalAreaHa > 0 ? `<span style="background:#dcfce7;color:#166534;border-radius:10px;padding:1px 6px;font-weight:700;font-size:9px">📐 ${l.totalAreaHa.toFixed(2)} Ha</span>` : '';
+    const lenBadge  = l.totalLenKm  > 0 ? `<span style="background:#dbeafe;color:#1e40af;border-radius:10px;padding:1px 6px;font-weight:700;font-size:9px">📏 ${l.totalLenKm.toFixed(3)} km</span>` : '';
+    const strokePct = Math.round((l.strokeOpacity !== undefined ? l.strokeOpacity : 1) * 100);
+    return `<div style="border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:#fafafa;overflow:hidden">
+      <!-- Header baris: nama + tombol aksi -->
+      <div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid #f0f4f0">
+        <button onclick="togglePetaPWLayerVis('${l.id}')" id="pvbtn-${l.id}" style="background:none;border:none;font-size:14px;cursor:pointer;padding:0;line-height:1" title="Tampil/Sembunyikan">${l.visible ? '👁️' : '🙈'}</button>
+        <div style="flex:1;font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.name}">${l.name}</div>
+        <button onclick="zoomPetaPWLayer('${l.id}')" style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;color:#1d4ed8;flex-shrink:0" title="Zoom ke layer">🔍</button>
+        <button onclick="deletePetaPWLayer('${l.id}')" style="background:#fee2e2;border:1px solid #fecaca;border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;color:#dc2626;flex-shrink:0" title="Hapus layer">🗑️</button>
       </div>
-      <button onclick="togglePetaPWLayerVis('${l.id}')" id="pvbtn-${l.id}" style="background:none;border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:12px;cursor:pointer">${l.visible?'👁️':'🙈'}</button>
-      <button onclick="zoomPetaPWLayer('${l.id}')" style="background:#dbeafe;border:1px solid #bfdbfe;border-radius:5px;padding:2px 7px;font-size:12px;cursor:pointer;color:#1d4ed8">🔍</button>
-      <button onclick="deletePetaPWLayer('${l.id}')" style="background:#fee2e2;border:1px solid #fecaca;border-radius:5px;padding:2px 7px;font-size:12px;cursor:pointer;color:#dc2626">🗑️</button>
+      <!-- Info fitur + badge luas/jarak -->
+      <div style="padding:4px 8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:9px;color:var(--text-muted)">${l.fCount} fitur · ${l.geomTypes.join(', ')}</span>
+        ${areaBadge}${lenBadge}
+      </div>
+      <!-- Warna + Transparansi Fill -->
+      <div style="padding:4px 8px 2px;display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="color" value="${l.color}" style="width:22px;height:22px;border-radius:3px;border:1px solid #e5e7eb;cursor:pointer;padding:0;flex-shrink:0" title="Warna Fill"
+            oninput="changePetaPWColor('${l.id}',this.value)">
+          <span style="font-size:9px;color:var(--text-muted);flex-shrink:0">Fill</span>
+          <input type="range" min="0" max="100" value="${pct}" id="opslider-${l.id}" style="flex:1;accent-color:var(--hijau-mid)"
+            oninput="changePetaPWFillOpacity('${l.id}',this.value/100);document.getElementById('opval-${l.id}').textContent=this.value+'%'">
+          <span id="opval-${l.id}" style="font-size:9px;font-weight:700;color:var(--hijau);width:28px;text-align:right;flex-shrink:0">${pct}%</span>
+        </div>
+        <!-- Warna + Transparansi Garis -->
+        <div style="display:flex;align-items:center;gap:6px;padding-bottom:6px">
+          <input type="color" value="${l.strokeColor||l.color}" style="width:22px;height:22px;border-radius:3px;border:1px solid #e5e7eb;cursor:pointer;padding:0;flex-shrink:0" title="Warna Garis"
+            oninput="changePetaPWStroke('${l.id}',this.value)">
+          <span style="font-size:9px;color:var(--text-muted);flex-shrink:0">Garis</span>
+          <input type="range" min="0" max="100" value="${strokePct}" id="strokeslider-${l.id}" style="flex:1;accent-color:#1d4ed8"
+            oninput="changePetaPWStrokeOpacity('${l.id}',this.value/100);document.getElementById('strokeval-${l.id}').textContent=this.value+'%'">
+          <span id="strokeval-${l.id}" style="font-size:9px;font-weight:700;color:#1d4ed8;width:28px;text-align:right;flex-shrink:0">${strokePct}%</span>
+        </div>
+      </div>
     </div>`;
   }).join('');
 }
 
-function changePetaPWColor(id,color){
-  const l=petaPWLayers.find(x=>x.id===id); if(!l)return;
-  l.color=color; l.geojsonLayer.setStyle({color,fillColor:color});
+function changePetaPWColor(id, color) {
+  const l = petaPWLayers.find(x => x.id === id);
+  if (!l) return;
+  l.color = color;
+  l.geojsonLayer.setStyle(feat => {
+    const t = feat?.geometry?.type || '';
+    if (t.includes('Line')) return { color: l.strokeColor || color };
+    return { fillColor: color, color: l.strokeColor || color, fillOpacity: l.opacity };
+  });
 }
-function changePetaPWOpacity(id,opacity){
-  const l=petaPWLayers.find(x=>x.id===id); if(!l)return;
-  l.opacity=opacity;
-  l.geojsonLayer.eachLayer(ly=>{ if(ly.setStyle) ly.setStyle({fillOpacity:opacity,opacity:Math.min(1,opacity+0.3)}); });
+
+function changePetaPWStroke(id, strokeColor) {
+  const l = petaPWLayers.find(x => x.id === id);
+  if (!l) return;
+  l.strokeColor = strokeColor;
+  l.geojsonLayer.setStyle(feat => {
+    const t = feat?.geometry?.type || '';
+    if (t.includes('Line')) return { color: strokeColor };
+    return { color: strokeColor, fillColor: l.color, fillOpacity: l.opacity };
+  });
 }
+function changePetaPWFillOpacity(id, opacity) {
+  const l = petaPWLayers.find(x => x.id === id);
+  if (!l) return;
+  l.opacity = opacity;
+  l.geojsonLayer.setStyle(() => ({ fillOpacity: opacity }));
+}
+function changePetaPWStrokeOpacity(id, opacity) {
+  const l = petaPWLayers.find(x => x.id === id);
+  if (!l) return;
+  l.strokeOpacity = opacity;
+  l.geojsonLayer.setStyle(() => ({ opacity: opacity }));
+}
+// kept for backward compat
+function changePetaPWOpacity(id, opacity) { changePetaPWFillOpacity(id, opacity); }
 function togglePetaPWLayerVis(id){
   const l=petaPWLayers.find(x=>x.id===id); if(!l||!petaPWMap)return;
   l.visible=!l.visible;
@@ -7430,17 +7731,19 @@ function zoomPetaPWLayer(id){
 }
 function deletePetaPWLayer(id){
   const idx=petaPWLayers.findIndex(x=>x.id===id); if(idx===-1)return;
-  if(petaPWMap) petaPWMap.removeLayer(petaPWLayers[idx].geojsonLayer);
+  try{ if(petaPWMap) petaPWMap.removeLayer(petaPWLayers[idx].geojsonLayer); }catch(e){}
   petaPWLayers.splice(idx,1);
-  renderPetaPWLayerList(); updatePetaPWLayerBadge();
+  renderPetaPWLayerList();
+  updatePetaPWLayerBadge();
   showToast('🗑️ Layer dihapus.','info');
 }
 function clearPetaPWLayers(){
-  if(!petaPWLayers.length)return;
-  if(!confirm('Hapus semua '+petaPWLayers.length+' layer?'))return;
-  petaPWLayers.forEach(l=>{ if(petaPWMap) petaPWMap.removeLayer(l.geojsonLayer); });
+  if(!petaPWLayers.length){ showToast('Belum ada layer untuk dihapus.','info'); return; }
+  if(!confirm('Hapus semua '+petaPWLayers.length+' layer GIS?'))return;
+  petaPWLayers.forEach(l=>{ try{ if(petaPWMap) petaPWMap.removeLayer(l.geojsonLayer); }catch(e){} });
   petaPWLayers=[];
-  renderPetaPWLayerList(); updatePetaPWLayerBadge();
+  renderPetaPWLayerList();
+  updatePetaPWLayerBadge();
   showToast('🗑️ Semua layer dihapus.','info');
 }
 
@@ -8174,7 +8477,6 @@ function removePetugas(btn) {
 }
 
 // ============ FILE UPLOAD ============
-let uploadedFiles = [];
 
 function handleFileSelect(event) {
   const files = Array.from(event.target.files);
@@ -8721,8 +9023,6 @@ async function handleDropZone(event) {
 // DASHBOARD GIS LAYER MANAGER
 // Upload SHP/KMZ/KML/GeoJSON/GPX langsung dari panel Dashboard
 // ============================================================
-let dashGISLayers = [];
-let dashMapRef = null; // will be set after dashMap init
 
 // Hook into dashMap after it's created — we patch setLayerDash
 const _origSetLayerDash = typeof setLayerDash === 'function' ? setLayerDash : null;
@@ -9041,9 +9341,6 @@ if (!localStorage.getItem('siwashut_v6_reset')) {
   localStorage.setItem('siwashut_v6_reset', '1');
 }
 // SANKSI_DATA declared at top of DATA STORE section
-let currentSanksiSubjek = null;
-let sanksiBAFile = null;
-let sanksiSKFile = null;
 
 function saveSanksiData() {
   try { localStorage.setItem('siwashut_sanksi', JSON.stringify(SANKSI_DATA)); } catch(e) {}
@@ -9679,8 +9976,6 @@ function renderSarpras(cat) {
 }
 
 // ============ FOTO REALTIME ============
-let fotoList = [];       // foto pengawasan umum
-let cameraStream = null;
 
 function startCamera() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -9761,19 +10056,14 @@ function toggleSarprasSection() {
 }
 
 function filterSarprasInput(cat, btn) {
-  document.querySelectorAll('#sarpras-input-panel .sarpras-cat-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentSarprasInputFilter = cat;
-  renderSarprasInputForm(cat);
+  // Alias ke filterSarprasInputStatic agar backward-compatible
+  filterSarprasInputStatic(cat, btn);
 }
-
 function recalcSarpras() {
-  if (document.getElementById('sarpras-input-panel').style.display !== 'none') {
-    renderSarprasInputForm(currentSarprasInputFilter);
-  }
+  // Alias ke versi static
+  recalcSarprasReguStatic();
 }
 
-// Hitung jumlah regu wajib berdasarkan jenis pemegang dan luasan
 function hitungJumlahRegu(jenis, luas) {
   luas = parseFloat(luas) || 0;
   if (jenis === 'A') {
@@ -9794,56 +10084,10 @@ function hitungJumlahRegu(jenis, luas) {
 }
 
 function recalcSarprasRegu() {
-  const jenis = document.getElementById('sarpras-jenis')?.value || '';
-  const luas = document.getElementById('sarpras-luas')?.value || '';
-  const resultEl = document.getElementById('sarpras-regu-result');
-  const nilaiEl = document.getElementById('sarpras-regu-nilai');
-  const dasarEl = document.getElementById('sarpras-regu-dasar');
-  const sdmInfoEl = document.getElementById('sarpras-sdm-info');
-  const sdmDetailEl = document.getElementById('sarpras-sdm-detail');
-  const reguInput = document.getElementById('sarpras-regu');
-
-  if (jenis && luas && parseFloat(luas) > 0) {
-    const hasil = hitungJumlahRegu(jenis, luas);
-    if (hasil) {
-      resultEl.style.display = 'block';
-      nilaiEl.textContent = hasil.regu;
-      dasarEl.textContent = hasil.dasar;
-      // Sync ke input manual
-      reguInput.value = hasil.regu;
-
-      // Tampilkan info SDM
-      sdmInfoEl.style.display = 'block';
-      let sdmHtml = '';
-      if (jenis === 'A') {
-        sdmHtml = `Pemegang <strong>IUPHHK, IUPHHBK, IUPHHK-RE Hutan Alam & Izin Pinjam Pakai</strong>:<br>
-        ✓ Anggota regu berkompeten Bidang Dalkarhutla (memiliki bukti sah)<br>
-        ✓ Regu pemadam kebakaran (${hasil.dasar})<br>
-        ✓ Regu pendukung (karyawan)<br>
-        ✓ Regu Perbantuan (anggota masyarakat binaan)<br>
-        <span style="color:var(--hijau);font-weight:600">→ Total kebutuhan SDM: ${hasil.regu} regu × 15 orang = ${hasil.regu * 15} orang</span>`;
-      } else {
-        sdmHtml = `Pemegang <strong>IUPHHK dan IUPHHBK dalam HTI atau HTHR</strong>:<br>
-        ✓ Anggota regu berkompeten Bidang Dalkarhutla (memiliki bukti sah)<br>
-        ✓ Regu pemadam kebakaran (${hasil.dasar})<br>
-        ✓ Regu pendukung (karyawan)<br>
-        ✓ Regu perbantuan (anggota masyarakat binaan)<br>
-        <span style="color:var(--hijau);font-weight:600">→ Total kebutuhan SDM: ${hasil.regu} regu × 15 orang = ${hasil.regu * 15} orang</span>`;
-      }
-      sdmDetailEl.innerHTML = sdmHtml;
-    }
-  } else {
-    resultEl.style.display = 'none';
-    sdmInfoEl.style.display = 'none';
-  }
-
-  // Re-render form kalau panel terbuka
-  if (document.getElementById('sarpras-input-panel').style.display !== 'none') {
-    renderSarprasInputForm(currentSarprasInputFilter);
-  }
+  // Alias ke versi static
+  recalcSarprasReguStatic();
 }
 
-// Parse standard value from SARPRAS_DATA std field (e.g. "15 unit" -> 15)
 function parseStdQty(stdStr) {
   if (!stdStr) return null;
   const match = stdStr.match(/^(\d+)/);
@@ -9856,107 +10100,8 @@ function getStdUnit(stdStr) {
 }
 
 function renderSarprasInputForm(cat) {
-  const el = document.getElementById('sarpras-input-content');
-  if (!el) return;
-  const nRegu = parseInt(document.getElementById('sarpras-regu')?.value || '1') || 1;
-  const jenis = document.getElementById('sarpras-jenis')?.value || '';
-  const luas = parseFloat(document.getElementById('sarpras-luas')?.value || '0') || 0;
-  const cats = cat === 'all' ? ['pemadaman', 'pencegahan', 'lainnya'] : [cat];
-
-  // Banner info konteks
-  let bannerHtml = '';
-  if (jenis && luas > 0) {
-    const hasil = hitungJumlahRegu(jenis, luas);
-    const jenisLabel = jenis === 'A'
-      ? 'IUPHHK/IUPHHBK/IUPHHK-RE Hutan Alam & IPP'
-      : 'IUPHHK/IUPHHBK HTI atau HTHR';
-    if (hasil) {
-      bannerHtml = `<div style="background:linear-gradient(135deg,#e8f5ed,#f0fdf4);border:1.5px solid var(--hijau-mid);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span style="font-size:20px">📊</span>
-        <div style="flex:1">
-          <div style="font-size:12px;font-weight:700;color:var(--hijau)">Dasar Kalkulasi Kebutuhan</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
-            Jenis Pemegang: <strong>${jenisLabel}</strong> &nbsp;|&nbsp; 
-            Luasan: <strong>${luas.toLocaleString('id-ID')} Ha</strong> &nbsp;|&nbsp; 
-            Regu Wajib: <strong style="color:var(--hijau)">${hasil.regu} regu</strong> 
-            <span style="color:var(--hijau-mid)">(${hasil.dasar})</span>
-          </div>
-        </div>
-      </div>`;
-    }
-  } else {
-    bannerHtml = `<div style="background:#fff8e1;border:1.5px solid #f59e0b;border-radius:10px;padding:10px 16px;margin-bottom:14px;font-size:12px;color:#92400e">
-      ⚠️ <strong>Perhatian:</strong> Pilih <em>Jenis Pemegang</em> dan masukkan <em>Luasan Areal</em> di atas agar jumlah kebutuhan sarpras dikalkulasi otomatis sesuai panduan pengawasan. Atau gunakan input manual jumlah regu.
-    </div>`;
-  }
-
-  el.innerHTML = bannerHtml + cats.map(c => {
-    const sec = SARPRAS_DATA[c];
-    if (!sec) return '';
-    return `<div class="table-card" style="margin-bottom:16px">
-      <div style="padding:12px 18px 0">
-        <div class="sarpras-section-title">🏕️ ${sec.title}</div>
-      </div>
-      <div style="padding:8px 18px 18px">
-        ${sec.groups.map(g => `
-          <div class="sarpras-group-title">${g.title}</div>
-          ${g.note ? `<div style="font-size:11px;color:var(--text-muted);margin:-4px 0 8px 4px;font-style:italic">📌 ${g.note}</div>` : ''}
-          <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:12.5px">
-              <thead>
-                <tr style="background:var(--hijau-light)">
-                  <th style="padding:7px 10px;text-align:left;font-weight:700;color:var(--hijau);border-bottom:1.5px solid var(--border)">Item Sarpras</th>
-                  <th style="padding:7px 10px;text-align:center;width:100px;font-weight:700;color:var(--hijau);border-bottom:1.5px solid var(--border)">Standar/Regu</th>
-                  <th style="padding:7px 10px;text-align:center;width:120px;font-weight:700;color:var(--hijau);border-bottom:1.5px solid var(--border)">Kebutuhan (${nRegu} regu)</th>
-                  <th style="padding:7px 10px;text-align:center;width:110px;font-weight:700;color:var(--hijau);border-bottom:1.5px solid var(--border)">Tersedia</th>
-                  <th style="padding:7px 10px;text-align:center;width:80px;font-weight:700;color:var(--hijau);border-bottom:1.5px solid var(--border)">Kondisi</th>
-                  <th style="padding:7px 10px;text-align:center;width:70px;font-weight:700;color:var(--hijau);border-bottom:1.5px solid var(--border)">📸</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${g.items.map((it, idx) => {
-                  const qty = parseStdQty(it.std);
-                  const unit = getStdUnit(it.std);
-                  const kebutuhan = qty !== null ? (qty * nRegu) : null;
-                  const idBase = `sarpras_${c}_${g.title.replace(/[^a-z0-9]/gi,'_')}_${idx}`;
-                  return `<tr style="border-bottom:1px solid #f0f4f0">
-                    <td style="padding:8px 10px;vertical-align:middle">
-                      <span style="color:var(--hijau-mid)">✓</span> ${it.name}
-                      ${(it.sub||[]).map(s=>`<div style="font-size:11px;color:var(--text-muted);padding-left:14px">↳ ${s}</div>`).join('')}
-                    </td>
-                    <td style="padding:8px 10px;text-align:center;color:var(--hijau-mid);font-weight:600">${it.std || '—'}</td>
-                    <td style="padding:8px 10px;text-align:center">
-                      ${kebutuhan !== null
-                        ? `<span style="background:var(--hijau-light);color:var(--hijau);padding:2px 10px;border-radius:10px;font-weight:700">${kebutuhan} ${unit}</span>`
-                        : '<span style="color:#9ca3af;font-size:11px">Menyesuaikan</span>'}
-                    </td>
-                    <td style="padding:8px 10px">
-                      <div style="display:flex;align-items:center;gap:4px">
-                        <input type="number" id="${idBase}_qty" min="0" class="form-control sarpras-qty-input" style="width:65px;text-align:center;padding:5px 6px;font-size:12px" placeholder="0"
-                          oninput="checkSarprasStatus('${idBase}',${kebutuhan !== null ? kebutuhan : 0})"
-                        >
-                        <span style="font-size:11px;color:var(--text-muted)">${unit}</span>
-                      </div>
-                    </td>
-                    <td style="padding:8px 10px;text-align:center">
-                      <span id="${idBase}_status" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f3f4f6;color:#6b7280">—</span>
-                    </td>
-                    <td style="padding:8px 10px;text-align:center">
-                      <button onclick="openFotoModal('${it.name}','${idBase}')" title="Upload atau ambil foto item ini"
-                        style="background:none;border:none;cursor:pointer;font-size:18px;padding:2px;position:relative">
-                        📷
-                        <span id="${idBase}_foto_dot" style="display:none;position:absolute;top:0;right:0;width:8px;height:8px;background:#22c55e;border-radius:50%;border:1.5px solid #fff"></span>
-                      </button>
-                    </td>
-                  </tr>`;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        `).join('')}
-      </div>
-    </div>`;
-  }).join('');
+  // Konten sarpras sudah statis — update filter saja
+  filterSarprasInputStatic(cat || 'all', null);
 }
 
 function checkSarprasStatus(idBase, kebutuhan) {
@@ -10047,9 +10192,9 @@ function openFotoModal(itemName, idBase) {
 
           <!-- Camera controls -->
           <div id="foto-camera-controls" style="display:flex;gap:10px;margin-top:14px;justify-content:center">
-            <button id="foto-btn-start" onclick="startCamera()" style="background:var(--hijau);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">▶ Aktifkan Kamera</button>
+            <button id="foto-btn-start" onclick="startFotoCamera()" style="background:var(--hijau);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">▶ Aktifkan Kamera</button>
             <button id="foto-btn-snap" onclick="snapPhoto()" style="display:none;background:var(--hijau-mid);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📸 Ambil Foto</button>
-            <button id="foto-btn-stop" onclick="stopCamera()" style="display:none;background:#f3f4f6;color:var(--text-muted);border:none;border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;font-family:inherit">⏹ Stop</button>
+            <button id="foto-btn-stop" onclick="stopFotoCamera()" style="display:none;background:#f3f4f6;color:var(--text-muted);border:none;border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;font-family:inherit">⏹ Stop</button>
           </div>
         </div>
 
@@ -10148,7 +10293,7 @@ function saveFotoUpload() {
   showToast('✅ Foto "' + _fotoCurrentName + '" disimpan.', 'success');
 }
 
-async function startCamera() {
+async function startFotoCamera() {
   try {
     document.getElementById('foto-camera-overlay').style.display = 'none';
     _fotoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
@@ -10163,7 +10308,7 @@ async function startCamera() {
   }
 }
 
-function stopCamera() {
+function stopFotoCamera() {
   if (_fotoStream) {
     _fotoStream.getTracks().forEach(t => t.stop());
     _fotoStream = null;
@@ -10282,7 +10427,7 @@ function handlePanduanDocUpload(event) {
   event.target.value = '';
 }
 
-function getFileIcon(name, type) {
+function getFileIconExt(name, type) {
   if (name.endsWith('.pdf') || type.includes('pdf')) return '📄';
   if (name.endsWith('.xlsx') || name.endsWith('.xls')) return '📊';
   if (name.endsWith('.docx') || name.endsWith('.doc')) return '📝';
@@ -10314,7 +10459,7 @@ function renderPanduanDocs() {
     const isPreviewable = doc.name.match(/\.(pdf|png|jpg|jpeg|webp|gif)$/i) || (doc.type && (doc.type.includes('pdf') || doc.type.startsWith('image/')));
     return `
     <div class="panduan-doc-item">
-      <div class="panduan-doc-icon">${getFileIcon(doc.name, doc.type || '')}</div>
+      <div class="panduan-doc-icon">${getFileIconExt(doc.name, doc.type || '')}</div>
       <div class="panduan-doc-meta">
         <div class="panduan-doc-name">${doc.name}</div>
         <div class="panduan-doc-info">Ukuran: ${formatBytes(doc.size)} &nbsp;|&nbsp; Upload: ${doc.uploaded} &nbsp;|&nbsp; Oleh: ${doc.uploader}</div>
@@ -10384,8 +10529,6 @@ function deletePanduanDoc(id) {
 }
 
 // ============ INPUT TAB SWITCHING ============
-let kbEntriesList = []; // [{id, tanggal, luas, lat, lng, keterangan, fotos, mapInstance, mapMarker, cameraStream}]
-let kbEntryIdCounter = 0;
 
 function switchInputTab(tab) {
   ['pengawasan','sarpras','kebakaran'].forEach(t => {
@@ -10457,7 +10600,7 @@ function renderAllKbEntries() {
   // Entri #1 sudah statis — list kosong = tidak perlu tampilkan apa-apa di sini
   if (!kbEntriesList.length) { container.innerHTML = ''; return; }
   // Nomor mulai dari 2 karena entri statis #1 sudah ada di atas
-  container.innerHTML = kbEntriesList.map((entry, idx) => buildKbEntryHTML(entry, idx + 1)).join('');
+  container.innerHTML = kbEntriesList.map((entry, idx) => buildKbEntryHTML(entry, idx + 2)).join('');
   kbEntriesList.forEach(entry => {
     if (entry.lat && entry.lng) showKbEntryCoordInfo(entry.id, entry.lat, entry.lng);
   });
@@ -10714,10 +10857,6 @@ function getKbEntriesData() {
 }
 
 // ============ KEBAKARAN FUNCTIONS ============
-let kbFotoList = [];
-let kbMapInstance = null;
-let kbMapMarker = null;
-let kbCameraStream = null;
 
 function toggleKabakaranSection() {
   const panel = document.getElementById('kebakaran-input-panel');
@@ -10847,38 +10986,9 @@ function captureKbPhoto() {
 
 // ============ RENDER REKAP KEBAKARAN ============
 function renderRekapKebakaran() {
-  const q = (document.getElementById('rekap-kebakaran-search')?.value||'').toLowerCase();
-  const filterUnit = document.getElementById('rekap-kebakaran-filter-unit')?.value||'';
-  const accessData = getAccessibleData(DATA);
-  const kebData = accessData.filter(d => d.kebakaran && (d.kebakaran.tanggal || parseFloat(d.kebakaran.luas) > 0 || d.kebakaran.keterangan));
-  const filtered = kebData.filter(d => {
-    const matchQ = !q || [d.subjek,d.provinsi,d.kebakaran?.keterangan].some(v=>(v||'').toLowerCase().includes(q));
-    const matchUnit = !filterUnit || d.unitkerja === filterUnit;
-    return matchQ && matchUnit;
-  });
-  const tbody = document.getElementById('rekap-kebakaran-tbody');
-  if (!tbody) return;
-  if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="emoji">🔥</div><p>Tidak ada data kebakaran.</p></div></td></tr>`;
-  } else {
-    tbody.innerHTML = filtered.map((d,i) => {
-      const kb = d.kebakaran;
-      const koordinat = (kb.lat && kb.lng) ? `<a href="https://maps.google.com/?q=${kb.lat},${kb.lng}" target="_blank" style="color:#dc2626;font-size:11px">📍 ${kb.lat}, ${kb.lng}</a>` : '<span style="color:#9ca3af;font-size:11px">—</span>';
-      return `<tr>
-        <td>${i+1}</td>
-        <td>${kb.tanggal||'-'}</td>
-        <td style="font-size:11px">${d.unitkerja||'-'}</td>
-        <td>${d.subjek||'-'}</td>
-        <td>${d.provinsi||'-'}</td>
-        <td>${kb.luas ? parseFloat(kb.luas).toLocaleString('id-ID') + ' Ha' : '-'}</td>
-        <td>${koordinat}</td>
-        <td>${tindakBadge(d.tindak)}</td>
-        <td style="font-size:12px;max-width:200px">${kb.keterangan||'-'}</td>
-      </tr>`;
-    }).join('');
-  }
-  const info = document.getElementById('rekap-kebakaran-info');
-  if (info) info.textContent = `Menampilkan ${filtered.length} kejadian kebakaran`;
+  // Sudah terintegrasi di renderTable() — fungsi ini tetap ada sebagai stub
+  // agar kode lama yang memanggil tidak error
+  renderTable();
 }
 
 // ============ KEBAKARAN DASHBOARD CHART ============
@@ -10924,8 +11034,6 @@ function buildChartKebakaran() {
 }
 
 // ============ KEBAKARAN DASHBOARD MAP ============
-let dashKbMap = null;
-let dashKbMarkers = [];
 
 function renderDashboardKebakaranMap() {
   const container = document.getElementById('dash-kebakaran-map');
@@ -10969,6 +11077,571 @@ function renderDashboardKebakaranMap() {
     } catch(e) {}
   }
   setTimeout(() => { if(dashKbMap) dashKbMap.invalidateSize(); }, 200);
+}
+
+
+// ============================================================
+// GIS DRAWING TOOLS — Leaflet-Geoman + Turf.js
+// ============================================================
+
+let _gisSnap = true;
+let _gisDrawLayer = null;  // L.FeatureGroup untuk semua drawing
+let _gisCurrentMode = null;
+
+function _gisEnsureDrawLayer() {
+  if (!petaPWMap) return null;
+  if (!_gisDrawLayer) {
+    _gisDrawLayer = L.featureGroup().addTo(petaPWMap);
+  }
+  return _gisDrawLayer;
+}
+
+function _gisInitGeoman() {
+  if (!petaPWMap || petaPWMap._gmInitDone) return;
+  petaPWMap.pm.setGlobalOptions({
+    snappable: _gisSnap,
+    snapDistance: 15,
+    allowSelfIntersection: true,
+    templineStyle: { color: '#1a5c2e', weight: 2, dashArray: '6 4' },
+    hintlineStyle: { color: '#1a5c2e', weight: 1, dashArray: '4 4' },
+    pathOptions: { color: '#1a5c2e', fillColor: '#1a5c2e', fillOpacity: 0.2, weight: 2 }
+  });
+
+  // Event saat selesai menggambar
+  petaPWMap.on('pm:create', function(e) {
+    const layer = e.layer;
+    _gisEnsureDrawLayer();
+    _gisDrawLayer.addLayer(layer);
+    _gisAttachLayerEvents(layer, e.shape);
+    _gisUpdateLiveMeasure();
+    gisDrawMode('off');
+  });
+
+  // Event edit
+  petaPWMap.on('pm:edit', _gisUpdateLiveMeasure);
+
+  // pm:remove — hapus dari _gisDrawLayer dan update panel keterangan
+  petaPWMap.on('pm:remove', function(e) {
+    if (_gisDrawLayer) {
+      try { _gisDrawLayer.removeLayer(e.layer); } catch(_) {}
+    }
+    _gisUpdateLiveMeasure();
+    // Tutup result panel jika semua objek sudah dihapus
+    if (!_gisDrawLayer || !_gisDrawLayer.getLayers().length) {
+      const panel = document.getElementById('gis-result-panel');
+      if (panel) panel.style.display = 'none';
+    }
+  });
+
+  // Koordinat kursor
+  petaPWMap.on('mousemove', function(e) {
+    const el = document.getElementById('gis-cursor-coord');
+    if (el) el.textContent = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
+  });
+
+  petaPWMap._gmInitDone = true;
+}
+
+function _gisAttachLayerEvents(layer, shape) {
+  layer._gisShape = shape;
+  layer.on('click', function() {
+    _gisShowLayerInfo(layer, shape);
+  });
+  // Tambah popup info otomatis
+  const info = _gisLayerInfo(layer, shape);
+  if (info) layer.bindPopup(info, { maxWidth: 280 });
+}
+
+function _gisLayerInfo(layer, shape) {
+  try {
+    if (shape === 'Polygon' || shape === 'Rectangle') {
+      const geojson = layer.toGeoJSON();
+      const area = turf.area(geojson);
+      const areaSqKm = (area / 1e6).toFixed(4);
+      const areaHa  = (area / 1e4).toFixed(2);
+      const perimeter = turf.length(turf.polygonToLine(geojson), {units:'kilometers'});
+      return `<div style="font-size:12px;line-height:1.7">
+        <b>📐 ${shape}</b><br>
+        Luas: <b>${areaHa} Ha</b> (${areaSqKm} km²)<br>
+        Keliling: <b>${perimeter.toFixed(3)} km</b>
+      </div>`;
+    }
+    if (shape === 'Line') {
+      const geojson = layer.toGeoJSON();
+      const len = turf.length(geojson, {units:'kilometers'});
+      const lenM = turf.length(geojson, {units:'meters'});
+      return `<div style="font-size:12px;line-height:1.7">
+        <b>📏 Garis</b><br>
+        Panjang: <b>${len < 1 ? lenM.toFixed(1)+' m' : len.toFixed(3)+' km'}</b>
+      </div>`;
+    }
+    if (shape === 'Circle') {
+      const r = layer.getRadius();
+      const area = Math.PI * r * r;
+      return `<div style="font-size:12px;line-height:1.7">
+        <b>⬤ Lingkaran</b><br>
+        Radius: <b>${r >= 1000 ? (r/1000).toFixed(3)+' km' : r.toFixed(1)+' m'}</b><br>
+        Luas: <b>${(area/1e4).toFixed(2)} Ha</b>
+      </div>`;
+    }
+    if (shape === 'Marker') {
+      const ll = layer.getLatLng();
+      return `<div style="font-size:12px;line-height:1.7">
+        <b>📌 Marker</b><br>
+        Lat: <b>${ll.lat.toFixed(6)}</b><br>
+        Lng: <b>${ll.lng.toFixed(6)}</b>
+      </div>`;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function _gisShowLayerInfo(layer, shape) {
+  const info = _gisLayerInfo(layer, shape);
+  if (info) {
+    const el = document.getElementById('gis-result-txt');
+    const panel = document.getElementById('gis-result-panel');
+    if (el) el.innerHTML = info;
+    if (panel) panel.style.display = 'block';
+  }
+}
+
+function _gisUpdateLiveMeasure() {
+  if (!_gisDrawLayer) return;
+  const el = document.getElementById('gis-live-measure');
+  if (!el) return;
+  const layers = _gisDrawLayer.getLayers();
+  if (!layers.length) {
+    el.textContent = 'Belum ada objek';
+    const panel = document.getElementById('gis-result-panel');
+    if (panel) panel.style.display = 'none';
+    return;
+  }
+
+  let totalArea = 0, totalLen = 0, polyCount = 0, lineCount = 0, markerCount = 0;
+  layers.forEach(l => {
+    try {
+      if (l instanceof L.Polygon || l instanceof L.Rectangle) {
+        const a = turf.area(l.toGeoJSON());
+        totalArea += a; polyCount++;
+      } else if (l instanceof L.Polyline && !(l instanceof L.Polygon)) {
+        const len = turf.length(l.toGeoJSON(), {units:'kilometers'});
+        totalLen += len; lineCount++;
+      } else if (l instanceof L.CircleMarker || l instanceof L.Marker) {
+        markerCount++;
+      } else if (l instanceof L.Circle) {
+        const r = l.getRadius();
+        totalArea += Math.PI * r * r; polyCount++;
+      }
+    } catch(e) {}
+  });
+
+  const parts = [];
+  if (polyCount) parts.push(`${polyCount} polygon · ${(totalArea/1e4).toFixed(2)} Ha`);
+  if (lineCount) parts.push(`${lineCount} garis · ${totalLen.toFixed(3)} km`);
+  if (markerCount) parts.push(`${markerCount} marker`);
+  el.innerHTML = parts.join('<br>') || 'Belum ada objek';
+}
+
+// ============ MODE DRAWING ============
+function gisDrawMode(mode) {
+  if (!petaPWMap) return;
+  _gisInitGeoman();
+  _gisEnsureDrawLayer();
+
+  // Reset semua tombol
+  document.querySelectorAll('.gis-draw-btn').forEach(b => b.classList.remove('active'));
+
+  // Stop semua mode aktif dulu
+  petaPWMap.pm.disableDraw();
+  petaPWMap.pm.disableGlobalEditMode();
+  petaPWMap.pm.disableGlobalDragMode();
+  petaPWMap.pm.disableGlobalCutMode();
+  petaPWMap.pm.disableGlobalRotateMode();
+
+  const statusEl = document.getElementById('gis-draw-status');
+  const statusTxt = document.getElementById('gis-draw-status-txt');
+  _gisCurrentMode = mode;
+
+  const modeMap = {
+    'Marker':    { pm: 'Marker',    label: '📌 Mode Marker aktif — klik peta untuk tambah titik' },
+    'Polygon':   { pm: 'Polygon',   label: '⬡ Mode Polygon aktif — klik untuk membuat titik, double-klik untuk selesai' },
+    'Rectangle': { pm: 'Rectangle', label: '▭ Mode Persegi aktif — klik & drag untuk menggambar' },
+    'Circle':    { pm: 'Circle',    label: '⬤ Mode Lingkaran aktif — klik untuk pusat, drag untuk radius' },
+    'Line':      { pm: 'Line',      label: '📏 Mode Garis/Ukur aktif — klik untuk titik, double-klik untuk selesai' },
+  };
+
+  if (mode === 'off') {
+    if (statusEl) statusEl.style.display = 'none';
+    _gisCurrentMode = null;
+    return;
+  }
+
+  if (modeMap[mode]) {
+    petaPWMap.pm.enableDraw(modeMap[mode].pm, {
+      snappable: _gisSnap,
+      snapDistance: 15,
+      continueDrawing: false,
+    });
+    if (statusEl) { statusEl.style.display = 'flex'; statusTxt.textContent = modeMap[mode].label; }
+    const btn = document.getElementById('gdb-' + mode);
+    if (btn) btn.classList.add('active');
+  } else if (mode === 'Edit') {
+    petaPWMap.pm.enableGlobalEditMode();
+    if (statusEl) { statusEl.style.display = 'flex'; statusTxt.textContent = '✏️ Mode Edit aktif — klik objek untuk edit vertex'; }
+    document.getElementById('gdb-Edit')?.classList.add('active');
+  } else if (mode === 'Drag') {
+    petaPWMap.pm.enableGlobalDragMode();
+    if (statusEl) { statusEl.style.display = 'flex'; statusTxt.textContent = '✋ Mode Geser aktif — drag objek untuk memindahkan'; }
+    document.getElementById('gdb-Drag')?.classList.add('active');
+  } else if (mode === 'Cut') {
+    petaPWMap.pm.enableGlobalCutMode({ allowSelfIntersection: true });
+    if (statusEl) { statusEl.style.display = 'flex'; statusTxt.textContent = '✂️ Mode Potong aktif — gambar polygon di atas objek yang ingin dipotong'; }
+    document.getElementById('gdb-Cut')?.classList.add('active');
+  } else if (mode === 'Rotate') {
+    petaPWMap.pm.enableGlobalRotateMode();
+    if (statusEl) { statusEl.style.display = 'flex'; statusTxt.textContent = '🔄 Mode Putar aktif — drag handle untuk memutar objek'; }
+    document.getElementById('gdb-Rotate')?.classList.add('active');
+  } else if (mode === 'Scale') {
+    petaPWMap.pm.enableGlobalScaleMode();
+    if (statusEl) { statusEl.style.display = 'flex'; statusTxt.textContent = '⤢ Mode Skala aktif — drag handle untuk resize objek'; }
+    document.getElementById('gdb-Scale')?.classList.add('active');
+  }
+}
+
+function gisDeleteSelected() {
+  if (!petaPWMap) return;
+  petaPWMap.pm.enableGlobalRemovalMode();
+  const statusEl = document.getElementById('gis-draw-status');
+  const statusTxt = document.getElementById('gis-draw-status-txt');
+  if (statusEl) { statusEl.style.display = 'flex'; statusTxt.textContent = '🗑️ Mode Hapus aktif — klik objek untuk menghapus'; }
+  // Auto-off after 5s
+  setTimeout(() => {
+    if (petaPWMap) { petaPWMap.pm.disableGlobalRemovalMode(); gisDrawMode('off'); }
+  }, 8000);
+}
+
+function gisClearAll() {
+  if (!_gisDrawLayer) return;
+  if (!confirm('Hapus semua objek drawing?')) return;
+  _gisDrawLayer.clearLayers();
+  _gisUpdateLiveMeasure();
+  const panel = document.getElementById('gis-result-panel');
+  if (panel) panel.style.display = 'none';
+  const statusEl = document.getElementById('gis-draw-status');
+  if (statusEl) statusEl.style.display = 'none';
+  _gisCurrentMode = null;
+}
+
+function gisSnapToggle() {
+  _gisSnap = !_gisSnap;
+  const btn = document.getElementById('gdb-snap');
+  if (btn) {
+    btn.textContent = _gisSnap ? '🧲 Snap ON' : '🧲 Snap OFF';
+    btn.style.background = _gisSnap ? '#eff6ff' : '#f9fafb';
+    btn.style.color = _gisSnap ? '#1d4ed8' : '#6b7280';
+  }
+  if (petaPWMap) petaPWMap.pm.setGlobalOptions({ snappable: _gisSnap });
+  showToast(_gisSnap ? '🧲 Snap ON' : '🧲 Snap OFF', 'info');
+}
+
+// ============ EXPORT ============
+function gisExportGeoJSON() {
+  if (!_gisDrawLayer || !_gisDrawLayer.getLayers().length) {
+    showToast('⚠️ Belum ada objek drawing.', 'warn'); return;
+  }
+  const geojson = _gisDrawLayer.toGeoJSON();
+  const blob = new Blob([JSON.stringify(geojson, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'siwashut_drawing_' + new Date().toISOString().slice(0,10) + '.geojson';
+  a.click();
+  showToast('✅ GeoJSON berhasil diekspor.', 'success');
+}
+
+function gisExportKML() {
+  if (!_gisDrawLayer || !_gisDrawLayer.getLayers().length) {
+    showToast('⚠️ Belum ada objek drawing.', 'warn'); return;
+  }
+  const geojson = _gisDrawLayer.toGeoJSON();
+  // Simple GeoJSON → KML converter
+  const features = geojson.features || [];
+  const placemarks = features.map((f, i) => {
+    const geom = f.geometry;
+    let coords = '';
+    if (geom.type === 'Point') {
+      coords = `<Point><coordinates>${geom.coordinates[0]},${geom.coordinates[1]},0</coordinates></Point>`;
+    } else if (geom.type === 'LineString') {
+      const c = geom.coordinates.map(p => p[0]+','+p[1]+',0').join(' ');
+      coords = `<LineString><coordinates>${c}</coordinates></LineString>`;
+    } else if (geom.type === 'Polygon') {
+      const outer = geom.coordinates[0].map(p => p[0]+','+p[1]+',0').join(' ');
+      coords = `<Polygon><outerBoundaryIs><LinearRing><coordinates>${outer}</coordinates></LinearRing></outerBoundaryIs></Polygon>`;
+    }
+    return `<Placemark><name>Objek ${i+1}</name>${coords}</Placemark>`;
+  }).join('\n');
+  const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document><name>SIWASHUT Drawing</name>
+${placemarks}
+</Document></kml>`;
+  const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'siwashut_drawing_' + new Date().toISOString().slice(0,10) + '.kml';
+  a.click();
+  showToast('✅ KML berhasil diekspor.', 'success');
+}
+
+// ============ ANALISIS SPASIAL (Turf.js) ============
+function _gisGetPolygons() {
+  if (!_gisDrawLayer) return [];
+  return _gisDrawLayer.getLayers().filter(l =>
+    (l instanceof L.Polygon || l instanceof L.Rectangle) && !(l instanceof L.Circle)
+  );
+}
+function _gisGetLines() {
+  if (!_gisDrawLayer) return [];
+  return _gisDrawLayer.getLayers().filter(l =>
+    l instanceof L.Polyline && !(l instanceof L.Polygon)
+  );
+}
+function _gisGetMarkers() {
+  if (!_gisDrawLayer) return [];
+  return _gisDrawLayer.getLayers().filter(l => l instanceof L.Marker);
+}
+function _gisShowResult(html) {
+  const el = document.getElementById('gis-result-txt');
+  const panel = document.getElementById('gis-result-panel');
+  if (el) el.innerHTML = html;
+  if (panel) panel.style.display = 'block';
+}
+
+function gisCalcArea() {
+  const polys = _gisGetPolygons();
+  const circles = (_gisDrawLayer?.getLayers() || []).filter(l => l instanceof L.Circle);
+  if (!polys.length && !circles.length) { showToast('⚠️ Belum ada polygon atau lingkaran.', 'warn'); return; }
+  let total = 0, rows = '';
+  polys.forEach((l, i) => {
+    const a = turf.area(l.toGeoJSON());
+    total += a;
+    rows += `<div>Polygon ${i+1}: <b>${(a/1e4).toFixed(2)} Ha</b> (${(a/1e6).toFixed(4)} km²)</div>`;
+  });
+  circles.forEach((l, i) => {
+    const r = l.getRadius();
+    const a = Math.PI * r * r;
+    total += a;
+    rows += `<div>Lingkaran ${i+1} (r=${r>=1000?(r/1000).toFixed(2)+'km':r.toFixed(0)+'m'}): <b>${(a/1e4).toFixed(2)} Ha</b></div>`;
+  });
+  rows += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #d1fae5;font-size:13px">Total: <b style="color:var(--hijau)">${(total/1e4).toFixed(2)} Ha</b> (${(total/1e6).toFixed(4)} km²)</div>`;
+  _gisShowResult('📐 <b>Perhitungan Luas</b><br>' + rows);
+}
+
+function gisCalcLength() {
+  const lines = _gisGetLines();
+  if (!lines.length) { showToast('⚠️ Belum ada garis.', 'warn'); return; }
+  let total = 0, rows = '';
+  lines.forEach((l, i) => {
+    const len = turf.length(l.toGeoJSON(), {units:'kilometers'});
+    total += len;
+    rows += `<div>Garis ${i+1}: <b>${len < 1 ? (len*1000).toFixed(1)+' m' : len.toFixed(3)+' km'}</b></div>`;
+  });
+  rows += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #d1fae5;font-size:13px">Total: <b style="color:var(--hijau)">${total < 1 ? (total*1000).toFixed(1)+' m' : total.toFixed(3)+' km'}</b></div>`;
+  _gisShowResult('📏 <b>Perhitungan Jarak</b><br>' + rows);
+}
+
+function gisBuffer() {
+  const all = (_gisDrawLayer?.getLayers() || []).filter(l => !(l instanceof L.Marker));
+  if (!all.length) { showToast('⚠️ Belum ada objek untuk di-buffer.', 'warn'); return; }
+  const dlg = document.getElementById('gis-buffer-dialog');
+  if (dlg) dlg.style.display = 'flex';
+}
+
+function gisBufferExec() {
+  const radius = parseFloat(document.getElementById('gis-buffer-radius')?.value) || 1;
+  const unit   = document.getElementById('gis-buffer-unit')?.value || 'kilometers';
+  const dlg    = document.getElementById('gis-buffer-dialog');
+  if (dlg) dlg.style.display = 'none';
+  _gisEnsureDrawLayer();
+  const layers = (_gisDrawLayer?.getLayers() || []).filter(l => !(l instanceof L.Marker));
+  let count = 0;
+  layers.forEach(l => {
+    try {
+      const geojson = l.toGeoJSON();
+      const buffered = turf.buffer(geojson, radius, { units: unit });
+      const bufLayer = L.geoJSON(buffered, {
+        style: { color: '#f59e0b', fillColor: '#fbbf24', fillOpacity: 0.15, weight: 2, dashArray: '6 4' }
+      }).addTo(_gisDrawLayer);
+      bufLayer.bindPopup(`<b>⭕ Buffer</b><br>Radius: ${radius} ${unit}`);
+      count++;
+    } catch(e) { console.warn('Buffer error:', e); }
+  });
+  _gisUpdateLiveMeasure();
+  showToast(`✅ ${count} buffer berhasil dibuat.`, 'success');
+}
+
+function gisCentroid() {
+  const polys = _gisGetPolygons();
+  if (!polys.length) { showToast('⚠️ Belum ada polygon.', 'warn'); return; }
+  _gisEnsureDrawLayer();
+  polys.forEach((l, i) => {
+    try {
+      const c = turf.centroid(l.toGeoJSON());
+      const [lng, lat] = c.geometry.coordinates;
+      const marker = L.marker([lat, lng], {
+        icon: L.divIcon({ html: `<div style="background:#7c3aed;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)">⊕</div>`, className:'', iconSize:[22,22], iconAnchor:[11,11] })
+      }).addTo(_gisDrawLayer);
+      marker.bindPopup(`<b>⊕ Centroid Polygon ${i+1}</b><br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`).openPopup();
+    } catch(e) {}
+  });
+  showToast('✅ Centroid berhasil dihitung.', 'success');
+}
+
+function gisBbox() {
+  const all = (_gisDrawLayer?.getLayers() || []);
+  if (!all.length) { showToast('⚠️ Belum ada objek.', 'warn'); return; }
+  _gisEnsureDrawLayer();
+  try {
+    const fc = _gisDrawLayer.toGeoJSON();
+    const bbox = turf.bbox(fc);
+    const bboxPoly = turf.bboxPolygon(bbox);
+    L.geoJSON(bboxPoly, {
+      style: { color: '#1d4ed8', fillColor: '#3b82f6', fillOpacity: 0.08, weight: 2, dashArray: '8 4' }
+    }).addTo(_gisDrawLayer).bindPopup(`<b>▢ Bounding Box</b><br>W: ${bbox[0].toFixed(5)}<br>S: ${bbox[1].toFixed(5)}<br>E: ${bbox[2].toFixed(5)}<br>N: ${bbox[3].toFixed(5)}`).openPopup();
+    _gisUpdateLiveMeasure();
+    showToast('✅ Bounding Box berhasil dibuat.', 'success');
+  } catch(e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+function gisUnion() {
+  const polys = _gisGetPolygons();
+  if (polys.length < 2) { showToast('⚠️ Butuh minimal 2 polygon untuk Union.', 'warn'); return; }
+  _gisEnsureDrawLayer();
+  try {
+    let result = polys[0].toGeoJSON();
+    for (let i = 1; i < polys.length; i++) result = turf.union(result, polys[i].toGeoJSON());
+    const area = turf.area(result);
+    L.geoJSON(result, {
+      style: { color: '#7e22ce', fillColor: '#a855f7', fillOpacity: 0.2, weight: 2 }
+    }).addTo(_gisDrawLayer).bindPopup(`<b>⊎ Union (${polys.length} polygon)</b><br>Luas: <b>${(area/1e4).toFixed(2)} Ha</b>`).openPopup();
+    _gisUpdateLiveMeasure();
+    showToast('✅ Union berhasil. Luas: ' + (area/1e4).toFixed(2) + ' Ha', 'success');
+  } catch(e) { showToast('❌ Union gagal: ' + e.message, 'error'); }
+}
+
+function gisIntersect() {
+  const polys = _gisGetPolygons();
+  if (polys.length < 2) { showToast('⚠️ Butuh minimal 2 polygon untuk Intersect.', 'warn'); return; }
+  _gisEnsureDrawLayer();
+  try {
+    const result = turf.intersect(polys[0].toGeoJSON(), polys[1].toGeoJSON());
+    if (!result) { showToast('⚠️ Kedua polygon tidak berpotongan.', 'warn'); return; }
+    const area = turf.area(result);
+    L.geoJSON(result, {
+      style: { color: '#0369a1', fillColor: '#0ea5e9', fillOpacity: 0.3, weight: 2 }
+    }).addTo(_gisDrawLayer).bindPopup(`<b>∩ Intersect</b><br>Luas irisan: <b>${(area/1e4).toFixed(2)} Ha</b>`).openPopup();
+    _gisUpdateLiveMeasure();
+    showToast('✅ Intersect: ' + (area/1e4).toFixed(2) + ' Ha', 'success');
+  } catch(e) { showToast('❌ Intersect gagal: ' + e.message, 'error'); }
+}
+
+function gisDifference() {
+  const polys = _gisGetPolygons();
+  if (polys.length < 2) { showToast('⚠️ Butuh minimal 2 polygon untuk Difference.', 'warn'); return; }
+  _gisEnsureDrawLayer();
+  try {
+    const result = turf.difference(polys[0].toGeoJSON(), polys[1].toGeoJSON());
+    if (!result) { showToast('⚠️ Tidak ada selisih.', 'warn'); return; }
+    const area = turf.area(result);
+    L.geoJSON(result, {
+      style: { color: '#be123c', fillColor: '#fb7185', fillOpacity: 0.2, weight: 2 }
+    }).addTo(_gisDrawLayer).bindPopup(`<b>∖ Difference (P1 - P2)</b><br>Luas: <b>${(area/1e4).toFixed(2)} Ha</b>`).openPopup();
+    _gisUpdateLiveMeasure();
+    showToast('✅ Difference: ' + (area/1e4).toFixed(2) + ' Ha', 'success');
+  } catch(e) { showToast('❌ Difference gagal: ' + e.message, 'error'); }
+}
+
+function gisConvexHull() {
+  const all = (_gisDrawLayer?.getLayers() || []);
+  if (all.length < 3) { showToast('⚠️ Butuh minimal 3 objek untuk Convex Hull.', 'warn'); return; }
+  _gisEnsureDrawLayer();
+  try {
+    const fc = _gisDrawLayer.toGeoJSON();
+    const hull = turf.convex(fc);
+    if (!hull) { showToast('⚠️ Tidak bisa membuat Convex Hull.', 'warn'); return; }
+    const area = turf.area(hull);
+    L.geoJSON(hull, {
+      style: { color: '#334155', fillColor: '#94a3b8', fillOpacity: 0.15, weight: 2, dashArray: '8 4' }
+    }).addTo(_gisDrawLayer).bindPopup(`<b>△ Convex Hull</b><br>Luas: <b>${(area/1e4).toFixed(2)} Ha</b>`).openPopup();
+    _gisUpdateLiveMeasure();
+    showToast('✅ Convex Hull berhasil.', 'success');
+  } catch(e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+function gisVoronoi() {
+  const markers = _gisGetMarkers();
+  if (markers.length < 3) { showToast('⚠️ Butuh minimal 3 marker untuk Voronoi.', 'warn'); return; }
+  _gisEnsureDrawLayer();
+  try {
+    const pts = turf.featureCollection(markers.map(m => {
+      const ll = m.getLatLng();
+      return turf.point([ll.lng, ll.lat]);
+    }));
+    const bbox = turf.bbox(pts);
+    const pad = 0.5;
+    const bboxPadded = [bbox[0]-pad, bbox[1]-pad, bbox[2]+pad, bbox[3]+pad];
+    const voronoi = turf.voronoi(pts, { bbox: bboxPadded });
+    if (!voronoi || !voronoi.features.length) { showToast('⚠️ Gagal membuat Voronoi.', 'warn'); return; }
+    const colors = ['#1a5c2e','#1d4ed8','#dc2626','#f59e0b','#7c3aed','#0891b2','#059669'];
+    voronoi.features.forEach((f, i) => {
+      L.geoJSON(f, {
+        style: { color: '#fff', fillColor: colors[i % colors.length], fillOpacity: 0.2, weight: 1.5 }
+      }).addTo(_gisDrawLayer).bindPopup(`<b>⬡ Voronoi ${i+1}</b><br>Luas: ${(turf.area(f)/1e4).toFixed(2)} Ha`);
+    });
+    _gisUpdateLiveMeasure();
+    showToast('✅ Voronoi Diagram berhasil.', 'success');
+  } catch(e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+function gisTIN() {
+  const markers = _gisGetMarkers();
+  if (markers.length < 3) { showToast('⚠️ Butuh minimal 3 marker untuk TIN.', 'warn'); return; }
+  _gisEnsureDrawLayer();
+  try {
+    const pts = turf.featureCollection(markers.map(m => {
+      const ll = m.getLatLng();
+      return turf.point([ll.lng, ll.lat]);
+    }));
+    const tin = turf.tin(pts);
+    tin.features.forEach((f, i) => {
+      L.geoJSON(f, {
+        style: { color: '#166534', fillColor: '#4ade80', fillOpacity: 0.12, weight: 1 }
+      }).addTo(_gisDrawLayer);
+    });
+    _gisUpdateLiveMeasure();
+    showToast('✅ TIN berhasil dibuat (' + tin.features.length + ' segitiga).', 'success');
+  } catch(e) { showToast('❌ ' + e.message, 'error'); }
+}
+
+function gisKinks() {
+  const polys = _gisGetPolygons();
+  if (!polys.length) { showToast('⚠️ Belum ada polygon.', 'warn'); return; }
+  _gisEnsureDrawLayer();
+  let totalKinks = 0;
+  polys.forEach((l, i) => {
+    try {
+      const kinks = turf.kinks(l.toGeoJSON());
+      kinks.features.forEach(k => {
+        const [lng, lat] = k.geometry.coordinates;
+        L.circleMarker([lat, lng], {
+          radius: 6, color: '#dc2626', fillColor: '#fca5a5', fillOpacity: 0.8, weight: 2
+        }).addTo(_gisDrawLayer).bindPopup(`<b>⚠️ Self-intersection</b><br>Polygon ${i+1}<br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}`);
+        totalKinks++;
+      });
+    } catch(e) {}
+  });
+  if (totalKinks === 0) showToast('✅ Tidak ada self-intersection ditemukan.', 'success');
+  else showToast(`⚠️ Ditemukan ${totalKinks} self-intersection.`, 'warn');
 }
 
 // Update rekap if page-data is loaded
@@ -11320,19 +11993,24 @@ function saveDraft(tab) {
       if(inp.id) data[inp.id] = inp.value;
     });
   } else if (tab === 'kebakaran') {
-    // Strip non-serializable fields (Leaflet Map, Marker, MediaStream) dan
-    // foto base64 (bisa sangat besar → QuotaExceededError di localStorage)
-    data._entries = (kbEntriesList || []).map(e => ({
+    // Kumpulkan entri statis #1 dari form HTML
+    const staticEntry = {
+      id: 0,
+      tanggal:     document.getElementById('kb-s1-tanggal')?.value     || '',
+      luas:        document.getElementById('kb-s1-luas')?.value         || '',
+      lat:         document.getElementById('kb-s1-lat')?.value          || '',
+      lng:         document.getElementById('kb-s1-lng')?.value          || '',
+      keterangan:  document.getElementById('kb-s1-keterangan')?.value   || '',
+      fotos: (_kbStaticFotos[1] || []).map(f => ({ name: f.name }))
+    };
+    // Entri dinamis (mulai #2)
+    const dynamicEntries = (kbEntriesList || []).map(e => ({
       id: e.id,
-      tanggal: e.tanggal,
-      luas: e.luas,
-      lat: e.lat,
-      lng: e.lng,
+      tanggal: e.tanggal, luas: e.luas, lat: e.lat, lng: e.lng,
       keterangan: e.keterangan,
-      // Simpan hanya metadata foto (nama + tipe), bukan data base64
       fotos: (e.fotos || []).map(f => ({ name: f.name, type: f.type }))
-      // mapInstance, mapMarker, cameraStream → TIDAK disimpan (non-serializable)
     }));
+    data._entries = [staticEntry, ...dynamicEntries];
   }
   data._savedAt = new Date().toLocaleString('id-ID');
   try {
@@ -11415,10 +12093,22 @@ function loadDraft(tab) {
       }, 400);
     } else if (tab === 'kebakaran') {
       if (data._entries && data._entries.length) {
-        kbEntriesList = data._entries;
-        kbEntryIdCounter = Math.max(...kbEntriesList.map(e=>e.id||0)) + 1;
+        // Entri pertama → restore ke form statis #1
+        const first = data._entries[0];
+        if (first) {
+          const s = (id) => { const el = document.getElementById(id); if (el && first[id.replace('kb-s1-','')] !== undefined) el.value = first[id.replace('kb-s1-','')] || ''; };
+          if (document.getElementById('kb-s1-tanggal')) document.getElementById('kb-s1-tanggal').value = first.tanggal || '';
+          if (document.getElementById('kb-s1-luas'))    document.getElementById('kb-s1-luas').value    = first.luas    || '';
+          if (document.getElementById('kb-s1-lat'))     document.getElementById('kb-s1-lat').value     = first.lat     || '';
+          if (document.getElementById('kb-s1-lng'))     document.getElementById('kb-s1-lng').value     = first.lng     || '';
+          if (document.getElementById('kb-s1-keterangan')) document.getElementById('kb-s1-keterangan').value = first.keterangan || '';
+        }
+        // Entri berikutnya → render sebagai entri dinamis
+        const rest = data._entries.slice(1);
+        kbEntriesList = rest.map((e, i) => ({ ...e, id: i + 1 }));
+        kbEntryIdCounter = kbEntriesList.length + 1;
         const kbEl = document.getElementById('kb-entries-list');
-        if(kbEl) kbEl.innerHTML = '';
+        if (kbEl) kbEl.innerHTML = '';
         renderAllKbEntries();
       }
     }
