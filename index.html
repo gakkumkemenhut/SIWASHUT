@@ -2717,10 +2717,16 @@ function showPage(id) {
   if (id === 'petapengawasan') { initPetaPW(); setTimeout(()=>{ if(petaPWMap) petaPWMap.invalidateSize(); }, 200); }
   if (id === 'perencanaan') { initPerencanaanPage(); }
   if (id === 'input') {
-    // Auto-render sarpras form agar item tidak kosong
+    // Auto-render sarpras form setelah panel benar-benar visible di DOM
     setTimeout(() => {
       try { renderSarprasInputForm(currentSarprasInputFilter || 'all'); } catch(e) {}
-    }, 50);
+    }, 80);
+    // Jika tab kebakaran aktif tapi list kosong, tambah satu entry
+    setTimeout(() => {
+      if (document.getElementById('input-panel-kebakaran')?.style.display === 'block' && kbEntriesList.length === 0) {
+        addKbEntry();
+      }
+    }, 100);
     // Auto-isi dan kunci unit kerja berdasarkan role/unit pengguna
     const unitEl = document.getElementById('f-unitkerja');
     if (unitEl) {
@@ -6163,7 +6169,6 @@ function savePanduanDocs() {
 // isSuperAdmin sudah didefinisikan di atas (getCurrentRole() === 'superadmin')
 // Definisi duplikat di sini dihapus agar tidak menimpa yang benar.
 
-let panduanInitialized = false;
 function initPanduanPage() {
   // Pastikan elemen utama sudah ada sebelum render
   const tbody = document.getElementById('klas-tbody');
@@ -6173,11 +6178,10 @@ function initPanduanPage() {
     return;
   }
 
-  // Selalu render ulang agar konten tidak kosong saat navigasi bolak-balik
+  // Selalu render ulang agar konten tidak kosong saat navigasi bolak-balik atau refresh
   try { renderKlasifikasi(); } catch(e) { console.warn('renderKlasifikasi error:', e); }
   try { renderSanksiAdm(); } catch(e) { console.warn('renderSanksiAdm error:', e); }
   try { renderSarpras('all'); } catch(e) { console.warn('renderSarpras error:', e); }
-  panduanInitialized = true;
   try { renderPanduanDocs(); } catch(e) { console.warn('renderPanduanDocs error:', e); }
   // Pastikan tab pertama (klasifikasi) selalu aktif saat halaman dibuka
   const page = document.getElementById('page-panduan');
@@ -6204,6 +6208,10 @@ function switchPanduanTab(tab, btn) {
   btn.classList.add('active');
   const target = document.getElementById('panduan-' + tab);
   if (target) target.classList.add('active');
+  // Render ulang konten saat tab aktif, agar tidak kosong
+  if (tab === 'sarpras') { try { renderSarpras(window._sarprasCat || 'all'); } catch(e) {} }
+  if (tab === 'klasifikasi') { try { renderKlasifikasi(); } catch(e) {} }
+  if (tab === 'sanksi_adm') { try { renderSanksiAdm(); } catch(e) {} }
 }
 
 // ---- Klasifikasi PB & PP ----
@@ -7074,11 +7082,14 @@ function switchInputTab(tab) {
     // show sarpras panel (previously inside form, now standalone)
     const sarprasPanel = document.getElementById('sarpras-input-panel');
     if (sarprasPanel) sarprasPanel.style.display = 'block';
-    // Selalu render ulang agar item tidak kosong
-    setTimeout(() => renderSarprasInputForm(currentSarprasInputFilter || 'all'), 50);
+    // Selalu render ulang agar item tidak kosong setelah refresh/navigasi
+    // Gunakan delay 0 untuk pastikan display:block sudah diterapkan browser dulu
+    requestAnimationFrame(() => {
+      setTimeout(() => renderSarprasInputForm(currentSarprasInputFilter || 'all'), 30);
+    });
   }
   if (tab === 'kebakaran') {
-    // Init with one entry if empty
+    // Init with one entry if empty — jangan reset jika sudah ada data
     if (!kbEntriesList.length) addKbEntry();
     else renderAllKbEntries();
   }
