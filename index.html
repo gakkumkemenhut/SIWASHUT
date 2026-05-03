@@ -2678,6 +2678,10 @@ function showPage(id) {
   }
   // Simpan halaman terakhir agar bisa di-restore saat refresh
   try { localStorage.setItem('siwashut_last_page', id); } catch(e) {}
+  // === UPDATE URL HASH agar domain berubah sesuai halaman ===
+  if (window.location.hash !== '#' + id) {
+    history.pushState(null, '', '#' + id);
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.nav-subitem').forEach(n => n.classList.remove('active'));
@@ -4792,13 +4796,26 @@ function applyRoleBasedNavigation() {
     }
   });
 
-  // Default page sesuai role
-  if (isPetugas()) {
+  // Default page: gunakan hash URL jika ada, lalu fallback ke role default
+  const validPages = ['dashboard','petapengawasan','perencanaan','input','rekapinput','sanksi','rekapsanksi','panduan','laporan','sinkronisasi','manajemen','data'];
+  const hashPage = window.location.hash.replace('#','');
+  if (hashPage && validPages.includes(hashPage)) {
+    showPage(hashPage);
+  } else if (isPetugas()) {
     showPage('petapengawasan');
   } else {
     showPage('dashboard');
   }
 }
+
+// Navigasi tombol Back/Forward browser mengikuti hash
+window.addEventListener('popstate', function() {
+  const validPages = ['dashboard','petapengawasan','perencanaan','input','rekapinput','sanksi','rekapsanksi','panduan','laporan','sinkronisasi','manajemen','data'];
+  const hashPage = window.location.hash.replace('#','');
+  if (hashPage && validPages.includes(hashPage)) {
+    showPage(hashPage);
+  }
+});
 
 // ============ PETUGAS MULTI-ENTRY ============
 function addPetugas() {
