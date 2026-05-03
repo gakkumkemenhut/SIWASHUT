@@ -971,7 +971,26 @@
             <span>🗺️ Peta Sebaran Pengawasan</span>
             <button onclick="showPage('petapengawasan')" style="font-size:11px;padding:5px 14px;background:#1a5c2e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600">Buka Peta Lengkap →</button>
           </div>
-          <div id="dashboard-map" style="height:340px;width:100%"></div>
+          <div id="dashboard-map" style="height:340px;width:100%;position:relative">
+            <!-- Overlay GIS drag-drop untuk dashboard map -->
+            <div id="dash-drop-overlay" style="display:none;position:absolute;inset:0;background:rgba(26,92,46,0.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-size:16px;font-weight:700;border-radius:8px;pointer-events:none">
+              📂 Lepas file GIS di sini
+            </div>
+            <div id="dash-gis-progress" style="display:none;position:absolute;bottom:8px;left:8px;right:8px;background:rgba(255,255,255,0.95);border-radius:8px;padding:8px 14px;z-index:999;align-items:center;gap:10px;font-size:12px;font-weight:600;color:var(--hijau)">
+              🔄 <span id="dash-gis-progress-msg">Memproses file GIS...</span>
+            </div>
+          </div>
+          <!-- Info hint GIS dashboard -->
+          <div id="dash-gis-hint" style="display:none;background:#f0fdf4;border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:11px;color:var(--text-muted);margin-top:6px;align-items:center;gap:8px">
+            💡 Anda bisa drag &amp; drop file GIS (SHP ZIP, KML, GeoJSON) langsung ke peta di atas
+          </div>
+          <!-- Layer panel dashboard -->
+          <div id="dash-layer-panel" style="display:none;background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:8px">
+            <div style="font-size:12px;font-weight:700;color:var(--hijau);margin-bottom:8px">
+              🗂️ Layer Aktif — <span id="dash-layer-badge">0</span> layer
+            </div>
+            <div id="dash-layer-list" style="max-height:150px;overflow-y:auto;font-size:12px"></div>
+          </div>
         </div>
         <!-- Charts stacked -->
         <div style="display:flex;flex-direction:column;gap:16px">
@@ -1748,6 +1767,37 @@
           <div id="pagination" style="display:flex;gap:6px"></div>
         </div>
       </div>
+      <!-- REKAP KEBAKARAN: section yang dicari oleh renderRekapKebakaran() -->
+      <div class="table-card" style="margin-top:24px">
+        <div class="table-toolbar" style="flex-wrap:wrap;gap:8px">
+          <span style="font-size:14px;font-weight:700;color:#dc2626">🔥 Rekap Kejadian Kebakaran</span>
+          <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="rekap-kebakaran-search" placeholder="Cari subjek, provinsi, keterangan..." oninput="renderRekapKebakaran()">
+          </div>
+          <select class="form-control" style="width:200px" id="rekap-kebakaran-filter-unit" onchange="renderRekapKebakaran()">
+            <option value="">Semua Unit Kerja</option>
+            <option>Dit. PPSAKK</option>
+            <option>Gakkum Kehutanan Wilayah Sumatera</option>
+            <option>Gakkum Kehutanan Wilayah Jabalnusra</option>
+            <option>Gakkum Kehutanan Wilayah Kalimantan</option>
+            <option>Gakkum Kehutanan Wilayah Sulawesi</option>
+            <option>Gakkum Kehutanan Wilayah Mapua</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Tanggal Kebakaran</th><th>Unit Kerja</th><th>Nama Subjek Hukum</th>
+              <th>Provinsi</th><th>Luasan Terbakar</th><th>Koordinat</th><th>Tindak Lanjut</th><th>Keterangan</th>
+            </tr></thead>
+            <tbody id="rekap-kebakaran-tbody"></tbody>
+          </table>
+        </div>
+        <div style="padding:10px 20px;border-top:1px solid var(--border)">
+          <span id="rekap-kebakaran-info" style="font-size:12px;color:var(--text-muted)">Menampilkan 0 kejadian kebakaran</span>
+        </div>
+      </div>
     </div><!-- /page-rekapinput -->
 
     <!-- ===== REKAP SANKSI ADMINISTRATIF ===== -->
@@ -2273,6 +2323,13 @@ let DATA = [];
 let currentPage = 1;
 const ROWS_PER_PAGE = 10;
 let charts = {};
+
+// DRAFT keys — dideklarasikan di sini agar tersedia di seluruh script
+const DRAFT_KEY = {
+  pengawasan: 'siwashut_draft_pengawasan',
+  sarpras:    'siwashut_draft_sarpras',
+  kebakaran:  'siwashut_draft_kebakaran'
+};
 
 // ── Load data patroli dari Supabase ──────────────────────────────────────────
 async function loadDataFromSupabase() {
@@ -6169,14 +6226,21 @@ function savePanduanDocs() {
 // isSuperAdmin sudah didefinisikan di atas (getCurrentRole() === 'superadmin')
 // Definisi duplikat di sini dihapus agar tidak menimpa yang benar.
 
+let _panduanRetry = 0;
 function initPanduanPage() {
   // Pastikan elemen utama sudah ada sebelum render
   const tbody = document.getElementById('klas-tbody');
   if (!tbody) {
-    // Elemen belum siap, coba lagi setelah delay
-    setTimeout(() => initPanduanPage(), 150);
+    if (_panduanRetry < 10) { // batas 10 kali retry (1.5 detik total)
+      _panduanRetry++;
+      setTimeout(() => initPanduanPage(), 150);
+    } else {
+      _panduanRetry = 0;
+      console.warn('initPanduanPage: elemen tidak ditemukan setelah 10x retry');
+    }
     return;
   }
+  _panduanRetry = 0;
 
   // Selalu render ulang agar konten tidak kosong saat navigasi bolak-balik atau refresh
   try { renderKlasifikasi(); } catch(e) { console.warn('renderKlasifikasi error:', e); }
@@ -6209,7 +6273,7 @@ function switchPanduanTab(tab, btn) {
   const target = document.getElementById('panduan-' + tab);
   if (target) target.classList.add('active');
   // Render ulang konten saat tab aktif, agar tidak kosong
-  if (tab === 'sarpras') { try { renderSarpras(window._sarprasCat || 'all'); } catch(e) {} }
+  if (tab === 'sarpras') { try { renderSarpras(currentSarprasFilter || 'all'); } catch(e) {} }
   if (tab === 'klasifikasi') { try { renderKlasifikasi(); } catch(e) {} }
   if (tab === 'sanksi_adm') { try { renderSanksiAdm(); } catch(e) {} }
 }
@@ -6600,7 +6664,7 @@ function renderSarprasInputForm(cat) {
                     </td>
                     <td style="padding:8px 10px">
                       <div style="display:flex;align-items:center;gap:4px">
-                        <input type="number" id="${idBase}_qty" min="0" class="form-control" style="width:65px;text-align:center;padding:5px 6px;font-size:12px" placeholder="0"
+                        <input type="number" id="${idBase}_qty" min="0" class="form-control sarpras-qty-input" style="width:65px;text-align:center;padding:5px 6px;font-size:12px" placeholder="0"
                           oninput="checkSarprasStatus('${idBase}',${kebutuhan !== null ? kebutuhan : 0})"
                         >
                         <span style="font-size:11px;color:var(--text-muted)">${unit}</span>
@@ -7690,11 +7754,7 @@ function renderDashboardKebakaranMap() {
 
 <script>
 // ============ DRAFT SYSTEM (Per-Tab localStorage) ============
-const DRAFT_KEY = {
-  pengawasan: 'siwashut_draft_pengawasan',
-  sarpras:    'siwashut_draft_sarpras',
-  kebakaran:  'siwashut_draft_kebakaran'
-};
+// DRAFT_KEY sudah dideklarasikan di awal script — tidak diduplikasi di sini
 const SUBMISSION_KEY = 'siwashut_submission_status';
 
 // Kembalikan key submission yang spesifik untuk user yang sedang login
@@ -7760,10 +7820,31 @@ function saveDraft(tab) {
       if(inp.id) data[inp.id] = inp.value;
     });
   } else if (tab === 'kebakaran') {
-    data._entries = kbEntriesList ? JSON.parse(JSON.stringify(kbEntriesList)) : [];
+    // Strip non-serializable fields (Leaflet Map, Marker, MediaStream) dan
+    // foto base64 (bisa sangat besar → QuotaExceededError di localStorage)
+    data._entries = (kbEntriesList || []).map(e => ({
+      id: e.id,
+      tanggal: e.tanggal,
+      luas: e.luas,
+      lat: e.lat,
+      lng: e.lng,
+      keterangan: e.keterangan,
+      // Simpan hanya metadata foto (nama + tipe), bukan data base64
+      fotos: (e.fotos || []).map(f => ({ name: f.name, type: f.type }))
+      // mapInstance, mapMarker, cameraStream → TIDAK disimpan (non-serializable)
+    }));
   }
   data._savedAt = new Date().toLocaleString('id-ID');
-  try { localStorage.setItem(DRAFT_KEY[tab], JSON.stringify(data)); } catch(e) {}
+  try {
+    localStorage.setItem(DRAFT_KEY[tab], JSON.stringify(data));
+  } catch(e) {
+    if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+      showToast('⚠️ Draft tidak tersimpan: kapasitas penyimpanan penuh. Hapus draft lama atau kurangi foto.', 'warn');
+      return;
+    }
+    showToast('⚠️ Gagal menyimpan draft: ' + e.message, 'warn');
+    return;
+  }
   showToast('💾 Draft ' + {pengawasan:'Pengawasan',sarpras:'Sarpras',kebakaran:'Kebakaran'}[tab] + ' tersimpan di perangkat.', 'success');
   checkDraftBanner();
 }
@@ -7832,7 +7913,7 @@ function loadDraft(tab) {
         kbEntryIdCounter = Math.max(...kbEntriesList.map(e=>e.id||0)) + 1;
         const kbEl = document.getElementById('kb-entries-list');
         if(kbEl) kbEl.innerHTML = '';
-        kbEntriesList.forEach(e => renderKbEntryCard(e));
+        renderAllKbEntries();
       }
     }
   } catch(e) {}
