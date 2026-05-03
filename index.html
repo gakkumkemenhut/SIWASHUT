@@ -455,6 +455,37 @@
   .badge-warn { background: #fef9c3; color: #854d0e; }
   .badge-danger { background: #fee2e2; color: #991b1b; }
   .badge-proc { background: #dbeafe; color: #1e40af; }
+  .badge-carryover { background: #f3e8ff; color: #6b21a8; border: 1px solid #ddd6fe; }
+
+  /* Dashboard perencanaan section */
+  .dash-perencanaan-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 28px; }
+  .dash-pren-card { background: #fff; border-radius: 12px; padding: 16px 18px; border: 1px solid var(--border); position: relative; overflow: hidden; transition: box-shadow 0.2s; }
+  .dash-pren-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .dash-pren-card .pren-icon { font-size: 22px; position: absolute; top: 12px; right: 14px; opacity: 0.16; }
+  .dash-pren-card .pren-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px; }
+  .dash-pren-card .pren-value { font-size: 28px; font-weight: 700; line-height: 1; }
+  .dash-pren-card .pren-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .pren-total { border-top: 3px solid var(--hijau); }
+  .pren-total .pren-value { color: var(--hijau); }
+  .pren-realized { border-top: 3px solid #16a34a; }
+  .pren-realized .pren-value { color: #16a34a; }
+  .pren-process { border-top: 3px solid #f59e0b; }
+  .pren-process .pren-value { color: #d97706; }
+  .pren-unrealized { border-top: 3px solid var(--merah); }
+  .pren-unrealized .pren-value { color: var(--merah); }
+  .pren-carryover { border-top: 3px solid #7c3aed; }
+  .pren-carryover .pren-value { color: #7c3aed; }
+  .dash-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .dash-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* File preview in recent table */
+  .file-preview-thumb { width: 34px; height: 34px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; transition: transform 0.2s; }
+  .file-preview-thumb:hover { transform: scale(1.12); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  .file-doc-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #f0fdf4; color: var(--hijau); border: 1px solid var(--border); cursor: pointer; }
+  #dash-lightbox { display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.88); align-items: center; justify-content: center; }
+  #dash-lightbox.open { display: flex; }
+  #dash-lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+  #dash-lightbox-close { position: absolute; top: 20px; right: 24px; color: #fff; font-size: 36px; cursor: pointer; background: none; border: none; line-height: 1; opacity: 0.8; }
 
   /* BUTTONS */
   .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: all 0.2s; }
@@ -839,6 +870,43 @@
     <div class="page active" id="page-dashboard">
       <div id="alert-box" class="alert alert-success hidden"></div>
 
+      <!-- ===== PERENCANAAN PENGAWASAN ===== -->
+      <div class="dash-section-label">📅 Perencanaan Pengawasan</div>
+      <div class="dash-perencanaan-grid" id="dash-pren-grid">
+        <div class="dash-pren-card pren-total">
+          <div class="pren-icon">📋</div>
+          <div class="pren-label">Total Rencana</div>
+          <div class="pren-value" id="pren-total">0</div>
+          <div class="pren-sub">Tahun berjalan</div>
+        </div>
+        <div class="dash-pren-card pren-realized">
+          <div class="pren-icon">✅</div>
+          <div class="pren-label">Terealisasi</div>
+          <div class="pren-value" id="pren-realized">0</div>
+          <div class="pren-sub">Sudah dilaksanakan</div>
+        </div>
+        <div class="dash-pren-card pren-process">
+          <div class="pren-icon">🔄</div>
+          <div class="pren-label">Dalam Proses</div>
+          <div class="pren-value" id="pren-process">0</div>
+          <div class="pren-sub">Sedang berjalan</div>
+        </div>
+        <div class="dash-pren-card pren-unrealized">
+          <div class="pren-icon">⏳</div>
+          <div class="pren-label">Belum Terealisasi</div>
+          <div class="pren-value" id="pren-unrealized">0</div>
+          <div class="pren-sub">Belum dilaksanakan</div>
+        </div>
+        <div class="dash-pren-card pren-carryover">
+          <div class="pren-icon">🔁</div>
+          <div class="pren-label">Carry Over</div>
+          <div class="pren-value" id="pren-carryover">0</div>
+          <div class="pren-sub">Melewati tahun berjalan</div>
+        </div>
+      </div>
+
+      <!-- ===== PENGAWASAN KEHUTANAN ===== -->
+      <div class="dash-section-label">🌿 Pengawasan Kehutanan</div>
       <div class="stat-grid" style="grid-template-columns:repeat(5,1fr)">
         <div class="stat-card s1">
           <div class="stat-icon">🌲</div>
@@ -873,7 +941,8 @@
       </div>
 
       <!-- Stat kebakaran -->
-      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);margin-top:-12px;margin-bottom:16px">
+      <div class="dash-section-label" style="margin-top:4px">🔥 Area Kebakaran</div>
+      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);margin-top:-4px;margin-bottom:16px">
         <div class="stat-card" style="background:linear-gradient(135deg,#fef2f2 0%,#fff5f5 100%);border:1.5px solid #fecaca">
           <div class="stat-icon">🔥</div>
           <div class="stat-label" style="color:#991b1b">Kejadian Kebakaran</div>
@@ -969,14 +1038,21 @@
       <div class="table-card">
         <table>
           <thead><tr>
-            <th>No</th><th>Tanggal</th><th>Provinsi</th><th>Nama Subjek Hukum</th><th>Jenis Pengawasan</th><th>Objek Pengawasan</th><th>Status</th>
+            <th>No</th><th>Tanggal</th><th>Provinsi</th><th>Nama Subjek Hukum</th><th>Jenis Pengawasan</th><th>Objek Pengawasan</th><th>Status</th><th>Dokumen / Foto</th>
           </tr></thead>
           <tbody id="recent-table-body">
-            <tr><td colspan="7"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>
+            <tr><td colspan="8"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>
           </tbody>
         </table>
       </div>
-    </div>
+
+      <!-- Lightbox for image preview -->
+      <div id="dash-lightbox" onclick="closeDashLightbox()">
+        <button id="dash-lightbox-close" onclick="closeDashLightbox()">✕</button>
+        <img id="dash-lightbox-img" src="" alt="Preview">
+      </div>
+
+    </div><!-- /page-dashboard -->
 
     <!-- ===== PETA ===== -->
     <div class="page" id="page-peta">
@@ -1504,6 +1580,7 @@
             <option>Terealisasi</option>
             <option>Belum Terealisasi</option>
             <option>Dalam Proses</option>
+            <option>Carry Over</option>
           </select>
           <label for="perencanaan-upload" class="btn btn-outline" style="cursor:pointer;margin:0">
             📤 Upload Excel
@@ -1603,20 +1680,23 @@
           </div>
           <div class="form-group">
             <label class="form-label">Rencana Pengawasan</label>
-            <input type="text" id="mp-rencana" class="form-control" placeholder="Bulan/Triwulan/Tahun">
+            <input type="date" id="mp-rencana" class="form-control" oninput="autoComputePerencanaanStatus()">
           </div>
           <div class="form-group">
             <label class="form-label">Realisasi Pengawasan</label>
-            <input type="text" id="mp-realisasi" class="form-control" placeholder="Tanggal realisasi">
+            <input type="date" id="mp-realisasi" class="form-control" oninput="autoComputePerencanaanStatus()">
           </div>
           <div class="form-group">
-            <label class="form-label">Status</label>
-            <select id="mp-status" class="form-control">
-              <option value="">-- Pilih --</option>
-              <option>Terealisasi</option>
-              <option>Belum Terealisasi</option>
-              <option>Dalam Proses</option>
-            </select>
+            <label class="form-label">Status <span style="font-size:10px;font-weight:400;color:var(--hijau-mid);margin-left:4px">🔒 Otomatis</span></label>
+            <input type="text" id="mp-status" class="form-control" readonly
+              style="background:#f0f4f0;color:var(--hijau);font-weight:700;cursor:not-allowed;border-color:var(--border);"
+              placeholder="Terisi otomatis dari tanggal">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.6">
+              🟢 <b>Terealisasi</b>: Realisasi terisi &nbsp;|&nbsp;
+              🔴 <b>Belum Terealisasi</b>: Rencana sudah lewat, belum terealisasi<br>
+              🟡 <b>Dalam Proses</b>: Rencana belum lewat &nbsp;|&nbsp;
+              🟣 <b>Carry Over</b>: Rencana tahun lalu, belum terealisasi
+            </div>
           </div>
           <div class="form-group full">
             <label class="form-label">Keterangan</label>
@@ -1776,6 +1856,63 @@
       </div>
       <div class="alert alert-info">
         ℹ️ File Excel akan berisi 4 sheet: <strong>Data Pengawasan</strong> (semua kolom input data), <strong>Rekapitulasi</strong> (ringkasan per provinsi), <strong>Sanksi Administratif</strong> (data teguran tertulis, denda administratif, pembekuan, dan pencabutan), dan <strong>Kejadian Kebakaran</strong> (data area kebakaran dengan koordinat).
+      </div>
+
+      <!-- ===== SYNC PANEL ===== -->
+      <div id="sync-panel" style="background:linear-gradient(135deg,#fff8e1,#fffde7);border:1.5px solid #f59e0b;border-radius:14px;padding:22px 26px;margin-top:20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="font-size:28px">🔄</div>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#92400e">Sinkronisasi Data ke Server</div>
+            <div style="font-size:12px;color:#b45309;margin-top:2px">Data yang hanya tersimpan di perangkat ini (localStorage) belum tersedia di server Supabase. Gunakan tombol di bawah untuk mengirimnya ke server agar bisa diakses dari perangkat lain.</div>
+          </div>
+        </div>
+
+        <!-- Status Info -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px" id="sync-status-grid">
+          <div style="background:#fff;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:#92400e" id="sync-count-local">—</div>
+            <div style="font-size:11px;color:#b45309;margin-top:3px">Data di Perangkat Ini</div>
+          </div>
+          <div style="background:#fff;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:#1a5c2e" id="sync-count-server">—</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Data di Server</div>
+          </div>
+          <div style="background:#fff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:#1d4ed8" id="sync-count-diff">—</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">Belum Tersync</div>
+          </div>
+        </div>
+
+        <!-- Progress bar (hidden by default) -->
+        <div id="sync-progress-wrap" style="display:none;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#92400e;margin-bottom:5px">
+            <span id="sync-progress-label">Mengirim data...</span>
+            <span id="sync-progress-pct">0%</span>
+          </div>
+          <div style="background:#fde68a;border-radius:8px;height:10px;overflow:hidden">
+            <div id="sync-progress-bar" style="height:100%;background:linear-gradient(90deg,#f59e0b,#d97706);border-radius:8px;width:0%;transition:width 0.3s"></div>
+          </div>
+        </div>
+
+        <!-- Hasil sync -->
+        <div id="sync-result-box" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+
+        <!-- Tombol aksi -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button onclick="checkSyncStatus()" style="display:flex;align-items:center;gap:7px;padding:10px 20px;background:#fff;border:1.5px solid #f59e0b;border-radius:9px;font-size:13px;font-weight:700;color:#92400e;cursor:pointer;font-family:inherit;transition:all 0.2s" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='#fff'">
+            🔍 Cek Status
+          </button>
+          <button onclick="syncLocalToSupabase()" id="btn-do-sync" style="display:flex;align-items:center;gap:7px;padding:10px 22px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:9px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:all 0.2s;box-shadow:0 3px 10px rgba(245,158,11,0.3)" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+            🚀 Sync Semua Data ke Server
+          </button>
+          <button onclick="loadDataFromSupabase().then(()=>{checkSyncStatus();showToast('✅ Data diperbarui dari server.','success')})" style="display:flex;align-items:center;gap:7px;padding:10px 20px;background:#fff;border:1.5px solid var(--hijau);border-radius:9px;font-size:13px;font-weight:700;color:var(--hijau);cursor:pointer;font-family:inherit;transition:all 0.2s" onmouseover="this.style.background='var(--hijau-light)'" onmouseout="this.style.background='#fff'">
+            ☁️ Muat Ulang dari Server
+          </button>
+        </div>
+        <div style="font-size:11px;color:#b45309;margin-top:10px">
+          ⚠️ <strong>Catatan:</strong> Sync hanya untuk data yang belum pernah tersimpan di server. Data duplikat tidak akan dikirim ulang. Fitur ini hanya tersedia untuk <strong>Super Admin</strong>.
+        </div>
       </div>
     </div>
 
@@ -1944,6 +2081,23 @@
           <div style="background:#fff;border:1px solid #d1e7d9;border-radius:8px;padding:10px 14px">
             <div style="font-weight:700;color:#374151;margin-bottom:4px">👤 Petugas Pengawas</div>
             <div style="color:var(--text-muted)">Peta Pengawasan, Input Data, Rekap Data, Panduan Pengawasan</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shortcut Sync Data (Super Admin only) -->
+      <div id="manajemen-sync-shortcut" style="background:linear-gradient(135deg,#fff8e1,#fffde7);border:1.5px solid #f59e0b;border-radius:12px;padding:16px 20px;margin-bottom:20px;display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:24px">🔄</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#92400e">Sinkronisasi Data ke Server</div>
+              <div id="manajemen-sync-info" style="font-size:11px;color:#b45309;margin-top:2px">Klik "Cek Status" untuk melihat apakah ada data yang belum tersync.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="checkSyncStatusMini()" style="padding:8px 16px;background:#fff;border:1.5px solid #f59e0b;border-radius:8px;font-size:12px;font-weight:700;color:#92400e;cursor:pointer;font-family:inherit">🔍 Cek Status</button>
+            <button onclick="showPage('laporan');setTimeout(()=>checkSyncStatus(),300)" style="padding:8px 16px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit">🚀 Buka Panel Sync</button>
           </div>
         </div>
       </div>
@@ -2193,6 +2347,175 @@ async function deleteRowFromSupabase(id) {
   }
 }
 
+// ============ SYNC LOCALSTORAGE → SUPABASE ============
+
+// Ambil semua ID yang sudah ada di server
+async function getServerIDs() {
+  try {
+    const { data, error } = await supa.from('patroli').select('id');
+    if (error) throw error;
+    return new Set((data || []).map(r => r.id));
+  } catch(e) {
+    console.warn('getServerIDs error:', e.message);
+    return null; // null = gagal konek
+  }
+}
+
+// Cek status: berapa data lokal vs server
+async function checkSyncStatus() {
+  const localData = JSON.parse(localStorage.getItem('siwashut_data') || '[]');
+  const localCount = localData.length;
+  document.getElementById('sync-count-local').textContent = localCount;
+
+  showToast('🔍 Mengecek server...', 'info');
+  const serverIDs = await getServerIDs();
+
+  if (serverIDs === null) {
+    document.getElementById('sync-count-server').textContent = '?';
+    document.getElementById('sync-count-diff').textContent = '?';
+    showSyncResult('⚠️ Gagal terhubung ke server. Periksa koneksi internet atau konfigurasi Supabase.', 'warn');
+    return;
+  }
+
+  const serverCount = serverIDs.size;
+  document.getElementById('sync-count-server').textContent = serverCount;
+
+  // Data lokal yang ID-nya belum ada di server = perlu di-sync
+  // (ID numerik kecil dari Date.now() = belum pernah dapat ID Supabase)
+  const needSync = localData.filter(d => {
+    // Jika ID adalah angka besar (timestamp) atau tidak ada di server → belum tersync
+    const idNum = Number(d.id);
+    const isTimestampId = idNum > 9999999999; // > 10 digit = kemungkinan Date.now()
+    return isTimestampId || !serverIDs.has(d.id);
+  });
+
+  document.getElementById('sync-count-diff').textContent = needSync.length;
+
+  if (needSync.length === 0) {
+    showSyncResult('✅ Semua data sudah tersync ke server! Tidak ada data yang tertinggal.', 'success');
+  } else {
+    showSyncResult(`📦 Ditemukan <strong>${needSync.length} data</strong> yang belum tersync ke server. Klik tombol <em>"Sync Semua Data ke Server"</em> untuk mengirimnya.`, 'warn');
+  }
+  showToast('✅ Pengecekan selesai.', 'success');
+}
+
+function showSyncResult(msg, type) {
+  const box = document.getElementById('sync-result-box');
+  if (!box) return;
+  const colors = {
+    success: { bg: '#dcfce7', border: '#bbf7d0', color: '#166534' },
+    warn:    { bg: '#fef3c7', border: '#fde68a', color: '#92400e' },
+    error:   { bg: '#fee2e2', border: '#fecaca', color: '#991b1b' },
+  };
+  const c = colors[type] || colors.warn;
+  box.style.cssText = `display:block;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;background:${c.bg};border:1px solid ${c.border};color:${c.color}`;
+  box.innerHTML = msg;
+}
+
+// Sync semua data lokal yang belum ada di server → Supabase
+async function syncLocalToSupabase() {
+  // Hanya Super Admin
+  if (!isSuperAdmin()) {
+    showToast('⛔ Hanya Super Admin yang dapat melakukan sync.', 'error');
+    return;
+  }
+
+  const localData = JSON.parse(localStorage.getItem('siwashut_data') || '[]');
+  if (!localData.length) {
+    showSyncResult('⚠️ Tidak ada data di perangkat ini untuk di-sync.', 'warn');
+    return;
+  }
+
+  // Ambil ID yang sudah ada di server
+  showToast('🔍 Memeriksa server...', 'info');
+  const serverIDs = await getServerIDs();
+  if (serverIDs === null) {
+    showSyncResult('❌ Gagal terhubung ke server. Periksa koneksi dan konfigurasi Supabase.', 'error');
+    return;
+  }
+
+  // Filter: hanya yang belum ada di server
+  const toSync = localData.filter(d => {
+    const idNum = Number(d.id);
+    const isTimestampId = idNum > 9999999999;
+    return isTimestampId || !serverIDs.has(d.id);
+  });
+
+  if (!toSync.length) {
+    showSyncResult('✅ Semua data sudah ada di server. Tidak ada yang perlu di-sync.', 'success');
+    document.getElementById('sync-count-diff').textContent = '0';
+    return;
+  }
+
+  if (!confirm(`Akan mengirim ${toSync.length} data ke server Supabase. Lanjutkan?`)) return;
+
+  // Tampilkan progress bar
+  const progWrap = document.getElementById('sync-progress-wrap');
+  const progBar  = document.getElementById('sync-progress-bar');
+  const progLabel = document.getElementById('sync-progress-label');
+  const progPct   = document.getElementById('sync-progress-pct');
+  const btn = document.getElementById('btn-do-sync');
+  progWrap.style.display = 'block';
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = '⏳ Sedang Sync...'; }
+
+  let sukses = 0, gagal = 0;
+  for (let i = 0; i < toSync.length; i++) {
+    const row = toSync[i];
+    const pct = Math.round(((i + 1) / toSync.length) * 100);
+    progLabel.textContent = `Mengirim ${i + 1} dari ${toSync.length}: ${row.subjek || row.kode || '—'}`;
+    progPct.textContent = pct + '%';
+    progBar.style.width = pct + '%';
+
+    try {
+      const payload = {
+        tanggal: row.tanggal, kode: row.kode, subjek: row.subjek,
+        provinsi: row.provinsi, kabupaten: row.kabupaten, kawasan: row.kawasan,
+        jenis: row.jenis, luas: row.luas, status: row.status, tindak: row.tindak,
+        unitkerja: row.unitkerja || '',
+        petugas: JSON.stringify((row.petugas || []).map(p => ({ nama: p.nama || '', unit: p.unit || '' }))),
+        files: JSON.stringify((row.files || []).map(f => typeof f === 'string' ? { name: f, url: null, path: null } : { name: f.name || '', url: f.url || null, path: f.path || null })),
+        uraian: row.uraian, rekomendasi: row.rekomendasi,
+        kebakaran: row.kebakaran ? JSON.stringify(row.kebakaran) : null
+      };
+      const { data: inserted, error } = await supa.from('patroli').insert(payload).select().single();
+      if (error) throw error;
+      // Update ID lokal ke ID dari Supabase
+      const idx = DATA.findIndex(d => d.id === row.id);
+      if (idx !== -1 && inserted) DATA[idx].id = inserted.id;
+      sukses++;
+    } catch(e) {
+      console.warn('Sync gagal untuk row:', row.kode, e.message);
+      gagal++;
+    }
+
+    // Jeda kecil agar tidak rate-limit
+    await new Promise(r => setTimeout(r, 80));
+  }
+
+  // Simpan ulang DATA dengan ID baru dari Supabase
+  saveData();
+
+  // Selesai
+  progBar.style.width = '100%';
+  progLabel.textContent = 'Selesai!';
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = '🚀 Sync Semua Data ke Server'; }
+
+  const resultMsg = sukses > 0 && gagal === 0
+    ? `✅ Berhasil! <strong>${sukses} data</strong> berhasil dikirim ke server Supabase.`
+    : sukses > 0
+      ? `⚠️ Selesai dengan peringatan: <strong>${sukses} berhasil</strong>, <strong>${gagal} gagal</strong>. Data yang gagal mungkin sudah ada di server atau ada masalah koneksi.`
+      : `❌ Semua data gagal dikirim (${gagal} data). Periksa koneksi dan konfigurasi tabel Supabase.`;
+
+  const resultType = sukses > 0 && gagal === 0 ? 'success' : sukses > 0 ? 'warn' : 'error';
+  showSyncResult(resultMsg, resultType);
+  showToast(sukses > 0 ? `✅ Sync selesai: ${sukses} berhasil.` : '❌ Sync gagal.', sukses > 0 ? 'success' : 'error');
+
+  // Refresh status
+  await checkSyncStatus();
+  // Reload dari server
+  await loadDataFromSupabase();
+}
+
 // ── Manajemen Akun via Supabase ───────────────────────────────────────────────
 async function loadPendingFromSupabase() {
   try {
@@ -2367,8 +2690,8 @@ function showPage(id) {
     if (vobadge) vobadge.style.display = (!canEditDeleteRekap()) ? 'inline' : 'none';
   }
   if (id === 'data' || id === 'rekapsanksi') { renderRekapSanksi(); }
-  if (id === 'laporan') { updateLaporan(); populateExportFilter(); }
-  if (id === 'manajemen') { renderAdminPage(); }
+  if (id === 'laporan') { updateLaporan(); populateExportFilter(); setTimeout(updateSyncPanelVisibility, 200); }
+  if (id === 'manajemen') { renderAdminPage(); setTimeout(initSyncShortcut, 200); }
   if (id === 'petapengawasan') { initPetaPW(); setTimeout(()=>{ if(petaPWMap) petaPWMap.invalidateSize(); }, 200); }
   if (id === 'perencanaan') { initPerencanaanPage(); }
   if (id === 'input') {
@@ -2395,7 +2718,7 @@ function showPage(id) {
     setTimeout(checkAdminSubmissionInbox, 200);
   }
   if (id === 'sanksi') { renderSanksiPage(); }
-  if (id === 'panduan') { initPanduanPage(); }
+  if (id === 'panduan') { setTimeout(() => initPanduanPage(), 50); }
 }
 
 // ============ FORM ============
@@ -2566,6 +2889,18 @@ function updateDashboard() {
   document.getElementById('st-pembekuan').textContent = SANKSI_DATA.filter(s => s.jenis === 'Pembekuan').length;
   document.getElementById('st-pencabutan').textContent = SANKSI_DATA.filter(s => s.jenis === 'Pencabutan').length;
 
+  // Perencanaan stats
+  const prenTotal = perencanaanData.length;
+  const prenRealized   = perencanaanData.filter(r => computePerencanaanStatus(r.rencana||'', r.realisasi||'') === 'Terealisasi').length;
+  const prenProcess    = perencanaanData.filter(r => computePerencanaanStatus(r.rencana||'', r.realisasi||'') === 'Dalam Proses').length;
+  const prenUnrealized = perencanaanData.filter(r => computePerencanaanStatus(r.rencana||'', r.realisasi||'') === 'Belum Terealisasi').length;
+  const prenCarryover  = perencanaanData.filter(r => computePerencanaanStatus(r.rencana||'', r.realisasi||'') === 'Carry Over').length;
+  if (document.getElementById('pren-total')) document.getElementById('pren-total').textContent = prenTotal;
+  if (document.getElementById('pren-realized')) document.getElementById('pren-realized').textContent = prenRealized;
+  if (document.getElementById('pren-process')) document.getElementById('pren-process').textContent = prenProcess;
+  if (document.getElementById('pren-unrealized')) document.getElementById('pren-unrealized').textContent = prenUnrealized;
+  if (document.getElementById('pren-carryover')) document.getElementById('pren-carryover').textContent = prenCarryover;
+
   // Kebakaran stats
   const dataKebakaran = viewData.filter(d => d.kebakaran && (d.kebakaran.tanggal || d.kebakaran.luas > 0));
   const totalLuasKebakaran = dataKebakaran.reduce((s,d) => s + (parseFloat(d.kebakaran?.luas)||0), 0);
@@ -2576,21 +2911,45 @@ function updateDashboard() {
   if (document.getElementById('st-kebakaran-peta')) document.getElementById('st-kebakaran-peta').textContent = kebakaranPeta;
   if (document.getElementById('st-kebakaran-selesai')) document.getElementById('st-kebakaran-selesai').textContent = kebakaranSelesai;
 
-  // Recent table
+  // Recent table with file preview
   const tbody = document.getElementById('recent-table-body');
   const recent = [...viewData].reverse().slice(0, 5);
   if (!recent.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="emoji">📋</div><p>Belum ada data. Silakan input data terlebih dahulu.</p></div></td></tr>`;
   } else {
-    tbody.innerHTML = recent.map((d,i) => `<tr>
-      <td>${i+1}</td>
-      <td>${d.tanggal}</td>
-      <td>${d.provinsi}</td>
-      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.subjek||'-'}</td>
-      <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.jenis||'-'}</td>
-      <td>${objekBadge(d.status)}</td>
-      <td>${tindakBadge(d.tindak)}</td>
-    </tr>`).join('');
+    tbody.innerHTML = recent.map((d,i) => {
+      // Build file preview cells
+      let fileCells = '';
+      if (d.files && d.files.length > 0) {
+        const imgExts = ['jpg','jpeg','png','gif','webp','bmp'];
+        const docExts = ['pdf','doc','docx','xls','xlsx'];
+        const previews = d.files.map(fname => {
+          const ext = (fname.split('.').pop()||'').toLowerCase();
+          const isImg = imgExts.includes(ext);
+          const isDoc = docExts.includes(ext);
+          if (isImg) {
+            return `<span class="file-doc-badge" title="${fname}" onclick="openDashLightbox('${fname}')">🖼️ ${fname.length > 14 ? fname.slice(0,12)+'…' : fname}</span>`;
+          } else if (isDoc) {
+            const icon = ext === 'pdf' ? '📄' : (ext.startsWith('xls') ? '📊' : '📝');
+            return `<span class="file-doc-badge" title="${fname}">${icon} ${fname.length > 14 ? fname.slice(0,12)+'…' : fname}</span>`;
+          }
+          return `<span class="file-doc-badge" title="${fname}">📎 ${fname.length > 14 ? fname.slice(0,12)+'…' : fname}</span>`;
+        }).join(' ');
+        fileCells = `<div style="display:flex;flex-wrap:wrap;gap:4px">${previews}</div>`;
+      } else {
+        fileCells = `<span style="font-size:11px;color:var(--text-muted)">—</span>`;
+      }
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${d.tanggal}</td>
+        <td>${d.provinsi}</td>
+        <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.subjek||'-'}</td>
+        <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.jenis||'-'}</td>
+        <td>${objekBadge(d.status)}</td>
+        <td>${tindakBadge(d.tindak)}</td>
+        <td>${fileCells}</td>
+      </tr>`;
+    }).join('');
   }
 
   // Dashboard mini rekap
@@ -3996,7 +4355,8 @@ function renderPerencanaanTable() {
   const filterStatus = document.getElementById('perencanaan-filter-status')?.value || '';
   let filtered = perencanaanData.filter(r => {
     const matchSearch = !search || JSON.stringify(r).toLowerCase().includes(search);
-    const matchStatus = !filterStatus || (r.status || '') === filterStatus;
+    const statusNow = computePerencanaanStatus(r.rencana || '', r.realisasi || '') || r.status || '';
+    const matchStatus = !filterStatus || statusNow === filterStatus;
     return matchSearch && matchStatus;
   });
   const tbody = document.getElementById('perencanaan-tbody');
@@ -4010,7 +4370,16 @@ function renderPerencanaanTable() {
     </td></tr>`;
   } else {
     filtered.forEach((r, i) => {
-      const statusBadge = r.status === 'Terealisasi' ? 'badge-ok' : r.status === 'Belum Terealisasi' ? 'badge-danger' : 'badge-proc';
+      // Selalu hitung ulang status dari data tanggal (override status lama jika ada perubahan)
+      const statusNow = computePerencanaanStatus(r.rencana || '', r.realisasi || '') || r.status || '-';
+      const statusBadge = statusNow === 'Terealisasi' ? 'badge-ok' : statusNow === 'Belum Terealisasi' ? 'badge-danger' : statusNow === 'Carry Over' ? 'badge-carryover' : statusNow === 'Dalam Proses' ? 'badge-proc' : 'badge-proc';
+      // Format tanggal ke DD/MM/YYYY untuk tampilan
+      function fmtDate(s) {
+        if (!s) return '-';
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) return d.toLocaleDateString('id-ID', {day:'2-digit',month:'2-digit',year:'numeric'});
+        return s;
+      }
       tbody.innerHTML += `<tr>
         <td>${i+1}</td>
         <td style="font-weight:600">${r.nama || '-'}</td>
@@ -4020,9 +4389,9 @@ function renderPerencanaanTable() {
         <td>${r.nomorSk || '-'}</td>
         <td>${r.riwayat || '-'}</td>
         <td>${r.jenis || '-'}</td>
-        <td>${r.rencana || '-'}</td>
-        <td>${r.realisasi || '-'}</td>
-        <td><span class="badge ${statusBadge}">${r.status || '-'}</span></td>
+        <td>${fmtDate(r.rencana)}</td>
+        <td>${fmtDate(r.realisasi)}</td>
+        <td><span class="badge ${statusBadge}">${statusNow}</span></td>
         <td>${r.keterangan || '-'}</td>
         <td><button onclick="deletePerencanaanRow(${r._id})" style="background:#fee2e2;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;color:#dc2626;font-size:12px">🗑️</button></td>
       </tr>`;
@@ -4069,7 +4438,22 @@ function handlePerencanaanUpload(event) {
         const nama = iNama >= 0 ? String(row[iNama] || '').trim() : '';
         if (!nama) continue;
         const newId = Date.now() + i;
-        perencanaanData.push({
+        const rencanaStr   = iRencana   >= 0 ? String(row[iRencana]   || '').trim() : '';
+          const realisasiStr = iRealisasi >= 0 ? String(row[iRealisasi] || '').trim() : '';
+          // Normalise date strings dari Excel (format DD/MM/YYYY → YYYY-MM-DD)
+          function normDate(s) {
+            if (!s) return '';
+            // Jika sudah YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+            // DD/MM/YYYY atau DD-MM-YYYY
+            const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+            if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+            return s;
+          }
+          const rencana   = normDate(rencanaStr);
+          const realisasi = normDate(realisasiStr);
+          const statusAuto = computePerencanaanStatus(rencana, realisasi);
+          perencanaanData.push({
           _id: newId,
           nama, 
           luasan: iLuasan >= 0 ? row[iLuasan] : '',
@@ -4078,9 +4462,9 @@ function handlePerencanaanUpload(event) {
           nomorSk: iNomorSk >= 0 ? String(row[iNomorSk] || '').trim() : '',
           riwayat: iRiwayat >= 0 ? String(row[iRiwayat] || '').trim() : '',
           jenis: iJenis >= 0 ? String(row[iJenis] || '').trim() : '',
-          rencana: iRencana >= 0 ? String(row[iRencana] || '').trim() : '',
-          realisasi: iRealisasi >= 0 ? String(row[iRealisasi] || '').trim() : '',
-          status: iStatus >= 0 ? String(row[iStatus] || '').trim() : '',
+          rencana: rencana,
+          realisasi: realisasi,
+          status: statusAuto,
           keterangan: iKeterangan >= 0 ? String(row[iKeterangan] || '').trim() : '',
         });
         added++;
@@ -4131,8 +4515,56 @@ function downloadTemplatePerencanaan() {
 
 function openAddPerencanaanModal() {
   document.getElementById('modal-perencanaan').style.display = 'flex';
-  ['mp-subjek','mp-luasan','mp-lokasi','mp-nomor-sk','mp-riwayat','mp-rencana','mp-realisasi','mp-keterangan'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-  ['mp-objek','mp-jenis','mp-status'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['mp-subjek','mp-luasan','mp-lokasi','mp-nomor-sk','mp-riwayat','mp-rencana','mp-realisasi','mp-keterangan','mp-status'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['mp-objek','mp-jenis'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  autoComputePerencanaanStatus();
+}
+
+// ============ AUTO-COMPUTE STATUS PERENCANAAN ============
+function autoComputePerencanaanStatus() {
+  const rencanaVal = document.getElementById('mp-rencana')?.value || '';
+  const realisasiVal = document.getElementById('mp-realisasi')?.value || '';
+  const statusEl = document.getElementById('mp-status');
+  if (!statusEl) return;
+  const status = computePerencanaanStatus(rencanaVal, realisasiVal);
+  statusEl.value = status;
+  // Color coding
+  const colorMap = {
+    'Terealisasi':       { bg: '#dcfce7', color: '#166534' },
+    'Belum Terealisasi': { bg: '#fee2e2', color: '#991b1b' },
+    'Dalam Proses':      { bg: '#fef9c3', color: '#854d0e' },
+    'Carry Over':        { bg: '#f3e8ff', color: '#6b21a8' },
+    '':                  { bg: '#f0f4f0', color: '#6b7280' },
+  };
+  const c = colorMap[status] || colorMap[''];
+  statusEl.style.background = c.bg;
+  statusEl.style.color = c.color;
+}
+
+/**
+ * Logika otomatis status:
+ *   - Terealisasi     : Realisasi terisi (ada tanggal realisasi)
+ *   - Carry Over      : Rencana ada & sudah melewati TAHUN LALU (tahun rencana < tahun sekarang) & Realisasi kosong
+ *   - Belum Terealisasi: Rencana ada & sudah lewat hari ini & Realisasi kosong
+ *   - Dalam Proses    : Rencana ada & belum lewat hari ini & Realisasi kosong
+ *   - (kosong)        : Rencana belum diisi
+ */
+function computePerencanaanStatus(rencanaStr, realisasiStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  // Jika realisasi terisi → Terealisasi
+  if (realisasiStr && realisasiStr.trim()) return 'Terealisasi';
+  // Jika rencana kosong → belum bisa ditentukan
+  if (!rencanaStr || !rencanaStr.trim()) return '';
+  const rencana = new Date(rencanaStr); rencana.setHours(0,0,0,0);
+  if (isNaN(rencana.getTime())) return '';
+  const tahunRencana = rencana.getFullYear();
+  const tahunSekarang = today.getFullYear();
+  // Carry Over: tahun rencana < tahun sekarang dan realisasi kosong
+  if (tahunRencana < tahunSekarang) return 'Carry Over';
+  // Belum Terealisasi: tanggal rencana sudah lewat hari ini
+  if (rencana < today) return 'Belum Terealisasi';
+  // Dalam Proses: tanggal rencana hari ini atau yang akan datang
+  return 'Dalam Proses';
 }
 
 function closePerencanaanModal() {
@@ -4142,6 +4574,9 @@ function closePerencanaanModal() {
 function savePerencanaanRow() {
   const nama = document.getElementById('mp-subjek')?.value?.trim();
   if (!nama) { showToast('Nama Subjek Hukum wajib diisi.', 'warn'); return; }
+  const rencanaVal   = document.getElementById('mp-rencana')?.value?.trim() || '';
+  const realisasiVal = document.getElementById('mp-realisasi')?.value?.trim() || '';
+  const statusAuto   = computePerencanaanStatus(rencanaVal, realisasiVal);
   perencanaanData.push({
     _id: Date.now(),
     nama,
@@ -4151,9 +4586,9 @@ function savePerencanaanRow() {
     nomorSk: document.getElementById('mp-nomor-sk')?.value?.trim() || '',
     riwayat: document.getElementById('mp-riwayat')?.value?.trim() || '',
     jenis: document.getElementById('mp-jenis')?.value || '',
-    rencana: document.getElementById('mp-rencana')?.value?.trim() || '',
-    realisasi: document.getElementById('mp-realisasi')?.value?.trim() || '',
-    status: document.getElementById('mp-status')?.value || '',
+    rencana: rencanaVal,
+    realisasi: realisasiVal,
+    status: statusAuto,
     keterangan: document.getElementById('mp-keterangan')?.value?.trim() || '',
   });
   savePerencanaanStorage();
@@ -5607,23 +6042,38 @@ function savePanduanDocs() {
 
 let panduanInitialized = false;
 function initPanduanPage() {
-  if (!panduanInitialized) {
-    renderKlasifikasi();
-    renderSanksiAdm();
-    renderSarpras('all');
-    panduanInitialized = true;
-  }
+  // Selalu render ulang agar konten tidak kosong saat navigasi bolak-balik
+  renderKlasifikasi();
+  renderSanksiAdm();
+  renderSarpras('all');
+  panduanInitialized = true;
   renderPanduanDocs();
+
+  // Pastikan tab pertama (klasifikasi) selalu aktif saat halaman dibuka
+  const page = document.getElementById('page-panduan');
+  if (page) {
+    page.querySelectorAll('.panduan-tab').forEach(t => t.classList.remove('active'));
+    page.querySelectorAll('.panduan-content').forEach(c => c.classList.remove('active'));
+    const firstTab = page.querySelector('.panduan-tab');
+    const firstContent = document.getElementById('panduan-klasifikasi');
+    if (firstTab) firstTab.classList.add('active');
+    if (firstContent) firstContent.classList.add('active');
+  }
+
   // Show/hide upload section based on role
   const adminUpload = document.getElementById('panduan-upload-section-admin');
   if (adminUpload) adminUpload.style.display = isSuperAdmin() ? 'block' : 'none';
 }
 
 function switchPanduanTab(tab, btn) {
-  document.querySelectorAll('.panduan-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panduan-content').forEach(c => c.classList.remove('active'));
+  // Scope hanya ke #page-panduan agar tidak bentrok dengan tab Perencanaan
+  const page = document.getElementById('page-panduan');
+  if (!page) return;
+  page.querySelectorAll('.panduan-tab').forEach(t => t.classList.remove('active'));
+  page.querySelectorAll('.panduan-content').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('panduan-' + tab).classList.add('active');
+  const target = document.getElementById('panduan-' + tab);
+  if (target) target.classList.add('active');
 }
 
 // ---- Klasifikasi PB & PP ----
@@ -7535,8 +7985,72 @@ function adminTindakPengajuan(action) {
 // ============ Action button tab sync — integrated into main switchInputTab ============
 // (duplicate removed — handled inside main switchInputTab below)
 
-// ============ INIT on page load ============
-document.addEventListener('DOMContentLoaded', () => {
+// ============ DASHBOARD LIGHTBOX ============
+function openDashLightbox(fname) {
+  // Since files are stored as names only (not blobs), show a viewer modal with the filename
+  const lb = document.getElementById('dash-lightbox');
+  const img = document.getElementById('dash-lightbox-img');
+  if (!lb || !img) return;
+  // Try to display using object URL if file is in uploadedFiles memory
+  const fileObj = uploadedFiles ? uploadedFiles.find(f => f.name === fname) : null;
+  if (fileObj && fileObj.type && fileObj.type.startsWith('image/')) {
+    img.src = URL.createObjectURL(fileObj);
+    lb.classList.add('open');
+  } else {
+    // fallback: show toast with filename
+    showToast('📄 File: ' + fname + ' (preview tidak tersedia — file harus diupload ulang)', 'warn');
+  }
+}
+
+function closeDashLightbox() {
+  const lb = document.getElementById('dash-lightbox');
+  const img = document.getElementById('dash-lightbox-img');
+  if (lb) lb.classList.remove('open');
+  if (img && img.src && img.src.startsWith('blob:')) { URL.revokeObjectURL(img.src); img.src = ''; }
+}
+
+// ============ SYNC STATUS MINI (untuk panel Manajemen) ============
+async function checkSyncStatusMini() {
+  const infoEl = document.getElementById('manajemen-sync-info');
+  if (infoEl) infoEl.textContent = '🔍 Mengecek...';
+  const localData = JSON.parse(localStorage.getItem('siwashut_data') || '[]');
+  const serverIDs = await getServerIDs();
+  if (serverIDs === null) {
+    if (infoEl) infoEl.textContent = '⚠️ Gagal terhubung ke server.';
+    return;
+  }
+  const needSync = localData.filter(d => {
+    const idNum = Number(d.id);
+    return idNum > 9999999999 || !serverIDs.has(d.id);
+  });
+  if (infoEl) {
+    infoEl.textContent = needSync.length > 0
+      ? `⚠️ Ada ${needSync.length} data yang belum tersync ke server dari ${localData.length} total data lokal.`
+      : `✅ Semua ${localData.length} data sudah tersync ke server (${serverIDs.size} data di server).`;
+  }
+}
+
+// Tampilkan shortcut sync di halaman Manajemen hanya untuk Super Admin
+function initSyncShortcut() {
+  const el = document.getElementById('manajemen-sync-shortcut');
+  if (el && isSuperAdmin()) {
+    el.style.display = 'block';
+    checkSyncStatusMini();
+  }
+}
+
+// Sembunyikan sync panel di halaman Laporan untuk non-Super Admin
+function updateSyncPanelVisibility() {
+  const panel = document.getElementById('sync-panel');
+  if (!panel) return;
+  if (!isSuperAdmin()) {
+    panel.style.display = 'none';
+  } else {
+    panel.style.display = 'block';
+    checkSyncStatus();
+  }
+}
+
   setTimeout(() => {
     checkDraftBanner();
     const sub = getSubmissionStatus();
