@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIWASHUT — Sistem Pengawasan Kehutanan</title>
+<title>SIWASHUT v4.6 — Sistem Pengawasan Kehutanan</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -1235,12 +1235,31 @@
               <button onclick="setPetaLayer('hybrid')"    id="pl-hybrid"    class="map-ctrl-btn" style="font-size:10px;padding:5px 4px;text-align:center">🌍 Hybrid</button>
               <button onclick="setPetaLayer('osm')"       id="pl-osm"       class="map-ctrl-btn" style="font-size:10px;padding:5px 4px;text-align:center">🔵 OSM</button>
             </div>
+            <!-- Cache tile untuk offline -->
+            <button onclick="cacheVisibleTiles()" style="width:100%;margin-top:6px;font-size:10px;padding:5px 8px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700;text-align:left" title="Simpan tile peta saat ini untuk digunakan offline">📥 Simpan Tile Offline</button>
           </div>
 
           <!-- DATA SECTION -->
           <div style="padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
             <div style="font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px">Data</div>
             <button onclick="locateMePeta()" id="btn-locate-peta" style="width:100%;margin-bottom:5px;font-size:11px;padding:6px 10px;background:#1d4ed8;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;text-align:left">📍 Lokasi Saya</button>
+            <!-- GPS Track Rute -->
+            <button onclick="toggleGPSTracking()" id="btn-gps-track" style="width:100%;margin-bottom:5px;font-size:11px;padding:6px 10px;background:#059669;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;text-align:left">🛤️ Rekam Rute GPS</button>
+            <div id="gps-track-status" style="display:none;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:6px;padding:5px 8px;font-size:10px;color:#065f46;margin-bottom:5px">
+              <div style="font-weight:700">🔴 Tracking Aktif</div>
+              <div id="gps-track-info" style="margin-top:2px;color:#047857">Menunggu sinyal GPS...</div>
+              <div style="display:flex;gap:4px;margin-top:5px">
+                <button onclick="exportTrackGPX()" style="flex:1;font-size:10px;padding:3px 6px;background:#1d4ed8;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:700">⬇️ GPX</button>
+                <button onclick="exportTrackGeoJSON()" style="flex:1;font-size:10px;padding:3px 6px;background:#7c3aed;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:700">⬇️ JSON</button>
+                <button onclick="clearTrack()" style="flex:1;font-size:10px;padding:3px 6px;background:#dc2626;color:#fff;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-weight:700">🗑️</button>
+              </div>
+            </div>
+            <!-- Simpan & Muat Drawing -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px">
+              <button onclick="saveDrawings()" style="font-size:10px;padding:5px 4px;background:#f0fdf4;color:#1a5c2e;border:1px solid #bbf7d0;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700">💾 Simpan Drawing</button>
+              <button onclick="loadDrawings()" style="font-size:10px;padding:5px 4px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700">📂 Muat Drawing</button>
+            </div>
+            <div id="saved-drawing-info" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:4px 8px;font-size:10px;color:#166534;margin-bottom:5px"></div>
             <button onclick="document.getElementById('peta-pw-input').click()" style="width:100%;font-size:11px;padding:6px 10px;background:var(--hijau);color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;text-align:left">📂 Upload GIS</button>
             <input type="file" id="peta-pw-input" accept=".zip,.shp,.kml,.kmz,.geojson,.json,.gpx" multiple style="display:none" onchange="handlePetaPWUpload(event)">
             <!-- Format badges -->
@@ -6080,6 +6099,16 @@ let petaPWLocMarker  = null;
 let petaPWLocCircle  = null;
 let petaPWLocWatch   = null;
 
+// GPS Route Tracking
+let petaPWTrackWatch   = null;   // watchPosition ID untuk tracking rute
+let petaPWTrackCoords  = [];     // array titik {lat,lng,ts}
+let petaPWTrackLine    = null;   // Leaflet polyline rute
+let petaPWTrackMarkers = [];     // marker titik-titik tracking
+let petaPWTracking     = false;  // status tracking aktif
+
+// Saved Drawings (polygon, line, marker dari Geoman) — disimpan ke localStorage
+const GIS_SAVE_KEY = 'siwashut_gis_drawings_v1';
+
 // Dashboard GIS
 let dashGISLayers = [];
 let dashMapRef    = null;
@@ -7340,6 +7369,22 @@ function initPetaPW() {
     el.addEventListener('dragover', e => e.preventDefault());
     el.addEventListener('drop', async e => { e.preventDefault(); await handlePetaPWDrop(e); });
   }
+
+  // Auto-save drawing setiap kali Geoman selesai menggambar / edit
+  setTimeout(() => {
+    initGeomanAutoSave();
+    // Auto-load drawing tersimpan jika ada
+    const raw = localStorage.getItem(GIS_SAVE_KEY);
+    if (raw) {
+      try {
+        const d = JSON.parse(raw);
+        if (d.features && d.features.length > 0) {
+          const infoEl = document.getElementById('saved-drawing-info');
+          if (infoEl) { infoEl.style.display = 'block'; infoEl.textContent = `💾 ${d.features.length} drawing tersimpan — klik "Muat Drawing" untuk menampilkan`; }
+        }
+      } catch(e) {}
+    }
+  }, 800);
 }
 
 function renderPetaPWDataMarkers() {
@@ -7461,6 +7506,323 @@ function clearLocatePeta() {
   if (info) info.style.display = 'none';
   const btn = document.getElementById('btn-locate-peta');
   if (btn) { btn.textContent = '📍 Lokasi Saya'; btn.disabled = false; }
+}
+
+// ── GPS Route Tracking ─────────────────────────────────────────────────────────
+function toggleGPSTracking() {
+  if (petaPWTracking) {
+    stopGPSTracking();
+  } else {
+    startGPSTracking();
+  }
+}
+
+function startGPSTracking() {
+  if (!navigator.geolocation) {
+    showToast('⚠️ Browser tidak mendukung geolokasi.', 'warn'); return;
+  }
+  if (!petaPWMap) initPetaPW();
+
+  petaPWTracking = true;
+  petaPWTrackCoords = [];
+  const btn = document.getElementById('btn-gps-track');
+  const statusEl = document.getElementById('gps-track-status');
+  if (btn) { btn.textContent = '⏹️ Stop Tracking'; btn.style.background = '#dc2626'; }
+  if (statusEl) statusEl.style.display = 'block';
+
+  // Buat polyline kosong dulu
+  if (petaPWTrackLine) petaPWMap.removeLayer(petaPWTrackLine);
+  petaPWTrackLine = L.polyline([], {
+    color: '#dc2626', weight: 4, opacity: 0.85,
+    dashArray: null,
+    lineCap: 'round', lineJoin: 'round'
+  }).addTo(petaPWMap);
+
+  if (petaPWTrackWatch) navigator.geolocation.clearWatch(petaPWTrackWatch);
+
+  petaPWTrackWatch = navigator.geolocation.watchPosition(
+    pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const ts  = new Date().toISOString();
+      const spd = pos.coords.speed;
+
+      petaPWTrackCoords.push({ lat, lng, ts, spd });
+
+      // Update polyline
+      const latlngs = petaPWTrackCoords.map(c => [c.lat, c.lng]);
+      petaPWTrackLine.setLatLngs(latlngs);
+
+      // Tambah marker setiap 5 titik
+      if (petaPWTrackCoords.length % 5 === 1) {
+        const dotIcon = L.divIcon({
+          html: `<div style="width:8px;height:8px;border-radius:50%;background:#dc2626;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,.4)"></div>`,
+          className: '', iconSize: [8,8], iconAnchor: [4,4]
+        });
+        const m = L.marker([lat,lng], { icon: dotIcon }).addTo(petaPWMap);
+        petaPWTrackMarkers.push(m);
+      }
+
+      // Update info
+      const infoEl = document.getElementById('gps-track-info');
+      if (infoEl) {
+        const dist = petaPWTrackCoords.length > 1 ? calcTrackDistance().toFixed(0) : 0;
+        const spdStr = spd != null ? (spd * 3.6).toFixed(1) + ' km/h' : '—';
+        infoEl.textContent = `${petaPWTrackCoords.length} titik · ${dist} m · ${spdStr}`;
+      }
+
+      // Pan ke posisi terbaru
+      petaPWMap.panTo([lat, lng]);
+    },
+    err => {
+      const msg = err.code===1 ? 'Izin ditolak.' : err.code===2 ? 'Lokasi tidak tersedia.' : 'Timeout.';
+      showToast('⚠️ GPS: ' + msg, 'warn');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 2000 }
+  );
+
+  showToast('🛤️ Tracking rute GPS dimulai!', 'success');
+}
+
+function stopGPSTracking() {
+  if (petaPWTrackWatch) { navigator.geolocation.clearWatch(petaPWTrackWatch); petaPWTrackWatch = null; }
+  petaPWTracking = false;
+  const btn = document.getElementById('btn-gps-track');
+  const statusEl = document.getElementById('gps-track-status');
+  if (btn) { btn.textContent = '🛤️ Rekam Rute GPS'; btn.style.background = '#059669'; }
+
+  const n = petaPWTrackCoords.length;
+  const dist = n > 1 ? calcTrackDistance().toFixed(0) : 0;
+  const infoEl = document.getElementById('gps-track-info');
+  if (infoEl) infoEl.textContent = `Selesai — ${n} titik · ${dist} m`;
+
+  showToast(`⏹️ Tracking dihentikan. ${n} titik, ${dist} m`, 'success');
+}
+
+function clearTrack() {
+  stopGPSTracking();
+  petaPWTrackCoords = [];
+  if (petaPWTrackLine && petaPWMap) { petaPWMap.removeLayer(petaPWTrackLine); petaPWTrackLine = null; }
+  petaPWTrackMarkers.forEach(m => { if (petaPWMap) petaPWMap.removeLayer(m); });
+  petaPWTrackMarkers = [];
+  const statusEl = document.getElementById('gps-track-status');
+  if (statusEl) statusEl.style.display = 'none';
+  showToast('🗑️ Rute tracking dihapus.', 'warn');
+}
+
+function calcTrackDistance() {
+  let total = 0;
+  for (let i = 1; i < petaPWTrackCoords.length; i++) {
+    const a = petaPWTrackCoords[i-1];
+    const b = petaPWTrackCoords[i];
+    total += L.latLng(a.lat, a.lng).distanceTo(L.latLng(b.lat, b.lng));
+  }
+  return total;
+}
+
+function exportTrackGPX() {
+  if (petaPWTrackCoords.length < 2) { showToast('⚠️ Belum ada rute untuk diekspor.', 'warn'); return; }
+  const pts = petaPWTrackCoords.map(c =>
+    `    <trkpt lat="${c.lat}" lon="${c.lng}"><time>${c.ts}</time>${c.spd != null ? '<speed>'+c.spd+'</speed>' : ''}</trkpt>`
+  ).join('\n');
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="SIWASHUT" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk><name>Rute GPS SIWASHUT ${new Date().toISOString().split('T')[0]}</name>
+    <trkseg>
+${pts}
+    </trkseg>
+  </trk>
+</gpx>`;
+  downloadBlob(gpx, 'rute_gps_siwashut_' + Date.now() + '.gpx', 'application/gpx+xml');
+  showToast('⬇️ Rute berhasil diekspor ke GPX!', 'success');
+}
+
+function exportTrackGeoJSON() {
+  if (petaPWTrackCoords.length < 2) { showToast('⚠️ Belum ada rute untuk diekspor.', 'warn'); return; }
+  const geojson = {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: { name: 'Rute GPS SIWASHUT', tanggal: new Date().toISOString(), jumlah_titik: petaPWTrackCoords.length, jarak_meter: Math.round(calcTrackDistance()) },
+      geometry: {
+        type: 'LineString',
+        coordinates: petaPWTrackCoords.map(c => [c.lng, c.lat])
+      }
+    }]
+  };
+  downloadBlob(JSON.stringify(geojson, null, 2), 'rute_gps_siwashut_' + Date.now() + '.geojson', 'application/geo+json');
+  showToast('⬇️ Rute berhasil diekspor ke GeoJSON!', 'success');
+}
+
+function downloadBlob(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// ── Simpan & Muat Drawing (Geoman) ke localStorage ─────────────────────────────
+function saveDrawings() {
+  if (!petaPWMap) { showToast('⚠️ Peta belum dimuat.', 'warn'); return; }
+  try {
+    const drawnLayer = petaPWMap.pm.getGeomanDrawLayers ? petaPWMap.pm.getGeomanDrawLayers() : [];
+    // Juga kumpulkan dari semua layer yang ada di map (non-tile, non-marker-data)
+    const geojsonFeatures = [];
+    petaPWMap.eachLayer(layer => {
+      if (layer instanceof L.Path || layer instanceof L.Marker) {
+        // Skip marker data pengawasan (bukan drawing)
+        if (petaPWMap._dataMakers && petaPWMap._dataMakers.includes(layer)) return;
+        if (layer === petaPWLocMarker || layer === petaPWLocCircle) return;
+        if (petaPWTrackMarkers.includes(layer) || layer === petaPWTrackLine) return;
+        try {
+          const gj = layer.toGeoJSON ? layer.toGeoJSON() : null;
+          if (gj) {
+            // Simpan juga style
+            const opt = layer.options || {};
+            gj.properties = gj.properties || {};
+            if (opt.color) gj.properties._color = opt.color;
+            if (opt.fillColor) gj.properties._fillColor = opt.fillColor;
+            if (opt.weight) gj.properties._weight = opt.weight;
+            if (opt.fillOpacity != null) gj.properties._fillOpacity = opt.fillOpacity;
+            if (layer.options.radius) gj.properties._radius = layer.options.radius; // circle
+            geojsonFeatures.push(gj);
+          }
+        } catch(e) {}
+      }
+    });
+
+    if (geojsonFeatures.length === 0) { showToast('⚠️ Tidak ada drawing untuk disimpan.', 'warn'); return; }
+
+    const saveData = {
+      ts: new Date().toISOString(),
+      count: geojsonFeatures.length,
+      features: geojsonFeatures
+    };
+    localStorage.setItem(GIS_SAVE_KEY, JSON.stringify(saveData));
+
+    const infoEl = document.getElementById('saved-drawing-info');
+    if (infoEl) { infoEl.style.display = 'block'; infoEl.textContent = `✅ ${geojsonFeatures.length} objek disimpan pada ${new Date().toLocaleTimeString('id-ID')}`; }
+    showToast(`💾 ${geojsonFeatures.length} drawing berhasil disimpan!`, 'success');
+  } catch(e) {
+    showToast('⚠️ Gagal menyimpan: ' + e.message, 'warn');
+  }
+}
+
+function loadDrawings() {
+  if (!petaPWMap) initPetaPW();
+  try {
+    const raw = localStorage.getItem(GIS_SAVE_KEY);
+    if (!raw) { showToast('⚠️ Belum ada drawing tersimpan.', 'warn'); return; }
+    const saveData = JSON.parse(raw);
+    const features = saveData.features || [];
+    if (features.length === 0) { showToast('⚠️ Data tersimpan kosong.', 'warn'); return; }
+
+    let loaded = 0;
+    features.forEach(feat => {
+      try {
+        const color = feat.properties._color || '#1a5c2e';
+        const fillColor = feat.properties._fillColor || color;
+        const weight = feat.properties._weight || 3;
+        const fillOpacity = feat.properties._fillOpacity != null ? feat.properties._fillOpacity : 0.3;
+
+        // Jika circle — simpan radius di properties
+        if (feat.geometry.type === 'Point' && feat.properties._radius) {
+          L.circle([feat.geometry.coordinates[1], feat.geometry.coordinates[0]], {
+            radius: feat.properties._radius, color, fillColor, weight, fillOpacity
+          }).addTo(petaPWMap);
+        } else {
+          L.geoJSON(feat, {
+            style: () => ({ color, fillColor, weight, fillOpacity }),
+            pointToLayer: (f, latlng) => L.marker(latlng)
+          }).addTo(petaPWMap);
+        }
+        loaded++;
+      } catch(e) {}
+    });
+
+    const infoEl = document.getElementById('saved-drawing-info');
+    if (infoEl) { infoEl.style.display = 'block'; infoEl.textContent = `📂 ${loaded} objek dimuat dari simpanan ${saveData.ts ? new Date(saveData.ts).toLocaleString('id-ID') : ''}`; }
+    showToast(`📂 ${loaded} drawing berhasil dimuat!`, 'success');
+  } catch(e) {
+    showToast('⚠️ Gagal memuat: ' + e.message, 'warn');
+  }
+}
+
+// Auto-save drawing setiap kali Geoman selesai menggambar / edit
+function initGeomanAutoSave() {
+  if (!petaPWMap || !petaPWMap.pm) return;
+  const events = ['pm:create','pm:edit','pm:remove','pm:cut','pm:rotateend','pm:dragend'];
+  events.forEach(ev => {
+    petaPWMap.on(ev, () => {
+      // Delay sedikit agar Geoman selesai commit perubahan
+      setTimeout(saveDrawings, 300);
+    });
+  });
+}
+
+// ── Tile Caching (offline basemap sederhana via Cache API) ─────────────────────
+// Fungsi ini men-prefetch tile yang terlihat di viewport dan menyimpannya ke
+// browser Cache Storage sehingga tersedia saat offline.
+const TILE_CACHE_NAME = 'siwashut-tiles-v1';
+
+async function cacheVisibleTiles() {
+  if (!petaPWMap) { showToast('⚠️ Peta belum dimuat.', 'warn'); return; }
+  if (!('caches' in window)) { showToast('⚠️ Browser tidak mendukung Cache API.', 'warn'); return; }
+
+  showToast('⏳ Menyimpan tile peta untuk offline...', 'info');
+
+  const bounds = petaPWMap.getBounds();
+  const zoom   = petaPWMap.getZoom();
+  const urls   = getTileURLsForBounds(bounds, zoom, zoom + 1); // zoom saat ini + 1 level lebih dalam
+
+  let saved = 0;
+  const cache = await caches.open(TILE_CACHE_NAME);
+  const batchSize = 10;
+
+  for (let i = 0; i < urls.length; i += batchSize) {
+    const batch = urls.slice(i, i + batchSize);
+    await Promise.allSettled(batch.map(async url => {
+      try {
+        const existing = await cache.match(url);
+        if (!existing) {
+          const resp = await fetch(url, { mode: 'cors' });
+          if (resp.ok) { await cache.put(url, resp); saved++; }
+        } else {
+          saved++;
+        }
+      } catch(e) {}
+    }));
+  }
+
+  showToast(`✅ ${saved} tile tersimpan untuk mode offline!`, 'success');
+}
+
+function getTileURLsForBounds(bounds, minZoom, maxZoom) {
+  const urls = [];
+  // Gunakan template URL layer aktif
+  const layerUrl = petaPWTileLayer ? petaPWTileLayer._url : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const subdomains = ['a','b','c'];
+
+  for (let z = minZoom; z <= Math.min(maxZoom, 16); z++) {
+    const sw = latLngToTile(bounds.getSouth(), bounds.getWest(), z);
+    const ne = latLngToTile(bounds.getNorth(), bounds.getEast(), z);
+    for (let x = sw.x; x <= ne.x; x++) {
+      for (let y = ne.y; y <= sw.y; y++) {
+        const s = subdomains[(x + y) % subdomains.length];
+        const url = layerUrl.replace('{s}', s).replace('{z}', z).replace('{x}', x).replace('{y}', y);
+        if (!url.includes('{') ) urls.push(url); // skip template yang tidak lengkap
+      }
+    }
+  }
+  return urls;
+}
+
+function latLngToTile(lat, lng, zoom) {
+  const x = Math.floor((lng + 180) / 360 * Math.pow(2, zoom));
+  const latRad = lat * Math.PI / 180;
+  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));
+  return { x, y };
 }
 
 // ── Upload GIS ke Peta Pengawasan ─────────────────────────────────────────────
